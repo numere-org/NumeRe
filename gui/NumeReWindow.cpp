@@ -2141,7 +2141,7 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
+void NumeReWindow::openTable(NumeRe::TableView _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
     wxWindow* openedBrowser = findWindow(WT_TABLEVIEWER);
     TableBrowser* browser;
@@ -2198,7 +2198,7 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDisplayName)
+void NumeReWindow::editTable(NumeRe::TableView _table, const std::string& tableDisplayName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
@@ -3017,7 +3017,10 @@ void NumeReWindow::OnPreview()
         return;
     }
 
-    NumeRe::Table table = _memManager.extractTable("data");
+    NumeRe::TableView table = _memManager.getTable("data").extractView("data",
+                                                                       VectorIndex(0, VectorIndex::OPEN_END),
+                                                                       VectorIndex(0, VectorIndex::OPEN_END),
+                                                                       VectorIndex(0, VectorIndex::OPEN_END));
     openTable(table, fileName, fileName);
 }
 

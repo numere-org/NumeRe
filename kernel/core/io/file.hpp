@@ -29,7 +29,7 @@
 #include "zip++.hpp"
 #include "../utils/stringtools.hpp"
 #include "../ui/error.hpp"
-#include "../datamanagement/tablecolumn.hpp"
+#include "../datamanagement/tabledata.hpp"
 #include "filesystem.hpp"
 
 namespace NumeRe
@@ -46,6 +46,7 @@ namespace NumeRe
         std::string sComment;
         int64_t nRows;
         int64_t nCols;
+        int64_t nLayers;
         int32_t versionMajor;
         int32_t versionMinor;
         int32_t versionBuild;
@@ -53,7 +54,7 @@ namespace NumeRe
         __time64_t timeStamp;
         bool needsConversion;
 
-        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0), needsConversion(true) {}
+        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), nLayers(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0), needsConversion(true) {}
     };
 
 
@@ -76,6 +77,7 @@ namespace NumeRe
             std::string sComment;
             int64_t nRows;
             int64_t nCols;
+            int64_t nLayers;
             unsigned short nPrecFields;
             bool needsConversion;
 
@@ -85,7 +87,7 @@ namespace NumeRe
             std::ios::openmode openMode;
 
             // The main data table
-            TableColumnArray* fileData;
+            TableData* fileData;
 
             /////////////////////////////////////////////////
             /// \brief This method has to be used to open the
@@ -282,14 +284,15 @@ namespace NumeRe
             ///
             /// \param nCol long longint
             /// \param nLineNumber size_t
+            /// \param nLayer long long int
             /// \return std::string
             ///
             /////////////////////////////////////////////////
-            std::string getLineFromHead(long long int nCol, size_t nLineNumber)
+            std::string getLineFromHead(long long int nCol, size_t nLineNumber, long long int nLayer = 0)
             {
                 size_t nLastLineBreak = 0u;
 
-                if (!fileData->at(nCol))
+                if (fileData->sheets() <= (size_t)nLayer || !fileData->getSheet(nLayer).getCols().at(nCol))
                 {
                     if (!nLineNumber)
                         return TableColumn::getDefaultColumnHead(nCol);
@@ -297,7 +300,9 @@ namespace NumeRe
                     return " ";
                 }
 
-                std::string sHeadLine = fileData->at(nCol)->m_sHeadLine;
+                TblColPtr& col = fileData->getSheet(nLayer).getCols().at(nCol);
+
+                std::string sHeadLine = col->m_sHeadLine;
 
                 // Search the selected part
                 for (size_t i = 0; i < sHeadLine.length(); i++)
@@ -336,8 +341,8 @@ namespace NumeRe
 
                 // If we have only one line remaining, we return the unit instead
                 // (if any)
-                if (nLineNumber == 1 && fileData->at(nCol)->m_sUnit.length())
-                    return "[" + fileData->at(nCol)->m_sUnit + "]";
+                if (nLineNumber == 1 && col->m_sUnit.length())
+                    return "[" + col->m_sUnit + "]";
 
                 // Not enough lines in this string, return a whitespace character
                 return " ";
@@ -722,8 +727,22 @@ namespace NumeRe
             {
                 if (nCols > 0 && !fileData)
                 {
-                    fileData = new TableColumnArray;
-                    fileData->resize(nCols);
+                    fileData = new TableData;
+
+                    if (nLayers < 2)
+                    {
+                        fileData->addSheet(sFileName, nCols);
+                        nLayers = 1;
+                    }
+                    else
+                    {
+                        fileData->reserve(nLayers);
+
+                        for (size_t i = 0; i < (size_t)nLayers; i++)
+                        {
+                            fileData->getSheet(i).reserve(nCols);
+                        }
+                    }
                 }
                 else if (nRows < 0 || nCols < 0)
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
@@ -753,6 +772,7 @@ namespace NumeRe
 
                 nRows = 0;
                 nCols = 0;
+                nLayers = 0;
             }
 
             /////////////////////////////////////////////////
@@ -877,6 +897,7 @@ namespace NumeRe
 
                 nRows = file.nRows;
                 nCols = file.nCols;
+                nLayers = file.nLayers;
                 nPrecFields = file.nPrecFields;
                 useExternalData = file.useExternalData;
                 sFileName = file.sFileName;
@@ -885,15 +906,9 @@ namespace NumeRe
                 sComment = file.sComment;
                 needsConversion = file.needsConversion;
 
-                // Creates only the vector but leaves the
-                // actual columns untouched
-                createStorage();
-
-                if (file.fileData && fileData)
-                {
-                    for (long long int col = 0; col < nCols; col++)
-                        fileData->at(col).reset(file.fileData->at(col)->copy());
-                }
+                fileData = file.fileData->extract(TableIndices(VectorIndex(0, nRows-1),
+                                                               VectorIndex(0, nCols-1),
+                                                               VectorIndex(0, nLayers-1)));
             }
 
         public:
@@ -904,7 +919,7 @@ namespace NumeRe
             /// \param fileName const std::string&
             ///
             /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), needsConversion(true), useExternalData(false), fileData(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nLayers(0), nPrecFields(7), needsConversion(true), useExternalData(false), fileData(nullptr)
             {
                 // Initializes the file system from the kernel
                 initializeFromKernel();
@@ -1125,6 +1140,17 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Returns the number of layers.
+            ///
+            /// \return int64_t
+            ///
+            /////////////////////////////////////////////////
+            int64_t getLayers()
+            {
+                return nLayers;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Returns the file header information
             /// structure.
             ///
@@ -1137,6 +1163,7 @@ namespace NumeRe
 
                 info.nCols = nCols;
                 info.nRows = nRows;
+                info.nLayers = nLayers;
                 info.sFileExtension = sFileExtension;
                 info.sFileName = sFileName;
                 info.sTableName = getTableName();
@@ -1186,18 +1213,25 @@ namespace NumeRe
             /// to the passed memory address. The target
             /// memory must already exist.
             ///
-            /// \param data TableColumnArray*
+            /// \param data TableData*
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void getData(TableColumnArray* data)
+            void getData(TableData* data)
             {
                 if (data && fileData)
                 {
-                    for (int64_t col = 0; col < nCols; col++)
+                    for (int64_t layer = 0; layer < nLayers; layer++)
                     {
-                        if (fileData->at(col))
-                            data->at(col).reset(fileData->at(col)->copy());
+                        data->getSheet(layer).m_sheetName = fileData->getSheet(layer).m_sheetName;
+                        TableColumnArray& columns = fileData->getSheet(layer).getCols();
+                        TableColumnArray& target = data->getSheet(layer).getCols();
+
+                        for (uint64_t col = 0; col < columns.size(); col++)
+                        {
+                            if (columns.at(col))
+                                target.at(col).reset(columns.at(col)->copy());
+                        }
                     }
                 }
             }
@@ -1211,13 +1245,15 @@ namespace NumeRe
             ///
             /// \param rows int64_t&
             /// \param cols int64_t&
-            /// \return TableColumnArray*
+            /// \param layers int64_t&
+            /// \return TableData*
             ///
             /////////////////////////////////////////////////
-            TableColumnArray* getData(int64_t& rows, int64_t& cols)
+            TableData* getData(int64_t& rows, int64_t& cols, int64_t& layers)
             {
                 rows = nRows;
                 cols = nCols;
+                layers = nLayers;
 
                 return fileData;
             }
@@ -1229,15 +1265,17 @@ namespace NumeRe
             ///
             /// \param rows int64_t
             /// \param cols int64_t
+            /// \param layers int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setDimensions(int64_t rows, int64_t cols)
+            void setDimensions(int64_t rows, int64_t cols, int64_t layers)
             {
                 clearStorage();
 
                 nRows = rows;
                 nCols = cols;
+                nLayers = layers;
             }
 
             /////////////////////////////////////////////////
@@ -1271,27 +1309,25 @@ namespace NumeRe
             /// storage and copies the passed data to this
             /// storage.
             ///
-            /// \param data TableColumnArray*
+            /// \param data TableData*
             /// \param rows int64_t
             /// \param cols int64_t
+            /// \param layers int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void addData(TableColumnArray* data, int64_t rows, int64_t cols)
+            void addData(TableData* data, int64_t rows, int64_t cols, int64_t layers)
             {
                 if (!nRows && !nCols)
                 {
                     nRows = rows;
                     nCols = cols;
+                    nLayers = layers;
                 }
 
-                createStorage();
-
-                if (fileData && data)
-                {
-                    for (int64_t col = 0; col < nCols; col++)
-                       fileData->at(col).reset(data->at(col)->copy());
-                }
+                fileData = data->extract(TableIndices(VectorIndex(0, rows-1),
+                                                      VectorIndex(0, cols-1),
+                                                      VectorIndex(0, layers-1)));
             }
 
             /////////////////////////////////////////////////
@@ -1300,19 +1336,21 @@ namespace NumeRe
             /// copied and must exist as long as thos class
             /// exists.
             ///
-            /// \param data TableColumnArray*
+            /// \param data TableData*
             /// \param rows int64_t
             /// \param cols int64_t
+            /// \param layers int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setData(TableColumnArray* data, int64_t rows, int64_t cols)
+            void setData(TableData* data, int64_t rows, int64_t cols, int64_t layers)
             {
                 useExternalData = true;
 
                 fileData = data;
                 nRows = rows;
                 nCols = cols;
+                nLayers = layers;
             }
     };
 
@@ -1426,22 +1464,26 @@ namespace NumeRe
             ///
             /// \param row int64_t
             /// \param col int64_t
+            /// \param layer int64_t
             /// \return std::complex<double>
             ///
             /////////////////////////////////////////////////
-            std::complex<double> getElement(int64_t row, int64_t col) const
+            std::complex<double> getElement(int64_t row, int64_t col, int64_t layer = 0) const
             {
                 if (m_file)
                 {
-                    if (row >= m_file->getRows() || col >= m_file->getCols())
+                    if (row >= m_file->getRows() || col >= m_file->getCols() || layer >= m_file->getLayers())
                         return 0;
 
                     // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
+                    int64_t r,c,l;
+                    TableData* arr = m_file->getData(r, c, l);
 
-                    if (arr->at(col))
-                        return arr->at(col)->getValue(row);
+                    if (arr->sheets() > (size_t)layer)
+                    {
+                        if (arr->m_sheets[layer]->m_columns.at(col))
+                            return arr->m_sheets[layer]->m_columns.at(col)->getValue(row);
+                    }
                 }
 
                 return std::complex<double>();
@@ -1454,22 +1496,26 @@ namespace NumeRe
             ///
             /// \param row int64_t
             /// \param col int64_t
+            /// \param layer int64_t
             /// \return std::string
             ///
             /////////////////////////////////////////////////
-            std::string getStringElement(int64_t row, int64_t col) const
+            std::string getStringElement(int64_t row, int64_t col, int64_t layer) const
             {
                 if (m_file)
                 {
-                    if (row >= m_file->getRows() || col >= m_file->getCols())
-                        return 0;
+                    if (row >= m_file->getRows() || col >= m_file->getCols() || layer >= m_file->getLayers())
+                        return "";
 
                     // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
+                    int64_t r,c,l;
+                    TableData* arr = m_file->getData(r, c, l);
 
-                    if (arr->at(col))
-                        return arr->at(col)->getValueAsInternalString(row);
+                    if (arr->sheets() > (size_t)layer)
+                    {
+                        if (arr->m_sheets[layer]->m_columns.at(col))
+                            return arr->m_sheets[layer]->m_columns.at(col)->getValueAsInternalString(row);
+                    }
                 }
 
                 return "";
@@ -1481,22 +1527,26 @@ namespace NumeRe
             /// if the column does not exist.
             ///
             /// \param col int64_t
+            /// \param layer int64_t
             /// \return string
             ///
             /////////////////////////////////////////////////
-            std::string getColumnHead(int64_t col) const
+            std::string getColumnHead(int64_t col, int64_t layer = 0) const
             {
                 if (m_file)
                 {
-                    if (col >= m_file->getCols())
+                    if (col >= m_file->getCols() || layer >= m_file->getLayers())
                         return "";
 
                     // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
+                    int64_t r,c,l;
+                    TableData* arr = m_file->getData(r, c, l);
 
-                    if (arr->at(col))
-                        return arr->at(col)->m_sHeadLine;
+                    if (arr->sheets() > (size_t)layer)
+                    {
+                        if (arr->m_sheets[layer]->m_columns.at(col))
+                            return arr->m_sheets[layer]->m_columns.at(col)->m_sHeadLine;
+                    }
                 }
 
                 return "";
@@ -1620,7 +1670,7 @@ namespace NumeRe
             int32_t versionMinor;
             int32_t versionBuild;
             const short fileSpecVersionMajor = 4;
-            const short fileSpecVersionMinor = 10;
+            const short fileSpecVersionMinor = 50;
             float fileVersionRead;
             size_t checkPos;
             size_t checkStart;

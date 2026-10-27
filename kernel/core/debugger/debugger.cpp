@@ -263,7 +263,12 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         // argument type as reference
         sArgumentValue = "{" + toString(_data.min(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
 
-        std::string sDim = toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false));
+        const Table& table = _data.getTable(sCache);
+        std::string sDim = toString(table.getRows()) + " x " + toString(table.getCols());
+        int sheets = table.getSheets();
+
+        if (sheets > 1)
+            sDim += " x " + toString(sheets);
 
         // Determine whether this is a templated variable
         if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
@@ -765,12 +770,15 @@ void NumeReDebugger::summarizeInformation(const std::map<std::string, std::pair<
         else
             sInlineInfo.clear();
 
-        std::string sTableData;
+        const Table& table = instance->getMemoryManager().getTable(iter.second);
+        std::string sTableData = toString(table.getRows()) + " x " + toString(table.getCols());
+        int sheets = table.getSheets();
+
+        if (sheets > 1)
+            sTableData += " x " + toString(sheets);
 
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
-        sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x "
-            + toString(instance->getMemoryManager().getCols(iter.second, false));
         sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
             + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
 
@@ -951,7 +959,14 @@ vector<string> NumeReDebugger::getGlobals()
     {
         if (!iter->first.starts_with("_~"))
         {
-            mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
+            const Table& table = _data.getTable(iter->first);
+            std::string sDim = toString(table.getRows()) + " x " + toString(table.getCols());
+            int sheets = table.getSheets();
+
+            if (sheets > 1)
+                sDim += " x " + toString(sheets);
+
+            mGlobals[iter->first + "()"] = sDim
                 + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
                 + toString(_data.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
         }

@@ -34,6 +34,13 @@
 #define MEMORYMANAGER_HPP
 
 
+struct TableReference
+{
+    size_t owned;
+    size_t referenced;
+};
+
+
 /////////////////////////////////////////////////
 /// \brief This class represents the central
 /// memory managing instance. It will handle all
@@ -42,679 +49,342 @@
 /////////////////////////////////////////////////
 class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 {
-	private:
-		std::vector<Memory*> vMemory;
-		std::map<std::string, std::pair<size_t, size_t>> mCachesMap;
-		bool bSaveMutex;
-		boost::nowide::fstream cache_file;
-		std::string sCache_file;
-		std::string sPredefinedFuncs;
-		std::string sUserdefinedFuncs;
-		std::string sPredefinedCommands;
-		std::string sPluginCommands;
+    private:
+        std::vector<Table*> m_tables;
+        std::map<std::string, TableReference> m_tableReferences;
+        bool bSaveMutex;
+        boost::nowide::fstream cache_file;
+        std::string sCache_file;
+        std::string sPredefinedFuncs;
+        std::string sUserdefinedFuncs;
+        std::string sPredefinedCommands;
+        std::string sPluginCommands;
 
-		void reorderColumn(size_t _nLayer, const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
-		bool loadFromNewCacheFile();
-		bool loadFromLegacyCacheFile();
-		VectorIndex parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const;
-        std::vector<std::complex<double>> resolveMAF(const std::string& sTableName, std::string sDir, std::complex<double> (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const;
+        void reorderColumn(size_t _nLayer, const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+        bool loadFromNewCacheFile();
+        bool loadFromLegacyCacheFile();
+        VectorIndex parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const;
+        std::vector<std::complex<double>> resolveMAF(const std::string& sTableName, std::string sDir,
+                                                     std::complex<double> (MemoryManager::*MAF)(const std::string&,
+                                                                                                const VectorIndex&,
+                                                                                                const VectorIndex&,
+                                                                                                const VectorIndex&) const) const;
 
         virtual bool saveLayer(std::string _sFileName, const std::string& _sTable, unsigned short nPrecision, std::string sExt = "") override
-		{
-			return vMemory[findTable(_sTable)]->save(ValidFileName(_sFileName, ".ndat", !sExt.length()), _sTable, nPrecision, sExt);
-		}
+        {
+            return m_tables[findTable(_sTable)]->save(ValidFileName(_sFileName, ".ndat", !sExt.length()), _sTable, nPrecision, sExt);
+        }
 
-		inline bool exists(const std::string& sTable) const
-		{
-		    return mCachesMap.find(sTable) != mCachesMap.end();
-		}
+        inline bool exists(const std::string& sTable) const
+        {
+            return m_tableReferences.find(sTable) != m_tableReferences.end();
+        }
 
-		size_t mapStringViewFind(StringView view) const
-		{
-		    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+        size_t mapStringViewFind(StringView view) const
+        {
+            for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
             {
                 if (view == iter->first)
                 {
-                    if (iter->second.first != iter->second.second)
-                        return iter->second.second;
+                    if (iter->second.owned != iter->second.referenced)
+                        return iter->second.referenced;
 
-                    return iter->second.first;
+                    return iter->second.owned;
                 }
                 else if (view < iter->first)
                     throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, view.to_string(), view.to_string());
             }
 
             return -1;
-		}
+        }
 
-		size_t findTable(const std::string& sTable) const
-		{
-		    auto iter = mCachesMap.find(sTable);
+        size_t findTable(const std::string& sTable) const
+        {
+            auto iter = m_tableReferences.find(sTable);
 
-		    if (iter == mCachesMap.end())
+            if (iter == m_tableReferences.end())
                 throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sTable, sTable);
 
-            if (iter->second.first != iter->second.second)
-                return iter->second.second;
+            if (iter->second.owned != iter->second.referenced)
+                return iter->second.referenced;
 
-            return iter->second.first;
-		}
+            return iter->second.owned;
+        }
 
-	public:
-		MemoryManager();
-		~MemoryManager();
+    public:
+        MemoryManager();
+        ~MemoryManager();
 
-		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};
+        enum AppDir {ROWS = Table::ROWS, COLS = Table::COLS, GRID = Table::GRID, ALL = Table::ALL};
 
-		// Variables for the parser
-		mutable mu::Variable tableLinesCount;
-		mutable mu::Variable tableColumnsCount;
+        // Variables for the parser
+        mutable mu::Variable tableLinesCount;
+        mutable mu::Variable tableColumnsCount;
         bool updateDimensionVariables(StringView sTableName) const;
 
 
         // OTHER METHODS
-		inline void setPredefinedFuncs(const std::string& sFuncs)
-		{
-			sPredefinedFuncs = sFuncs;
-		}
-
-		inline void setUserdefinedFuncs(const std::string& sUserFuncs)
-		{
-			sUserdefinedFuncs = sUserFuncs;
-		}
-
-		inline void setPluginCommands(const std::string& sPluginCmds)
-		{
-			sPluginCommands = sPluginCmds;
+        inline void setPredefinedFuncs(const std::string& sFuncs)
+        {
+            sPredefinedFuncs = sFuncs;
         }
 
-		inline void setPredefinedCommands(const std::string& sCommands)
-		{
-		    sPredefinedCommands = sCommands;
-		}
+        inline void setUserdefinedFuncs(const std::string& sUserFuncs)
+        {
+            sUserdefinedFuncs = sUserFuncs;
+        }
+
+        inline void setPluginCommands(const std::string& sPluginCmds)
+        {
+            sPluginCommands = sPluginCmds;
+        }
+
+        inline void setPredefinedCommands(const std::string& sCommands)
+        {
+            sPredefinedCommands = sCommands;
+        }
 
 
 
-		// VALIDATION METHODS
+        // VALIDATION METHODS
         bool isValid() const;
-		bool isTable(const std::string& sTable, bool only = false) const;
-		bool isTable(StringView sTable, bool only = false) const;
+        bool isTable(const std::string& sTable, bool only = false) const;
+        bool isTable(StringView sTable, bool only = false) const;
 
         bool isEmpty(const std::string& sTable) const
         {
             if (exists(sTable))
-                return !vMemory[findTable(sTable)]->getCols();
+                return !m_tables[findTable(sTable)]->getCols();
 
             return true;
         }
 
-		bool isValidElement(long long int _nLine, long long int _nCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->isValidElement(_nLine, _nCol);
+        bool isValidElement(size_t nRow, size_t nCol, size_t nSheet, const std::string& _sTable) const
+        {
+            if (exists(_sTable))
+                return m_tables[findTable(_sTable)]->isValidElement(nRow, nCol, nSheet);
 
             return false;
-		}
+        }
 
 
 
-		// RECOGNITION METHODS
-		bool containsTables(const std::string& sExpression);
-		bool containsTablesOrClusters(const std::string& sCmdLine);
+        // RECOGNITION METHODS
+        bool containsTables(const std::string& sExpression);
+        bool containsTablesOrClusters(const std::string& sCmdLine);
 
-		inline std::string matchTableAsParameter(const std::string& sExpression, char cFollowing = ' ')
-		{
-			for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
-			{
-				if (findParameter(sExpression, iter->first, cFollowing))
-					return iter->first;
-			}
+        inline std::string matchTableAsParameter(const std::string& sExpression, char cFollowing = ' ')
+        {
+            for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
+            {
+                if (findParameter(sExpression, iter->first, cFollowing))
+                    return iter->first;
+            }
 
-			return "";
-		}
-
+            return "";
+        }
 
 
         // GLOBAL TABLE METHODS
         // CREATION AND DELETION
-		bool addTable(const std::string& sCache, const Settings& _option);
-		bool deleteTable(const std::string& sCache);
+        bool addTable(const std::string& sCache, const Settings& _option);
+        bool deleteTable(const std::string& sCache);
         void removeData(bool bAutoSave = false);
         void removeTablesFromMemory();
 
-        bool insertBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
-        {
-            return vMemory[findTable(sTable)]->insertBlock(atRow, atCol, rows, cols);
-        }
 
-        bool insertCols(const std::string& sTable, size_t atCol, size_t num)
-        {
-            return vMemory[findTable(sTable)]->insertCols(atCol, num);
-        }
-
-        bool insertRows(const std::string& sTable, size_t atRow, size_t num)
-        {
-            return vMemory[findTable(sTable)]->insertRows(atRow, num);
-        }
-
-        bool removeBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
-        {
-            return vMemory[findTable(sTable)]->removeBlock(atRow, atCol, rows, cols);
-        }
-
-        bool removeCols(const std::string& sTable, const VectorIndex& _vCols)
-        {
-            return vMemory[findTable(sTable)]->removeCols(_vCols);
-        }
-
-        bool removeRows(const std::string& sTable, const VectorIndex& _vRows)
-        {
-            return vMemory[findTable(sTable)]->removeRows(_vRows);
-        }
-
-        bool reorderCols(const std::string& sTable, const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
-        {
-            return vMemory[findTable(sTable)]->reorderCols(_vCols, _vNewOrder);
-        }
-
-        bool reorderRows(const std::string& sTable, const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
-        {
-            return vMemory[findTable(sTable)]->reorderRows(_vRows, _vNewOrder);
-        }
-
-        bool replaceVals(const std::string& sTable, const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
-        {
-            return vMemory[findTable(sTable)]->replaceVals(_vCols, _oldVals, _newVals, enableRegEx);
-        }
-
-        bool resizeTable(int _nCols, const std::string& _sTable)
-		{
-			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);
-		}
-
-        void deleteEntry(int _nLine, int _nCol, const std::string& _sCache)
-		{
-			vMemory[findTable(_sCache)]->deleteEntry(_nLine, _nCol);
-		}
-
-		void deleteBulk(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = 0)
-		{
-			vMemory[findTable(_sCache)]->deleteBulk(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
-
-		void deleteBulk(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
-		{
-			vMemory[findTable(_sCache)]->deleteBulk(_vLine, _vCol);
-		}
-
-		void shrink(const std::string& _sCache)
-		{
-		    vMemory[findTable(_sCache)]->shrink();
-		}
-
-
-		// TABLE INFORMATION AND SAVING METHODS
-		VectorIndex arrayToIndex(const mu::Array& arr, const std::string& sTable) const;
-		bool getSaveStatus() const;
-		void setSaveStatus(bool _bIsSaved);
-		long long int getLastSaved() const;
-		void setCacheFileName(std::string _sFileName);
-		bool saveToCacheFile();
-		bool loadFromCacheFile();
+        // TABLE INFORMATION AND SAVING METHODS
+        VectorIndex arrayToIndex(const mu::Array& arr, const std::string& sTable, size_t sheet) const;
+        bool getSaveStatus() const;
+        void setSaveStatus(bool _bIsSaved);
+        long long int getLastSaved() const;
+        bool saveToCacheFile();
+        bool loadFromCacheFile();
 
         inline size_t getNumberOfTables() const
-		{
-			return mCachesMap.size();
-		}
+        {
+            return m_tableReferences.size();
+        }
 
-		inline const std::map<std::string, std::pair<size_t, size_t>>& getTableMap() const
-		{
-			return mCachesMap;
-		}
+        inline const std::map<std::string, TableReference>& getTableMap() const
+        {
+            return m_tableReferences;
+        }
 
-		inline std::string getTableNames() const
-		{
-			std::string sReturn = ";";
+        inline std::string getTableNames() const
+        {
+            std::string sReturn = ";";
 
-			for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
-			{
-				sReturn += iter->first + ";";
-			}
+            for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
+            {
+                sReturn += iter->first + ";";
+            }
 
-			return sReturn;
-		}
+            return sReturn;
+        }
 
 
         // GLOBAL TABLE ACCESS METHODS
-		Memory* getTable(const std::string& sTable);
-		virtual void melt(Memory* _mem, const std::string& sTable, bool overrideTarget = false) override;
+        Table& getTable(const std::string& sTable);
+        Table& getTable(StringView sTable);
+        const Table& getTable(const std::string& sTable) const;
+        const Table& getTable(StringView sTable) const;
+        virtual void melt(Table* _mem, const std::string& sTable, bool overrideTarget = false) override;
 
-		inline void renameTable(const std::string& sCache, const std::string& sNewName, bool bForceRenaming = false)
-		{
-			if (isTable(sNewName))
-				throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sNewName + "()");
+        inline void renameTable(const std::string& sCache, const std::string& sNewName, bool bForceRenaming = false)
+        {
+            if (isTable(sNewName))
+                throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sNewName + "()");
 
-			if (!isTable(sCache))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
+            if (!isTable(sCache))
+                throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
 
-			if ((sCache == "table" || sCache == "string") && !bForceRenaming)
-				throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, sCache);
+            if ((sCache == "table" || sCache == "string") && !bForceRenaming)
+                throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, sCache);
 
-			mCachesMap[sNewName] = mCachesMap[sCache];
-			mCachesMap.erase(sCache);
-			setSaveStatus(false);
-		}
+            m_tableReferences[sNewName] = m_tableReferences[sCache];
+            m_tableReferences.erase(sCache);
+            setSaveStatus(false);
+        }
 
-		inline void swapTables(std::string sTable1, std::string sTable2)
-		{
-			if (!isTable(sTable1))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable1);
+        inline void swapTables(std::string sTable1, std::string sTable2)
+        {
+            if (!isTable(sTable1))
+                throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable1);
 
-			if (!isTable(sTable2))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable2);
+            if (!isTable(sTable2))
+                throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable2);
 
-            size_t tab1 = mCachesMap[sTable1].second;
-            size_t tab2 = mCachesMap[sTable2].second;
+            size_t tab1 = m_tableReferences[sTable1].referenced;
+            size_t tab2 = m_tableReferences[sTable2].referenced;
 
-            for (auto& iter : mCachesMap)
+            for (auto& iter : m_tableReferences)
             {
-                if (iter.second.first == tab1)
-                    iter.second.first = tab2;
-                else if (iter.second.first == tab2)
-                    iter.second.first = tab1;
+                if (iter.second.owned == tab1)
+                    iter.second.owned = tab2;
+                else if (iter.second.owned == tab2)
+                    iter.second.owned = tab1;
 
-                if (iter.second.second == tab1)
-                    iter.second.second = tab2;
-                else if (iter.second.second == tab2)
-                    iter.second.second = tab1;
+                if (iter.second.referenced == tab1)
+                    iter.second.referenced = tab2;
+                else if (iter.second.referenced == tab2)
+                    iter.second.referenced = tab1;
             }
-		}
+        }
 
-		void addReference(const std::string& sTable, const std::string& sReference)
-		{
-		    if (!isTable(sTable))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable);
+        void addReference(const std::string& sTable, const std::string& sReference)
+        {
+            if (!isTable(sTable))
+                throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable);
 
             if (!sReference.length())
             {
-                mCachesMap[sTable].second = mCachesMap[sTable].first;
+                m_tableReferences[sTable].referenced = m_tableReferences[sTable].owned;
                 return;
             }
             else if (!isTable(sReference))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sReference);
+                throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sReference);
 
-			auto iter = mCachesMap.find(sReference.substr(0, sReference.find('(')));
-			mCachesMap[sTable].second = iter->second.first;
-		}
-
-		void copyTable(const std::string& source, const std::string& target);
-		void copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx);
-
-
-		// TABLE EXTRACTOR AND IMPORTER METHODS
-        inline NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-		{
-			return vMemory[findTable(_sTable)]->extractTable(_sTable, lines, cols);
-		}
-
-		inline NumeRe::Table extractTable(int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-		{
-			return vMemory[_nLayer]->extractTable(_sTable, lines, cols);
-		}
-
-		inline void importTable(NumeRe::Table _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-		{
-			return vMemory[findTable(_sTable)]->importTable(_table, lines, cols);
-		}
-
-		inline void importTable(NumeRe::Table _table, int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-		{
-			return vMemory[_nLayer]->importTable(_table, lines, cols);
-		}
-
-		inline void insertCopiedTable(NumeRe::Table _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END), bool transpose = false)
-		{
-			return vMemory[findTable(_sTable)]->insertCopiedTable(_table, lines, cols, transpose);
-		}
-
-
-
-		// TABLE INPLACE MODIFICATION METHODS
-		std::vector<int> sortElements(const std::string& sLine);
-		std::vector<int> sortElements(const std::string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression = "");
-
-		inline bool smooth(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const NumeRe::FilterSettings& _settings, AppDir Direction = ALL)
-		{
-			return vMemory[findTable(_sCache)]->smooth(_vLine, _vCol, _settings, (Memory::AppDir)Direction);
-		}
-
-		inline bool retouch(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction = ALL)
-		{
-			return vMemory[findTable(_sCache)]->retouch(_vLine, _vCol, (Memory::AppDir)Direction);
-		}
-
-		inline bool resample(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3")
-		{
-			return vMemory[findTable(_sCache)]->resample(_vLine, _vCol, samples, (Memory::AppDir)Direction, sFilter);
-		}
-
-		inline bool convertColumns(const std::string& _sTable, const VectorIndex& _vCol, const std::string& _sType)
-		{
-		    return vMemory[findTable(_sTable)]->convertColumns(_vCol, _sType);
-		}
-
-        inline bool setCategories(const std::string& _sTable, const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
-		{
-		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
-		}
-
-        std::vector<size_t> findCols(const std::string& sTable, const std::vector<std::string>& vCols, bool enableRegEx, bool autoCreate = false) const
-        {
-            return vMemory[findTable(sTable)]->findCols(vCols, enableRegEx, autoCreate);
+            auto iter = m_tableReferences.find(sReference.substr(0, sReference.find('(')));
+            m_tableReferences[sTable].referenced = iter->second.owned;
         }
 
-        std::vector<size_t> findLayers(const std::string& sTable, const std::vector<std::string>& vLayers, bool enableRegEx, bool autoCreate = false) const
+        void copyTable(const std::string& source, const std::string& target);
+        void copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx);
+
+
+        // TABLE EXTRACTOR AND IMPORTER METHODS
+        /*inline NumeRe::TableView extractView(const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
         {
-            return vMemory[findTable(sTable)]->findLayers(vLayers, enableRegEx, autoCreate);
+            return m_tables[findTable(_sTable)]->extractView(_sTable, lines, cols);
         }
 
-        std::vector<size_t> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
-                                         const mu::Array& vValues, bool enableRegEx) const
+        inline NumeRe::TableView extractView(int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
         {
-            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues, enableRegEx);
+            return m_tables[_nLayer]->extractView(_sTable, lines, cols);
         }
 
-        mu::Array getIndex(const std::string& sTable, size_t nCol, const mu::Array& vValues, bool enableRegEx) const
+        inline void importView(NumeRe::TableView _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
         {
-            return vMemory[findTable(sTable)]->getIndex(nCol, vValues, enableRegEx);
+            return m_tables[findTable(_sTable)]->importView(_table, lines, cols);
         }
 
-        std::vector<AnovaResult> getAnova(const std::string& sTable,
-                                          const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+        inline void importView(NumeRe::TableView _table, int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
         {
-            return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);
+            return m_tables[_nLayer]->importView(_table, lines, cols);
         }
 
-        KMeansResult getKMeans(const std::string& sTable, const VectorIndex& cols, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
+        inline void insertCopiedView(NumeRe::TableView _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END), bool transpose = false)
         {
-
-            return vMemory[findTable(sTable)]->getKMeans(cols, nClusters, maxIterations, init_method);
-        }
-
-        double getCovariance(const std::string& sTable,
-                             size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
-        {
-            return vMemory[findTable(sTable)]->getCovariance(col1, _vIndex1, col2, _vIndex2);
-        }
-
-        double getPearsonCorr(const std::string& sTable,
-                              size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
-        {
-            return vMemory[findTable(sTable)]->getPearsonCorr(col1, _vIndex1, col2, _vIndex2);
-        }
-
-        double getSpearmanCorr(const std::string& sTable,
-                               size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
-        {
-            return vMemory[findTable(sTable)]->getSpearmanCorr(col1, _vIndex1, col2, _vIndex2);
-        }
-
-        std::vector<double> getRank(const std::string& sTable,
-                                    size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
-        {
-            return vMemory[findTable(sTable)]->getRank(col, _vIndex, _strat);
-        }
-
-        std::vector<std::complex<double>> getZScore(const std::string& sTable,
-                                                    size_t col, const VectorIndex& _vIndex) const
-        {
-            return vMemory[findTable(sTable)]->getZScore(col, _vIndex);
-        }
-
-        std::vector<int64_t> getBins(const std::string& sTable,
-                                     size_t col, size_t nBins) const
-        {
-            return vMemory[findTable(sTable)]->getBins(col, nBins);
-        }
+            return m_tables[findTable(_sTable)]->insertCopiedView(_table, lines, cols, transpose);
+        }*/
 
 
-
-		// DIMENSION ACCESS METHODS
-		inline int getLines(StringView sTable, bool _bFull = false) const
-		{
-		    size_t idx = mapStringViewFind(sTable);
-
-		    if (idx != (size_t)-1)
-                return vMemory[idx]->getLines(_bFull);
-
-            return 0;
-		}
-
-		inline int getLines(const std::string& sTable, bool _bFull = false) const
-		{
-		    auto iter = mCachesMap.find(sTable);
-
-		    if (iter != mCachesMap.end())
-                return vMemory[findTable(sTable)]->getLines(_bFull);
-
-            return 0;
-		}
-
-		inline int getCols(StringView sTable, bool _bFull = false) const
-		{
-		    size_t idx = mapStringViewFind(sTable);
-
-		    if (idx != (size_t)-1)
-                return vMemory[idx]->getCols(_bFull);
-
-            return 0;
-		}
-
-		inline int getCols(const std::string& sTable, bool _bFull = false) const
-		{
-		    auto iter = mCachesMap.find(sTable);
-
-		    if (iter != mCachesMap.end())
-                return vMemory[findTable(sTable)]->getCols(_bFull);
-
-            return 0;
-		}
-
-		inline int getLayers(StringView sTable, bool _bFull = false) const
-		{
-		    size_t idx = mapStringViewFind(sTable);
-
-		    if (idx != (size_t)-1)
-                return vMemory[idx]->getLayers(_bFull);
-
-            return 0;
-		}
-
-		inline int getLayers(const std::string& sTable, bool _bFull = false) const
-		{
-		    auto iter = mCachesMap.find(sTable);
-
-		    if (iter != mCachesMap.end())
-                return vMemory[findTable(sTable)]->getLayers(_bFull);
-
-            return 0;
-		}
-
-		inline int getBytes(const std::string& sTable) const
-		{
-		    return getSize(findTable(sTable));
-		}
-
-		inline int getSize(int _nLayer) const
-		{
-			if (vMemory.size() && _nLayer < (int)vMemory.size())
-				return vMemory[_nLayer]->getSize();
-
-			return 0;
-		}
+        // TABLE INPLACE MODIFICATION METHODS
+        std::vector<int> sortElements(const std::string& sLine);
+        std::vector<int> sortElements(const std::string& sCache,
+                                      const VectorIndex& _vRow,
+                                      const VectorIndex& _vCol,
+                                      const VectorIndex& _vSheet,
+                                      const std::string& sSortingExpression = "");
 
 
-
-        // READ ACCESS METHODS
-        mu::Value getElement(int _nLine, int _nCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->readMem(_nLine, _nCol);
-
-            return NAN;
-		}
-
-		mu::Array getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->readMem(_vLine, _vCol);
-
-            return std::vector<std::complex<double>>();
-		}
-
-		TableColumn::ColumnType getType(const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getType(_vCol);
-
-            return TableColumn::TYPE_NONE;
-		}
-
-		bool isValueLike(const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->isValueLike(_vCol);
-
-            return false;
-		}
-
-		mu::Array getCategoryList(const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getCategoryList(_vCol);
-
-            return mu::Array();
-		}
-
-		void copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-			vMemory[findTable(_sTable)]->copyElementsInto(vTarget, _vLine, _vCol);
-		}
-
-		int getHeadlineCount(const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getHeadlineCount();
-
-            return 0;
-		}
-
-		std::string getHeadLineElement(int _i, const std::string& _sTable) const
-		{
-			if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getHeadLineElement(_i);
-
-            return "";
-		}
-
-		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getHeadLineElement(_vCol);
-
-            return std::vector<std::string>();
-		}
-
-		std::string getTopHeadLineElement(int _i, const std::string& _sTable) const
-        {
-            return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find('\n'));
-        }
-
-        std::string getUnit(int _i, const std::string& _sTable) const
+        bool isValueLike(const VectorIndex& _vCol, const VectorIndex& _vSheet, const std::string& _sTable) const
         {
             if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->getUnit(_i);
+                return m_tables[findTable(_sTable)]->isValueLike(_vCol, _vSheet);
+
+            return false;
+        }
+
+        std::string getHeadLineElement(size_t nCol, size_t sheet, const std::string& _sTable) const
+        {
+            if (exists(_sTable))
+                return m_tables[findTable(_sTable)]->getHeadLineElement(nCol, sheet);
 
             return "";
         }
 
-		int getAppendedZeroes(int _i, const std::string& _sTable) const
-		{
-			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);
-		}
+        std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol, const VectorIndex& _vSheet, const std::string& _sTable) const
+        {
+            if (exists(_sTable))
+                return m_tables[findTable(_sTable)]->getHeadLineElement(_vCol, _vSheet);
 
-		int getColElements(const VectorIndex& cols, const std::string& _sTable) const;
+            return std::vector<std::string>();
+        }
 
-		std::string getComment(const std::string& _sTable) const
-		{
-		    return vMemory[findTable(_sTable)]->getComment();
-		}
+        std::string getTopHeadLineElement(size_t nCol, size_t sheet, const std::string& _sTable) const
+        {
+            std::string sHeadLineElement = getHeadLineElement(nCol, sheet, _sTable);
+            return sHeadLineElement.substr(0, sHeadLineElement.find('\n'));
+        }
 
-		NumeRe::TableMetaData getMetaData(const std::string& _sTable) const
-		{
-		    return vMemory[findTable(_sTable)]->getMetaData();
-		}
-
+        int getColElements(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const;
 
 
-        // WRITE ACCESS METHODS
-		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const mu::Value& _dData)
-		{
-			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
-		}
-
-		inline void writeToTable(Indices& _idx, const std::string& _sCache, const mu::Array& _dData)
-		{
-			vMemory[findTable(_sCache)]->writeData(_idx, _dData);
-		}
-
-		bool setHeadLineElement(int _i, const std::string& _sTable, std::string _sHead)
-		{
-			return vMemory[findTable(_sTable)]->setHeadLineElement(_i, _sHead);
-		}
-
-		bool setUnit(int _i, const std::string& _sTable, const std::string& _sUnit)
-		{
-		    return vMemory[findTable(_sTable)]->setUnit(_i, _sUnit);
-		}
-
-		void overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type);
-
-		void writeComment(const std::string& _sTable, const std::string& _comment)
-		{
-		    vMemory[findTable(_sTable)]->writeComment(_comment);
-		}
-
-		void setMetaData(const std::string& _sTable, const NumeRe::TableMetaData& meta)
-		{
-		    vMemory[findTable(_sTable)]->setMetaData(meta);
-		}
-
-
-
-		// MAF METHODS
-		// IMPLEMENTATIONS FOR THE TABLE METHODS
-		std::vector<std::complex<double>> std(const std::string& sTable, std::string sDir) const
+        // MAF METHODS
+        // IMPLEMENTATIONS FOR THE TABLE METHODS
+        std::vector<std::complex<double>> std(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::std);
         }
 
-		std::vector<std::complex<double>> avg(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> avg(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::avg);
         }
 
-		std::vector<std::complex<double>> max(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> max(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::max);
         }
 
-		std::vector<std::complex<double>> min(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> min(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::min);
         }
 
-		std::vector<std::complex<double>> prd(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> prd(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::prd);
         }
@@ -724,66 +394,70 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return resolveMAF(sTable, sDir, MemoryManager::sum);
         }
 
-		std::vector<std::complex<double>> num(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> num(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::num);
         }
 
-		std::vector<std::complex<double>> and_func(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> and_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::and_func);
         }
 
-		std::vector<std::complex<double>> or_func(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> or_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::or_func);
         }
 
-		std::vector<std::complex<double>> xor_func(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> xor_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::xor_func);
         }
 
-		std::vector<std::complex<double>> cnt(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> cnt(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::cnt);
         }
 
-		std::vector<std::complex<double>> norm(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> norm(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::norm);
         }
 
-		std::vector<std::complex<double>> med(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> med(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::med);
         }
 
-		std::vector<std::complex<double>> exc(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> exc(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::exc);
         }
 
-		std::vector<std::complex<double>> skew(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> skew(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::skew);
         }
 
-		std::vector<std::complex<double>> stderr_func(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> stderr_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::stderr_func);
         }
 
-		std::vector<std::complex<double>> rms(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> rms(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::rms);
         }
 
-		std::vector<std::complex<double>> cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef = 0.0, int nType = 0) const
+        std::vector<std::complex<double>> cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef = 0.0, int nType = 0) const
         {
             std::vector<std::complex<double>> vResults;
-            long long int nlines = getLines(sTable, false);
-            long long int ncols = getCols(sTable, false);
+            const Table& table = getTable(sTable);
+            long long int nlines = table.getRows();
+            long long int ncols = table.getCols();
+
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+            size_t sheet = 0;
 
             long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
 
@@ -791,9 +465,9 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             // of this table
             if (nGridOffset)
             {
-                std::vector<std::complex<double>> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), VectorIndex(), GRID);
+                std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), sheet, GRID);
                 nlines = vSize.front().real();
-                ncols = vSize.back().real()+nGridOffset; // compensate the offset
+                ncols = vSize.back().real() + nGridOffset; // compensate the offset
             }
 
             VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
@@ -802,24 +476,39 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
+                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
                         continue;
 
-                    vResults.push_back(cmp(sTable, 0, nlines-1, _idx[i]+nGridOffset, -1, dRef.real(), nType));
+                    vResults.push_back(cmp(sTable,
+                                           VectorIndex(0, nlines - 1),
+                                           VectorIndex(_idx[i] + nGridOffset),
+                                           sheet,
+                                           dRef.real(),
+                                           nType));
                 }
             }
             else if (sDir.find("lines") != std::string::npos)
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= nlines)
+                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
                         continue;
 
-                    vResults.push_back(cmp(sTable, _idx[i]+nGridOffset, -1, 0, ncols-1, dRef.real(), nType));
+                    vResults.push_back(cmp(sTable,
+                                           VectorIndex(_idx[i] + nGridOffset),
+                                           VectorIndex(0, ncols - 1),
+                                           sheet,
+                                           dRef.real(),
+                                           nType));
                 }
             }
             else
-                vResults.push_back(cmp(sTable, 0, nlines-1, nGridOffset, ncols-1, dRef.real(), nType));
+                vResults.push_back(cmp(sTable,
+                                       VectorIndex(0, nlines - 1),
+                                       VectorIndex(nGridOffset, ncols - 1),
+                                       sheet,
+                                       dRef.real(),
+                                       nType));
 
             if (!vResults.size())
                 vResults.push_back(NAN);
@@ -827,11 +516,15 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vResults;
         }
 
-		std::vector<std::complex<double>> pct(const std::string& sTable, std::string sDir, std::complex<double> dPct = 0.5) const
+        std::vector<std::complex<double>> pct(const std::string& sTable, std::string sDir, std::complex<double> dPct = 0.5) const
         {
             std::vector<std::complex<double>> vResults;
-            long long int nlines = getLines(sTable, false);
-            long long int ncols = getCols(sTable, false);
+            const Table& table = getTable(sTable);
+            long long int nlines = table.getRows();
+            long long int ncols = table.getCols();
+
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+            size_t sheet = 0;
 
             long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
 
@@ -839,9 +532,9 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             // of this table
             if (nGridOffset)
             {
-                std::vector<std::complex<double>> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), VectorIndex(), GRID);
+                std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), sheet, GRID);
                 nlines = vSize.front().real();
-                ncols = vSize.back().real()+nGridOffset; // compensate the offset
+                ncols = vSize.back().real() + nGridOffset; // compensate the offset
             }
 
             VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
@@ -850,24 +543,36 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
+                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
                         continue;
 
-                    vResults.push_back(pct(sTable, 0, nlines-1, _idx[i]+nGridOffset, -1, dPct.real()));
+                    vResults.push_back(pct(sTable,
+                                           VectorIndex(0, nlines - 1),
+                                           VectorIndex(_idx[i] + nGridOffset),
+                                           sheet,
+                                           dPct.real()));
                 }
             }
             else if (sDir.find("lines") != std::string::npos)
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= nlines)
+                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
                         continue;
 
-                    vResults.push_back(pct(sTable, _idx[i]+nGridOffset, -1, 0, ncols-1, dPct.real()));
+                    vResults.push_back(pct(sTable,
+                                           VectorIndex(_idx[i] + nGridOffset),
+                                           VectorIndex(0, ncols - 1),
+                                           sheet,
+                                           dPct.real()));
                 }
             }
             else
-                vResults.push_back(pct(sTable, 0, nlines-1, nGridOffset, ncols-1, dPct.real()));
+                vResults.push_back(pct(sTable,
+                                       VectorIndex(0, nlines - 1),
+                                       VectorIndex(nGridOffset, ncols - 1),
+                                       sheet,
+                                       dPct.real()));
 
             if (!vResults.size())
                 vResults.push_back(NAN);
@@ -875,223 +580,237 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return vResults;
         }
 
-		std::vector<std::complex<double>> size(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> size(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
             VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+            size_t sheet = 0;
+
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->size(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->size(_everyIdx,
+                                                         _cellsIdx,
+                                                         sheet,
+                                                         COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->size(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->size(_everyIdx,
+                                                         _cellsIdx,
+                                                         sheet,
+                                                         ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->size(VectorIndex(),
-                                                        VectorIndex(),
-                                                        sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return m_tables[findTable(sTable)]->size(VectorIndex(),
+                                                         VectorIndex(),
+                                                         sheet,
+                                                         sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
-		std::vector<std::complex<double>> minpos(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> minpos(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
             VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+            size_t sheet = 0;
+
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->minpos(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->minpos(_everyIdx,
+                                                           _cellsIdx,
+                                                           sheet,
+                                                           COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->minpos(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->minpos(_everyIdx,
+                                                           _cellsIdx,
+                                                           sheet,
+                                                           ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END),
-                                                          VectorIndex(0, VectorIndex::OPEN_END),
-                                                          sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return m_tables[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                           VectorIndex(0, VectorIndex::OPEN_END),
+                                                           sheet,
+                                                           sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
-		std::vector<std::complex<double>> maxpos(const std::string& sTable, std::string sDir) const
+        std::vector<std::complex<double>> maxpos(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
             VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+            size_t sheet = 0;
+
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->maxpos(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->maxpos(_everyIdx,
+                                                           _cellsIdx,
+                                                           sheet,
+                                                           COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->maxpos(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return m_tables[findTable(sTable)]->maxpos(_everyIdx,
+                                                           _cellsIdx,
+                                                           sheet,
+                                                           ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END),
-                                                          VectorIndex(0, VectorIndex::OPEN_END),
-                                                          sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return m_tables[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                           VectorIndex(0, VectorIndex::OPEN_END),
+                                                           sheet,
+                                                           sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
 
 
         // IMPLEMENTATIONS FOR THE MAFS
-		inline std::complex<double> std(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->std(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> std(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->std(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> std(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->std(_vLine, _vCol);
-		}
+        inline std::complex<double> avg(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->avg(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> avg(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->avg(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> max(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->max(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> avg(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->avg(_vLine, _vCol);
-		}
+        inline std::complex<double> min(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->min(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> max(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->max(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> prd(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->prd(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> max(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->max(_vLine, _vCol);
-		}
+        inline std::complex<double> sum(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->sum(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> min(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->min(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> num(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->num(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> min(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->min(_vLine, _vCol);
-		}
+        inline std::complex<double> and_func(const std::string& _sCache,
+                                             const VectorIndex& _vRow,
+                                             const VectorIndex& _vCol,
+                                             const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->and_func(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> prd(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->prd(_vLine, _vCol);
-		}
+        inline std::complex<double> or_func(const std::string& _sCache,
+                                            const VectorIndex& _vRow,
+                                            const VectorIndex& _vCol,
+                                            const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->or_func(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> prd(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->prd(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> xor_func(const std::string& _sCache,
+                                             const VectorIndex& _vRow,
+                                             const VectorIndex& _vCol,
+                                             const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->xor_func(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> sum(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->sum(_vLine, _vCol);
-		}
+        inline std::complex<double> cnt(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->cnt(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> sum(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->sum(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> norm(const std::string& _sCache,
+                                         const VectorIndex& _vRow,
+                                         const VectorIndex& _vCol,
+                                         const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->norm(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> num(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->num(_vLine, _vCol);
-		}
+        inline std::complex<double> cmp(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        size_t sheet,
+                                        std::complex<double> dRef = 0.0, int nType = 0) const
+        {
+            return m_tables[findTable(_sCache)]->cmp(_vRow, _vCol, sheet, dRef, nType);
+        }
 
-		inline std::complex<double> num(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->num(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> med(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->med(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> and_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->and_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> pct(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet,
+                                        std::complex<double> dPct = 0.5) const
+        {
+            return m_tables[findTable(_sCache)]->pct(_vRow, _vCol, _vSheet, dPct);
+        }
 
-		inline std::complex<double> and_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->and_func(_vLine, _vCol);
-		}
+        inline std::complex<double> exc(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->exc(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> or_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->or_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
+        inline std::complex<double> skew(const std::string& _sCache,
+                                         const VectorIndex& _vRow,
+                                         const VectorIndex& _vCol,
+                                         const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->skew(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> or_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->or_func(_vLine, _vCol);
-		}
+        inline std::complex<double> stderr_func(const std::string& _sCache,
+                                                const VectorIndex& _vRow,
+                                                const VectorIndex& _vCol,
+                                                const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->stderr_func(_vRow, _vCol, _vSheet);
+        }
 
-		inline std::complex<double> xor_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->xor_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
-
-		inline std::complex<double> xor_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->xor_func(_vLine, _vCol);
-		}
-
-		inline std::complex<double> cnt(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->cnt(_vLine, _vCol);
-		}
-
-		inline std::complex<double> cnt(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->cnt(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
-
-		inline std::complex<double> norm(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->norm(_vLine, _vCol);
-		}
-
-		inline std::complex<double> norm(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->norm(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
-
-		inline std::complex<double> cmp(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dRef = 0.0, int nType = 0) const
-		{
-			return vMemory[findTable(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
-		}
-
-		inline std::complex<double> cmp(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1, std::complex<double> dRef = 0.0, int nType = 0) const
-		{
-			return vMemory[findTable(_sCache)]->cmp(VectorIndex(i1, i2), VectorIndex(j1, j2), dRef, nType);
-		}
-
-		inline std::complex<double> med(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->med(_vLine, _vCol);
-		}
-
-		inline std::complex<double> med(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
-		{
-			return vMemory[findTable(_sCache)]->med(VectorIndex(i1, i2), VectorIndex(j1, j2));
-		}
-
-		inline std::complex<double> pct(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dPct = 0.5) const
-		{
-			return vMemory[findTable(_sCache)]->pct(_vLine, _vCol, dPct);
-		}
-
-		inline std::complex<double> pct(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1, std::complex<double> dPct = 0.5) const
-		{
-			return vMemory[findTable(_sCache)]->pct(VectorIndex(i1, i2), VectorIndex(j1, j2), dPct);
-		}
-
-		inline std::complex<double> exc(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->exc(_vLine, _vCol);
-		}
-
-		inline std::complex<double> skew(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->skew(_vLine, _vCol);
-		}
-
-		inline std::complex<double> stderr_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->stderr_func(_vLine, _vCol);
-		}
-
-		inline std::complex<double> rms(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
-		{
-			return vMemory[findTable(_sCache)]->rms(_vLine, _vCol);
-		}
+        inline std::complex<double> rms(const std::string& _sCache,
+                                        const VectorIndex& _vRow,
+                                        const VectorIndex& _vCol,
+                                        const VectorIndex& _vSheet) const
+        {
+            return m_tables[findTable(_sCache)]->rms(_vRow, _vCol, _vSheet);
+        }
 
 };
 

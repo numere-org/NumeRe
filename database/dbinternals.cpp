@@ -320,9 +320,9 @@ bool closeDbConnection(int64_t dbId)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table executeSql(const SqlStatement& statement, qtl::sqlite::database& db, const std::string& host)
+static NumeRe::TableView executeSql(const SqlStatement& statement, qtl::sqlite::database& db, const std::string& host)
 {
-    NumeRe::Table result;
+    NumeRe::TableView result;
 
     try
     {
@@ -365,12 +365,12 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::sqlite::data
             if (columnCount)
             {
                 //std::vector<int> types;
-                result.setSize(0, columnCount);
+                result.setSize(0, columnCount, 1);
 
                 for (int j = 0; j < columnCount; j++)
                 {
                     //types.push_back(stmt.get_column_type(j));
-                    result.setHead(j, stmt.get_column_name(j));
+                    result.setHead(j, 0, stmt.get_column_name(j));
                 }
 
                 size_t i = 0;
@@ -385,16 +385,16 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::sqlite::data
                             case SQLITE_NULL:
                                 break;
                             case SQLITE_INTEGER:
-                                result.set(i, j, mu::Value(stmt.get_value_i64(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value_i64(j)));
                                 break;
                             case SQLITE_FLOAT:
-                                result.set(i, j, mu::Value(stmt.get_value_f64(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value_f64(j)));
                                 break;
                             case SQLITE_TEXT:
-                                result.set(i, j, mu::Value(stmt.get_text_value<char>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_text_value<char>(j)));
                                 break;
                             case SQLITE_BLOB:
-                                result.set(i, j, mu::Value("BLOB"));
+                                result.set(i, j, 0, mu::Value("BLOB"));
                                 break;
                         }
                     }
@@ -426,9 +426,9 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::sqlite::data
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::database& db, const std::string& host)
+static NumeRe::TableView executeSql(const SqlStatement& statement, qtl::mysql::database& db, const std::string& host)
 {
-    NumeRe::Table result;
+    NumeRe::TableView result;
 
     try
     {
@@ -547,12 +547,12 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
             {
                 stmt.auto_bind_fetch();
                 std::vector<enum_field_types> types;
-                result.setSize(0, columnCount);
+                result.setSize(0, columnCount, 1);
 
                 for (int j = 0; j < columnCount; j++)
                 {
                     types.push_back(stmt.get_column_type(j));
-                    result.setHead(j, stmt.get_column_name(j));
+                    result.setHead(j, 0, stmt.get_column_name(j));
                 }
 
                 size_t i = 0;
@@ -569,27 +569,27 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
                             case MYSQL_TYPE_NULL:
                                 break;
                             case MYSQL_TYPE_BIT:
-                                result.set(i, j, mu::Value(std::any_cast<bool>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<bool>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_YEAR:
                             case MYSQL_TYPE_TINY:
-                                result.set(i, j, mu::Value(std::any_cast<int8_t>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<int8_t>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_SHORT:
-                                result.set(i, j, mu::Value(std::any_cast<int16_t>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<int16_t>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_INT24:
                             case MYSQL_TYPE_LONG:
-                                result.set(i, j, mu::Value(std::any_cast<int32_t>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<int32_t>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_LONGLONG:
-                                result.set(i, j, mu::Value(std::any_cast<int64_t>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<int64_t>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_FLOAT:
-                                result.set(i, j, mu::Value(std::any_cast<float>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<float>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_DOUBLE:
-                                result.set(i, j, mu::Value(std::any_cast<double>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<double>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_DATE:
                             case MYSQL_TYPE_TIME:
@@ -600,7 +600,7 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
                             case MYSQL_TYPE_TIME2:
                             {
                                 qtl::mysql::time t = std::any_cast<qtl::mysql::time>(stmt.get_value(j));
-                                result.set(i, j, mu::Value(getTimePointFromTime_t(t.get_time()))+mu::Value(t.second_part*1e-6));
+                                result.set(i, j, 0, mu::Value(getTimePointFromTime_t(t.get_time()))+mu::Value(t.second_part*1e-6));
                                 break;
                             }
                             case MYSQL_TYPE_VARCHAR:
@@ -613,7 +613,7 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
                             case MYSQL_TYPE_DECIMAL:
                             case MYSQL_TYPE_NEWDECIMAL:
                             case MYSQL_TYPE_GEOMETRY:
-                                result.set(i, j, mu::Value(std::any_cast<std::string>(stmt.get_value(j))));
+                                result.set(i, j, 0, mu::Value(std::any_cast<std::string>(stmt.get_value(j))));
                                 break;
                             case MYSQL_TYPE_TINY_BLOB:
                             case MYSQL_TYPE_MEDIUM_BLOB:
@@ -629,10 +629,10 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::mysql::datab
                                         qtl::mysql::blobbuf& buf = std::any_cast<qtl::mysql::blobbuf&>(blob);
                                         std::stringstream s;
                                         s << &buf << std::flush;
-                                        result.set(i, j, mu::Value(s.str()));
+                                        result.set(i, j, 0, mu::Value(s.str()));
                                     }
                                     else
-                                        result.set(i, j, mu::Value("BINARY"));
+                                        result.set(i, j, 0, mu::Value("BINARY"));
                                 }
 
                                 break;
@@ -701,9 +701,9 @@ static double bswapF64(double f)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::database& db, const std::string& host)
+static NumeRe::TableView executeSql(const SqlStatement& statement, qtl::postgres::database& db, const std::string& host)
 {
-    NumeRe::Table result;
+    NumeRe::TableView result;
     static const sys_time_point REF_DATE = getTimePointFromYMD(2000,1,1);
     static const sys_time_point ZERO_DATE = getTimePointFromYMD(1970,1,1);
     try
@@ -800,11 +800,11 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::da
             if (columnCount)
             {
                 std::vector<PGSQL::Oid> types;
-                result.setSize(0, columnCount);
+                result.setSize(0, columnCount, 1);
 
                 for (int i = 0; i < columnCount; i++)
                 {
-                    result.setHead(i, res.get_column_name(i));
+                    result.setHead(i, 0, res.get_column_name(i));
                     types.push_back(res.get_column_type(i));
                 }
 
@@ -824,43 +824,43 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::da
                             switch (types[j])
                             {
                                 case BOOLOID:
-                                    result.set(row, j, *(bool*)res.get_value(i, j));
+                                    result.set(row, j, 0, *(bool*)res.get_value(i, j));
                                     break;
                                 case CHAROID:
                                 case TEXTOID:
                                 case NAMEOID:
                                 case VARCHAROID:
-                                    result.set(row, j, res.get_value(i, j));
+                                    result.set(row, j, 0, res.get_value(i, j));
                                     break;
                                 case FLOAT4OID:
-                                    result.set(row, j, bswapF32(*(float*)res.get_value(i, j)));
+                                    result.set(row, j, 0, bswapF32(*(float*)res.get_value(i, j)));
                                     break;
                                 case FLOAT8OID:
-                                    result.set(row, j, bswapF64(*(double*)res.get_value(i, j)));
+                                    result.set(row, j, 0, bswapF64(*(double*)res.get_value(i, j)));
                                     break;
                                 case INT2OID:
-                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int16_t*)res.get_value(i, j)));
+                                    result.set(row, j, 0, qtl::postgres::detail::ntoh(*(int16_t*)res.get_value(i, j)));
                                     break;
                                 case INT4OID:
-                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j)));
+                                    result.set(row, j, 0, qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j)));
                                     break;
                                 case INT8OID:
-                                    result.set(row, j, qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j)));
+                                    result.set(row, j, 0, qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j)));
                                     break;
                                 case DATEOID: // Days since 1.1.2000
-                                    result.set(row, j, REF_DATE + std::chrono::days(qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j))));
+                                    result.set(row, j, 0, REF_DATE + std::chrono::days(qtl::postgres::detail::ntoh(*(int32_t*)res.get_value(i, j))));
                                     break;
                                 case TIMEOID: // microseconds
-                                    result.set(row, j, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    result.set(row, j, 0, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
                                     break;
                                 case TIMETZOID: // microseconds
-                                    result.set(row, j, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    result.set(row, j, 0, ZERO_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
                                     break;
                                 case TIMESTAMPOID: // somehow microseconds since 1.1.2000
-                                    result.set(row, j, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    result.set(row, j, 0, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
                                     break;
                                 case TIMESTAMPTZOID:
-                                    result.set(row, j, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
+                                    result.set(row, j, 0, REF_DATE + std::chrono::microseconds(qtl::postgres::detail::ntoh(*(int64_t*)res.get_value(i, j))));
                                     break;
           //                      case qtl::postgres::object_traits<timestamp>::type_id:
           //                          value = field_cast<timestamp>(index);
@@ -911,7 +911,7 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::da
           //                          value = field_cast<std::vector<date>>(index);
           //                          break;
                                 default:
-                                    result.set(row, j, "NOT IMPLEMENTED");
+                                    result.set(row, j, 0, "NOT IMPLEMENTED");
                                     break;
                             }
                         }
@@ -944,9 +944,9 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::postgres::da
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::database& db, const std::string& host)
+static NumeRe::TableView executeSql(const SqlStatement& statement, qtl::odbc::database& db, const std::string& host)
 {
-    NumeRe::Table result;
+    NumeRe::TableView result;
 
     try
     {
@@ -1057,12 +1057,12 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
             if (columnCount)
             {
                 std::vector<SQLLEN> types;
-                result.setSize(0, columnCount);
+                result.setSize(0, columnCount, 1);
 
                 for (int j = 0; j < columnCount; j++)
                 {
                     types.push_back(stmt.get_column_type(j));
-                    result.setHead(j, stmt.get_column_name(j));
+                    result.setHead(j, 0, stmt.get_column_name(j));
                 }
 
                 stmt.fetch();
@@ -1078,25 +1078,25 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
                         switch (types[j])
                         {
                             case SQL_BIT:
-                                result.set(i, j, mu::Value(stmt.get_value<bool, SQL_C_BIT>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<bool, SQL_C_BIT>(j)));
                                 break;
                             case SQL_TINYINT:
-                                result.set(i, j, mu::Value(stmt.get_value<int8_t, SQL_TINYINT>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<int8_t, SQL_TINYINT>(j)));
                                 break;
                             case SQL_SMALLINT:
-                                result.set(i, j, mu::Value(stmt.get_value<int16_t, SQL_C_SSHORT>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<int16_t, SQL_C_SSHORT>(j)));
                                 break;
                             case SQL_INTEGER:
-                                result.set(i, j, mu::Value(stmt.get_value<int32_t, SQL_C_SLONG>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<int32_t, SQL_C_SLONG>(j)));
                                 break;
                             case SQL_BIGINT:
-                                result.set(i, j, mu::Value(stmt.get_value<int64_t, SQL_C_SBIGINT>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<int64_t, SQL_C_SBIGINT>(j)));
                                 break;
                             case SQL_FLOAT:
-                                result.set(i, j, mu::Value(stmt.get_value<float, SQL_C_FLOAT>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<float, SQL_C_FLOAT>(j)));
                                 break;
                             case SQL_DOUBLE:
-                                result.set(i, j, mu::Value(stmt.get_value<double,SQL_C_DOUBLE>(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_value<double,SQL_C_DOUBLE>(j)));
                                 break;
                             /*case SQL_NUMERIC:
                                 std::cout << stmt.get_value<SQL_NUMERIC_STRUCT, SQL_NUMERIC>(j);
@@ -1104,19 +1104,19 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
                             case SQL_TIME:
                             {
                                 SQL_TIME_STRUCT tm = stmt.get_value<SQL_TIME_STRUCT,SQL_TIME>(j);
-                                result.set(i, j, mu::Value(getTimePointFromHMS(tm.hour, tm.minute, tm.second)));
+                                result.set(i, j, 0, mu::Value(getTimePointFromHMS(tm.hour, tm.minute, tm.second)));
                                 break;
                             }
                             case SQL_DATE:
                             {
                                 SQL_DATE_STRUCT dt = stmt.get_value<SQL_DATE_STRUCT,SQL_DATE>(j);
-                                result.set(i, j, mu::Value(getTimePointFromYMD(dt.year, dt.month, dt.day)));
+                                result.set(i, j, 0, mu::Value(getTimePointFromYMD(dt.year, dt.month, dt.day)));
                                 break;
                             }
                             case SQL_TIMESTAMP:
                             {
                                 qtl::odbc::timestamp dt = stmt.get_value<SQL_TIMESTAMP_STRUCT,SQL_TIMESTAMP>(j);
-                                result.set(i, j, mu::Value(dt.get_time())+mu::Value(dt.fraction*1e-9));
+                                result.set(i, j, 0, mu::Value(dt.get_time())+mu::Value(dt.fraction*1e-9));
                                 break;
                             }
                             /*case SQL_TIMESTAMP:
@@ -1141,13 +1141,13 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
                             case SQL_CHAR:
                             case SQL_VARCHAR:
                             case SQL_LONGVARCHAR:
-                                result.set(i, j, mu::Value(stmt.get_str_value(j)));
+                                result.set(i, j, 0, mu::Value(stmt.get_str_value(j)));
                                 break;
                             case SQL_WCHAR:
                             case SQL_WVARCHAR:
                             case SQL_WLONGVARCHAR:
                             {
-                                result.set(i, j, mu::Value(boost::nowide::narrow(stmt.get_wstr_value(j))));
+                                result.set(i, j, 0, mu::Value(boost::nowide::narrow(stmt.get_wstr_value(j))));
                                 break;
                             }
                             /*case SQL_GUID:
@@ -1187,7 +1187,7 @@ static NumeRe::Table executeSql(const SqlStatement& statement, qtl::odbc::databa
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table executeSql(int64_t dbId, const SqlStatement& statement)
+NumeRe::TableView executeSql(int64_t dbId, const SqlStatement& statement)
 {
     auto iter = activeInstances.find(dbId);
 
@@ -1202,10 +1202,10 @@ NumeRe::Table executeSql(int64_t dbId, const SqlStatement& statement)
         else if (iter->second.type == DB_ODBC)
             return executeSql(statement, std::get<qtl::odbc::database>(iter->second.database), iter->second.host);
 
-        return NumeRe::Table();
+        return NumeRe::TableView();
     }
 
-    return NumeRe::Table();
+    return NumeRe::TableView();
 }
 
 

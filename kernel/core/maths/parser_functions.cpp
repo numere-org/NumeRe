@@ -598,7 +598,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 
 		// Create cache, if needed. Otherwise get first empty column
 		if (_data.isTable(sDefaultTarget + "()"))
-			_idx.col.front() += _data.getCols(sDefaultTarget, false);
+			_idx.col.front() += _data.getTable(sDefaultTarget).getCols();
 		else
 			_data.addTable(sDefaultTarget, _option);
 
@@ -629,12 +629,14 @@ bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 	if (!isValidIndexSet(_idx))
 		return false;
 
+    Table& table = _data.getTable(sCache);
+
 	// Evaluate the case for an open end index
 	if (_idx.row.isOpenEnd())
-		_idx.row.setRange(0, _data.getLines(StringView(sCache, 0, sCache.find('(')), false)-1);
+		_idx.row.setRange(0, table.getRows()-1);
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.setRange(0, _data.getCols(StringView(sCache, 0, sCache.find('(')), false)-1);
+		_idx.col.setRange(0, table.getCols()-1);
 
 	// Signal success
 	return true;

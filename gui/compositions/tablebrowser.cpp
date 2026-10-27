@@ -227,7 +227,7 @@ void TableBrowser::openTable(NumeRe::Container<std::string> _stringTable, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableBrowser::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
+void TableBrowser::openTable(NumeRe::TableView _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
     int pageNum = findPage(tableDisplayName, sIntName);
     TablePanel* panel;

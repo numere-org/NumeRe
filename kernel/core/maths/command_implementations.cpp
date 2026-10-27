@@ -168,8 +168,13 @@ static mu::Array integrateSingleDimensionData(CommandLineParser& cmdParser)
     Indices& _idx = accessParser.getIndices();
     std::string sDatatable = accessParser.getDataObject();
 
-    if (!_data.isValueLike(accessParser.getIndices().col, accessParser.getDataObject()))
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+    int sheet = accessParser.getIndices().layer.front();
+
+    if (!_data.isValueLike(accessParser.getIndices().col, sheet, accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
+    Table& table = _data.getTable(sDatatable);
 
     // The indices are vectors
     //
@@ -177,32 +182,33 @@ static mu::Array integrateSingleDimensionData(CommandLineParser& cmdParser)
     // summarize its contents, otherwise we calculate the
     // integral with the trapezoidal method
     if ((_idx.row.size() == 1 || _idx.col.size() == 1) && !bReturnFunctionPoints)
-        vResult.push_back(mu::Value(_data.sum(sDatatable, _idx.row, _idx.col)));
+        vResult.push_back(mu::Value(_data.sum(sDatatable, _idx.row, _idx.col, sheet)));
     else if (_idx.row.size() == 1 || _idx.col.size() == 1)
     {
         // cumulative sum
-        vResult.push_back(_data.getElement(_idx.row[0], _idx.col[0], sDatatable));
+        vResult.push_back(table.read(_idx.row[0], _idx.col[0], sheet));
 
         if (_idx.row.size() == 1)
         {
             for (size_t i = 1; i < _idx.col.size(); i++)
-                vResult.push_back(vResult.back() + _data.getElement(_idx.row[0], _idx.col[i], sDatatable));
+                vResult.push_back(vResult.back() + table.read(_idx.row[0], _idx.col[i], sheet));
         }
         else
         {
             for (size_t i = 1; i < _idx.row.size(); i++)
-                vResult.push_back(vResult.back() + _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+                vResult.push_back(vResult.back() + table.read(_idx.row[i], _idx.col[0], sheet));
         }
     }
     else
     {
         MemoryManager _cache;
+        Table& defaultTable = _cache.getTable("table");
 
         // Copy the data
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            defaultTable.write(i, 0, 0, table.read(_idx.row[i], _idx.col[0], sheet));
+            defaultTable.write(i, 1, 0, table.read(_idx.row[i], _idx.col[1], sheet));
         }
 
         // Sort the data
@@ -211,37 +217,39 @@ static mu::Array integrateSingleDimensionData(CommandLineParser& cmdParser)
         long long int j = 1;
 
         // Calculate the integral by jumping over NaNs
-        for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++) //nan-suche
+        for (long long int i = 0; i < defaultTable.getRows() - 1; i++) //nan-suche
         {
             j = 1;
 
-            if (!_cache.isValidElement(i, 1, "table"))
+            if (!defaultTable.isValidElement(i, 1, 0))
                 continue;
 
-            while (!_cache.isValidElement(i + j, 1, "table") && i + j < _cache.getLines("table", false) - 1)
+            while (!defaultTable.isValidElement(i + j, 1, 0) && i + j < defaultTable.getRows() - 1)
                 j++;
 
-            if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
+            if (!defaultTable.isValidElement(i + j, 0, 0) || !defaultTable.isValidElement(i + j, 1, 0))
                 break;
 
-            if (ivl.intervals.size() >= 1 && ivl.intervals[0].front().real() > _cache.getElement(i, 0, "table").getNum().asF64())
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].front().real() > defaultTable.read(i, 0, 0).getNum().asF64())
                 continue;
 
-            if (ivl.intervals.size() >= 1 && ivl.intervals[0].back().real() < _cache.getElement(i + j, 0, "table").getNum().asF64())
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].back().real() < defaultTable.read(i + j, 0, 0).getNum().asF64())
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
             if (!bReturnFunctionPoints && !bCalcXvals)
-                dResult += (_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table"));
+                dResult += (defaultTable.read(i, 1, 0) + defaultTable.read(i + j, 1, 0)) / mu::Value(2.0) * (defaultTable.read(i + j, 0, 0) - defaultTable.read(i, 0, 0));
             else if (bReturnFunctionPoints && !bCalcXvals)
             {
                 if (vResult.size())
-                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")) + vResult.back());
+                    vResult.push_back((defaultTable.read(i, 1, 0) + defaultTable.read(i + j, 1, 0)) / mu::Value(2.0)
+                                      * (defaultTable.read(i + j, 0, 0) - defaultTable.read(i, 0, 0)) + vResult.back());
                 else
-                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / mu::Value(2.0) * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")));
+                    vResult.push_back((defaultTable.read(i, 1, 0) + defaultTable.read(i + j, 1, 0)) / mu::Value(2.0)
+                                      * (defaultTable.read(i + j, 0, 0) - defaultTable.read(i, 0, 0)));
             }
             else
-                vResult.push_back(_cache.getElement(i + j, 0, "table"));
+                vResult.push_back(defaultTable.read(i + j, 0, 0));
         }
 
         // If the integral was calculated, then there is a
@@ -942,11 +950,12 @@ bool differentiate(CommandLineParser& cmdParser)
             //
             // Copy the data first and sort afterwards
             MemoryManager _cache;
+            Table& defaultTable = _cache.getTable("table");
 
             for (size_t i = 0; i < _dataView.rows(); i++)
             {
-                _cache.writeToTable(i, 0, "table", _dataView.get(i, 0));
-                _cache.writeToTable(i, 1, "table", _dataView.get(i, 1));
+                defaultTable.write(i, 0, 0, _dataView.get(i, 0, 0));
+                defaultTable.write(i, 1, 0, _dataView.get(i, 1, 0));
             }
 
             _cache.sortElements("sort -table c=1[2]");
@@ -958,39 +967,39 @@ bool differentiate(CommandLineParser& cmdParser)
 
                 // The x values are approximated to be in the
                 // middle of the two samplex
-                for (int i = 0; i < _cache.getLines("table", false) - 1; i++)
+                for (int i = 0; i < defaultTable.getRows() - 1; i++)
                 {
-                    if (_cache.isValidElement(i, 0, "table")
-                        && _cache.isValidElement(i + 1, 0, "table")
-                        && _cache.isValidElement(i, 1, "table")
-                        && _cache.isValidElement(i + 1, 1, "table"))
-                        vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / mu::Value(2.0));
+                    if (defaultTable.isValidElement(i, 0, 0)
+                        && defaultTable.isValidElement(i + 1, 0, 0)
+                        && defaultTable.isValidElement(i, 1, 0)
+                        && defaultTable.isValidElement(i + 1, 1, 0))
+                        vResult.push_back((defaultTable.read(i + 1, 0, 0) + defaultTable.read(i, 0, 0)) / mu::Value(2.0));
                     else
                         vResult.push_back(mu::Value(NAN));
                 }
             }
             else
             {
-                vResult.resize(_cache.getLines("table", false));
+                vResult.resize(defaultTable.getRows());
 
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (int i = nFilterSize/2; i < _cache.getLines("table", false) - (int)nFilterSize/2; i++)
+                for (int i = nFilterSize/2; i < defaultTable.getRows() - (int)nFilterSize/2; i++)
                 {
                     std::pair<mu::Value, size_t> avgDiff(0.0, 0);
 
                     for (int j = 0; j < (int)nFilterSize; j++)
                     {
-                        if (_cache.isValidElement(i + j - nFilterSize/2, 0, "table")
-                            && _cache.isValidElement(i + j - nFilterSize/2, 1, "table"))
+                        if (defaultTable.isValidElement(i + j - nFilterSize/2, 0, 0)
+                            && defaultTable.isValidElement(i + j - nFilterSize/2, 1, 0))
                         {
-                            vResult[i] += mu::Value(diff.apply(j, 0, _cache.getElement(i + j - nFilterSize/2, 1, "table").getNum().asCF64()));
+                            vResult[i] += mu::Value(diff.apply(j, 0, defaultTable.read(i + j - nFilterSize/2, 1, 0).getNum().asCF64()));
 
                             // Calculate the average difference
-                            if (_cache.isValidElement(i + j - nFilterSize/2 - 1, 0, "table"))
+                            if (defaultTable.isValidElement(i + j - nFilterSize/2 - 1, 0, 0))
                             {
-                                avgDiff.first += _cache.getElement(i + j - nFilterSize/2, 0, "table")
-                                                - _cache.getElement(i + j - nFilterSize/2 - 1, 0, "table");
+                                avgDiff.first += defaultTable.read(i + j - nFilterSize/2, 0, 0)
+                                                - defaultTable.read(i + j - nFilterSize/2 - 1, 0, 0);
                                 avgDiff.second++;
                             }
                         }
@@ -2386,6 +2395,8 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
     if (_fft.bShiftAxis && !_fft.bInverseTrafo)
         vAxis = getShiftedAxis(_fft.lines, _fft.bInverseTrafo);
 
+    Table& targetTable = _data.getTable(sTargetTable);
+
     // Store the results of the transformation in the target
     // table
     if (!_fft.bInverseTrafo)
@@ -2401,37 +2412,37 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
                 break;
 
             if (_fft.bShiftAxis)
-                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                targetTable.write(_idx.row[i], _idx.col.front(), _idx.layer.front(),
                                    _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
             else if (i <= nElements/2)
-                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                targetTable.write(_idx.row[i], _idx.col.front(), _idx.layer.front(),
                                    _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
             else
-                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                targetTable.write(_idx.row[i], _idx.col.front(), _idx.layer.front(),
                                    _fft.dFrequencyOffset + 2.0 * (double)(-(int)nElements+(int)i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
 
             if (!_fft.bComplex)
             {
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, std::abs(_fftData.a[i]));
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, std::arg(_fftData.a[i]));
+                targetTable.write(_idx.row[vAxis[i]], _idx.col[1], _idx.layer.front(), std::abs(_fftData.a[i]));
+                targetTable.write(_idx.row[vAxis[i]], _idx.col[2], _idx.layer.front(), std::arg(_fftData.a[i]));
             }
             else
             {
                 // Only complex values
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, mu::Value(_fftData.a[i], false));
+                targetTable.write(_idx.row[vAxis[i]], _idx.col[1], _idx.layer.front(), mu::Value(_fftData.a[i], false));
             }
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
+        targetTable.setHeadLineElement(_idx.col.front(), _idx.layer.front(), _lang.get("COMMON_FREQUENCY") + " [Hz]");
 
         if (!_fft.bComplex)
         {
-            _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
-            _data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + " [rad]");
+            targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_AMPLITUDE"));
+            targetTable.setHeadLineElement(_idx.col[2], _idx.layer.front(), _lang.get("COMMON_PHASE") + " [rad]");
         }
         else
-            _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+            targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_AMPLITUDE"));
     }
     else
     {
@@ -2443,13 +2454,13 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             if (i > (int)_idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*_fft.dTimeInterval[0] / (double)(_fftData.GetNx() - 1));
-            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, mu::Value(_fftData.a[i], false));
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), (double)(i)*_fft.dTimeInterval[0] / (double)(_fftData.GetNx() - 1));
+            targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(), mu::Value(_fftData.a[i], false));
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
+        targetTable.setHeadLineElement(_idx.col[0], _idx.layer.front(), _lang.get("COMMON_TIME") + " [s]");
+        targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_SIGNAL"));
     }
 }
 
@@ -2496,6 +2507,8 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + _fft.cols);
 
+    Table& targetTable = _data.getTable(sTargetTable);
+
     // Store the results of the transformation in the target
     // table
     if (!_fft.bInverseTrafo)
@@ -2513,22 +2526,24 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
 
             // Write x axis
             if (_fft.bShiftAxis)
-                _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, _fft.dNyquistFrequency[0]*(-1.0 + 2.0 * (double)(i) / nElemsLines));
+                targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(),
+                                  _fft.dNyquistFrequency[0]*(-1.0 + 2.0 * (double)(i) / nElemsLines));
             else
-                _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(nElemsLines));
+                targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(),
+                                  2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(nElemsLines));
 
             for (int j = 0; j < nElemsCols; j++)
             {
                 // Write the values
                 if (_fft.bShiftAxis)
-                    _data.writeToTable(_idx.row[i + (i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2+nElemsLines % 2)],
+                    targetTable.write(_idx.row[i + (i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2+nElemsLines % 2)],
                                        _idx.col[j+2 + (j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2+nElemsCols % 2)],
-                                       sTargetTable,
+                                       _idx.layer.front(),
                                        _fft.bComplex ? mu::Value(_fftData.a[i+j*nElemsLines], false) : mu::Value(std::abs(_fftData.a[i+j*nElemsLines])));
                 else
-                    _data.writeToTable(_idx.row[i],
+                    targetTable.write(_idx.row[i],
                                        _idx.col[j+2],
-                                       sTargetTable,
+                                        _idx.layer.front(),
                                        _fft.bComplex ? mu::Value(_fftData.a[i+j*nElemsLines], false) : mu::Value(std::abs(_fftData.a[i+j*nElemsLines])));
             }
         }
@@ -2540,18 +2555,20 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
                 break;
 
             if (_fft.bShiftAxis)
-                _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fft.dNyquistFrequency[1]*(-1.0 + 2.0 * (double)(i) / nElemsCols));
+                targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(),
+                                  _fft.dNyquistFrequency[1]*(-1.0 + 2.0 * (double)(i) / nElemsCols));
             else
-                _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, 2.0 * (double)(i)*_fft.dNyquistFrequency[1] / (double)(nElemsCols));
+                targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(),
+                                  2.0 * (double)(i)*_fft.dNyquistFrequency[1] / (double)(nElemsCols));
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
+        targetTable.setHeadLineElement(_idx.col[0], _idx.layer.front(), _lang.get("COMMON_FREQUENCY") + " [Hz]");
+        targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_FREQUENCY") + " [Hz]");
 
         for (int j = 0; j < nElemsCols; j++)
         {
-            _data.setHeadLineElement(_idx.col[j+2], sTargetTable, _lang.get("COMMON_AMPLITUDE") + "(:," + toString(j+1) + ")");
+            targetTable.setHeadLineElement(_idx.col[j+2], _idx.layer.front(), _lang.get("COMMON_AMPLITUDE") + "(:," + toString(j+1) + ")");
         }
     }
     else
@@ -2568,12 +2585,14 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
                 break;
 
             // Write x axis
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*_fft.dTimeInterval[0] / (double)(nElemsLines - 1));
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(),
+                              (double)(i)*_fft.dTimeInterval[0] / (double)(nElemsLines - 1));
 
             // Write the values
             for (int j = 0; j < nElemsCols; j++)
             {
-                _data.writeToTable(_idx.row[i], _idx.col[j+2], sTargetTable, mu::Value(_fftData.a[i+j*nElemsLines], false));
+                targetTable.write(_idx.row[i], _idx.col[j+2], _idx.layer.front(),
+                                  mu::Value(_fftData.a[i+j*nElemsLines], false));
             }
         }
 
@@ -2583,16 +2602,17 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             if ((size_t)i > _idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, (double)(i)*_fft.dTimeInterval[1] / (double)(nElemsCols - 1));
+            targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(),
+                              (double)(i)*_fft.dTimeInterval[1] / (double)(nElemsCols - 1));
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
+        targetTable.setHeadLineElement(_idx.col[0], _idx.layer.front(), _lang.get("COMMON_TIME") + " [s]");
+        targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_TIME") + " [s]");
 
         for (int j = 0; j < nElemsCols; j++)
         {
-            _data.setHeadLineElement(_idx.col[j+2], sTargetTable, _lang.get("COMMON_SIGNAL") + "(:," + toString(j+1) + ")");
+            targetTable.setHeadLineElement(_idx.col[j+2], _idx.layer.front(), _lang.get("COMMON_SIGNAL") + "(:," + toString(j+1) + ")");
         }
     }
 }
@@ -2803,6 +2823,7 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
+    Table& targetTable = _data.getTable(sTargetTable);
 
     // get the data from the data object
     DataView _dataView = cmdParser.getExprAsDataView();
@@ -2857,15 +2878,15 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     // write the output as datagrid for plotting (only if not an inverse trafo)
     if (bTargetGrid && !bInverseTrafo)
     {
-        NumeRe::Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
+        NumeRe::TableView tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
 
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _idx.col.front() + tWaveletData.getCols()-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _idx.row.front() + tWaveletData.getLines()-1);
+            _idx.row.setRange(0, _idx.row.front() + tWaveletData.getRows()-1);
 
-        for (size_t i = 0; i < tWaveletData.getLines(); i++)
+        for (size_t i = 0; i < tWaveletData.getRows(); i++)
         {
             if (_idx.row[i] == VectorIndex::INVALID)
                 break;
@@ -2884,13 +2905,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
                     else
                         sHeadline = _lang.get("COMMON_COEFFICIENT");
 
-                    _data.setHeadLineElement(_idx.col[j], sTargetTable, sHeadline);
+                    targetTable.setHeadLineElement(_idx.col[j], _idx.layer.front(), sHeadline);
                 }
 
                 if (_idx.col[j] == VectorIndex::INVALID)
                     break;
 
-                _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j).real());
+                targetTable.write(_idx.row[i], _idx.col[j], _idx.layer.front(), tWaveletData.getValue(i, j, 0).real());
             }
         }
 
@@ -2916,11 +2937,11 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
             break;
 
         if (bInverseTrafo)
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, double(i));
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), double(i));
         else
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, std::complex<double>(level, translation));
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), std::complex<double>(level, translation));
 
-        _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
+        targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(), vWaveletData[i]);
 
         translation++;
 
@@ -2933,13 +2954,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 
     if (!bInverseTrafo)
     {
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+        targetTable.setHeadLineElement(_idx.col[0], _idx.layer.front(), _lang.get("COMMON_COEFFICIENT"));
+        targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_AMPLITUDE"));
     }
     else
     {
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME"));
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
+        targetTable.setHeadLineElement(_idx.col[0], _idx.layer.front(), _lang.get("COMMON_TIME"));
+        targetTable.setHeadLineElement(_idx.col[1], _idx.layer.front(), _lang.get("COMMON_SIGNAL"));
     }
 
     if (_option.systemPrints())
@@ -3229,6 +3250,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
 
     // search for explicit "target" options and select the target cache
     std::string sTargetCache = cmdParser.getTargetTable(_iTargetIndex, "grid");
+    Table& targetTable = _data.getTable(sTargetCache);
 
     cmdParser.clearReturnValue();
     cmdParser.setReturnValue(sTargetCache);
@@ -3346,15 +3368,15 @@ bool createDatagrid(CommandLineParser& cmdParser)
 
     // Write the x axis
     for (size_t i = 0; i < vSamples[bTranspose]; i++)
-        _data.writeToTable(i, _iTargetIndex.col[0], sTargetCache, ivl[0](i, vSamples[bTranspose]));
+        targetTable.write(i, _iTargetIndex.col[0], _iTargetIndex.layer.front(), ivl[0](i, vSamples[bTranspose]));
 
-    _data.setHeadLineElement(_iTargetIndex.col[0], sTargetCache, "x");
+    targetTable.setHeadLineElement(_iTargetIndex.col[0], _iTargetIndex.layer.front(), "x");
 
     // Write the y axis
     for (size_t i = 0; i < vSamples[1-bTranspose]; i++)
-        _data.writeToTable(i, _iTargetIndex.col[1], sTargetCache, ivl[1](i, vSamples[1-bTranspose]));
+        targetTable.write(i, _iTargetIndex.col[1], _iTargetIndex.layer.front(), ivl[1](i, vSamples[1-bTranspose]));
 
-    _data.setHeadLineElement(_iTargetIndex.col[1], sTargetCache, "y");
+    targetTable.setHeadLineElement(_iTargetIndex.col[1], _iTargetIndex.layer.front(), "y");
     _iTargetIndex.row.setOpenEndIndex(_iTargetIndex.row.front()+vZVals.size()-1);
     int rowmax = _iTargetIndex.row.max();
 
@@ -3364,12 +3386,11 @@ bool createDatagrid(CommandLineParser& cmdParser)
         if (_iTargetIndex.col[j+2] == VectorIndex::INVALID)
             break;
 
-        _data.writeToTable(rowmax, _iTargetIndex.col[j+2], sTargetCache, mu::Value(0.0, false));
+        targetTable.write(rowmax, _iTargetIndex.col[j+2], _iTargetIndex.layer.front(), mu::Value(0.0, false));
     }
 
     // Ensure, we can write complex values
-    _data.convertColumns(sTargetCache, _iTargetIndex.col.subidx(2), "value.cf64");
-    Memory* tab = _data.getTable(sTargetCache);
+    targetTable.convertColumns(_iTargetIndex.col.subidx(2), _iTargetIndex.layer.front(), "value.cf64");
 
     // Write the z matrix
     for (size_t i = 0; i < vZVals.size(); i++)
@@ -3382,10 +3403,10 @@ bool createDatagrid(CommandLineParser& cmdParser)
             if (_iTargetIndex.col[j+2] == VectorIndex::INVALID)
                 break;
 
-            tab->writeDataDirectUnsafe(_iTargetIndex.row[i], _iTargetIndex.col[j+2], vZVals[i][j].getNum().asCF64());
+            targetTable.writeUnsafe(_iTargetIndex.row[i], _iTargetIndex.col[j+2], _iTargetIndex.layer.front(), vZVals[i][j].getNum().asCF64());
 
             if (!i)
-                tab->setHeadLineElement(_iTargetIndex.col[j+2], "z(x(:),y(" + toString(j + 1) + "))");
+                targetTable.setHeadLineElement(_iTargetIndex.col[j+2], _iTargetIndex.layer.front(), "z(x(:),y(" + toString(j + 1) + "))");
         }
     }
 
@@ -3472,6 +3493,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "");
     std::string sAudioFile = cmdParser.getExprAsFileName(".wav");
+    Table& targetTable = _data.getTable(sTarget);
 
     g_logger.info("Load audiofile '" + sAudioFile + "'.");
 
@@ -3487,27 +3509,26 @@ bool readAudioFile(CommandLineParser& cmdParser)
         size_t nChannels = audiofile->getChannels();
 
         // Try to read the entire file
-        _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1
-                          ? _targetIdx.col.subidx(0, 2).max()+1
-                          : _targetIdx.col.front()+1,
-                          sTarget);
+        targetTable.reserve(nChannels > 1 && _targetIdx.col.size() > 1
+                            ? _targetIdx.col.subidx(0, 2).max()+1
+                            : _targetIdx.col.front()+1,
+                            _targetIdx.layer.front()+1);
 
-        Memory* _table = _data.getTable(sTarget);
         int rowmin = _targetIdx.row.subidx(0, nLen).min();
         int rowmax = _targetIdx.row.subidx(0, nLen).max();
 
         // Write the first row for conversion and afterwards
         // last row for preallocation
-        _table->writeData(rowmin, _targetIdx.col.front(), mu::Numerical(0.0F));
-        _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
-        _table->writeData(rowmax, _targetIdx.col.front(), mu::Numerical(0.0F));
+        targetTable.write(rowmin, _targetIdx.col.front(), _targetIdx.layer.front(), mu::Numerical(0.0F));
+        targetTable.convertColumns(_targetIdx.col.subidx(0, 1), _targetIdx.layer.front(), "value.f32");
+        targetTable.write(rowmax, _targetIdx.col.front(), _targetIdx.layer.front(), mu::Numerical(0.0F));
 
         // Same for second channel, if any
         if (nChannels > 1 && _targetIdx.col.size() > 1)
         {
-            _table->writeData(rowmin, _targetIdx.col[1], mu::Numerical(0.0F));
-            _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
-            _table->writeData(rowmax, _targetIdx.col[1], mu::Numerical(0.0F));
+            targetTable.write(rowmin, _targetIdx.col[1], _targetIdx.layer.front(), mu::Numerical(0.0F));
+            targetTable.convertColumns(_targetIdx.col.subidx(1, 1), _targetIdx.layer.front(), "value.f32");
+            targetTable.write(rowmax, _targetIdx.col[1], _targetIdx.layer.front(), mu::Numerical(0.0F));
         }
 
         for (size_t i = 0; i < nLen; i++)
@@ -3517,21 +3538,21 @@ bool readAudioFile(CommandLineParser& cmdParser)
             if (_targetIdx.row.size() <= i)
                 break;
 
-            _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[0], sample.leftOrMono);
+            targetTable.writeUnsafe(_targetIdx.row[i], _targetIdx.col[0], _targetIdx.layer.front(), sample.leftOrMono);
 
             if (nChannels > 1 && _targetIdx.col.size() > 1)
-                _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[1], sample.right);
+                targetTable.writeUnsafe(_targetIdx.row[i], _targetIdx.col[1], _targetIdx.layer.front(), sample.right);
         }
 
         if (nChannels > 1 && _targetIdx.col.size() > 1)
         {
-            _table->setHeadLineElement(_targetIdx.col[0], "A_L");
-            _table->setHeadLineElement(_targetIdx.col[1], "A_R");
+            targetTable.setHeadLineElement(_targetIdx.col[0], _targetIdx.layer.front(), "A_L");
+            targetTable.setHeadLineElement(_targetIdx.col[1], _targetIdx.layer.front(), "A_R");
         }
         else
-            _table->setHeadLineElement(_targetIdx.col[0], "A");
+            targetTable.setHeadLineElement(_targetIdx.col[0], _targetIdx.layer.front(), "A");
 
-        _table->markModified();
+        targetTable.markModified();
 
         // Create the storage indices
         std::vector<std::complex<double>> vIndices = {_targetIdx.row.min()+1,
@@ -3579,6 +3600,7 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "audiodata");
     std::vector<mu::Array> vSeekIndices = cmdParser.parseExpr();
+    Table& targetTable = _data.getTable(sTarget);
 
     if (vSeekIndices.size() < 2)
         return false;
@@ -3603,25 +3625,26 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     nLen = std::min(nLen - seekable->getPosition(), (size_t)(std::max(vSeekIndices[1].front().getNum().asF64(), 0.0)));
 
     // Try to read the desired length from the file
-    _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
-                      sTarget);
+    targetTable.reserve(nChannels > 1 && _targetIdx.col.size() > 1
+                        ? _targetIdx.col.subidx(0, 2).max()+1
+                        : _targetIdx.col.front()+1,
+                        _targetIdx.layer.front()+1);
 
-    Memory* _table = _data.getTable(sTarget);
     int rowmin = _targetIdx.row.subidx(0, nLen).min();
     int rowmax = _targetIdx.row.subidx(0, nLen).max();
 
     // Write the first row for conversion and afterwards
     // last row for preallocation
-    _table->writeData(rowmin, _targetIdx.col.front(), mu::Numerical(0.0F));
-    _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
-    _table->writeData(rowmax, _targetIdx.col.front(), mu::Numerical(0.0F));
+    targetTable.write(rowmin, _targetIdx.col.front(), _targetIdx.layer.front(), mu::Numerical(0.0F));
+    targetTable.convertColumns(_targetIdx.col.subidx(0, 1), _targetIdx.layer.front(), "value.f32");
+    targetTable.write(rowmax, _targetIdx.col.front(), _targetIdx.layer.front(), mu::Numerical(0.0F));
 
     // Same for second channel, if any
     if (nChannels > 1 && _targetIdx.col.size() > 1)
     {
-        _table->writeData(rowmin, _targetIdx.col[1], mu::Numerical(0.0F));
-        _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
-        _table->writeData(rowmax, _targetIdx.col[1], mu::Numerical(0.0F));
+        targetTable.write(rowmin, _targetIdx.col[1], _targetIdx.layer.front(), mu::Numerical(0.0F));
+        targetTable.convertColumns(_targetIdx.col.subidx(1, 1), _targetIdx.layer.front(), "value.f32");
+        targetTable.write(rowmax, _targetIdx.col[1], _targetIdx.layer.front(), mu::Numerical(0.0F));
     }
 
     for (size_t i = 0; i < nLen; i++)
@@ -3631,21 +3654,21 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
         if (_targetIdx.row.size() <= i)
             break;
 
-        _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[0], sample.leftOrMono);
+        targetTable.writeUnsafe(_targetIdx.row[i], _targetIdx.col[0], _targetIdx.layer.front(), sample.leftOrMono);
 
         if (nChannels > 1 && _targetIdx.col.size() > 1)
-            _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[1], sample.right);
+            targetTable.writeUnsafe(_targetIdx.row[i], _targetIdx.col[1], _targetIdx.layer.front(), sample.right);
     }
 
-    _table->markModified();
+    targetTable.markModified();
 
     if (nChannels > 1 && _targetIdx.col.size() > 1)
     {
-        _table->setHeadLineElement(_targetIdx.col[0], "A_L");
-        _table->setHeadLineElement(_targetIdx.col[1], "A_R");
+        targetTable.setHeadLineElement(_targetIdx.col[0], _targetIdx.layer.front(), "A_L");
+        targetTable.setHeadLineElement(_targetIdx.col[1], _targetIdx.layer.front(), "A_R");
     }
     else
-        _table->setHeadLineElement(_targetIdx.col[0], "A");
+        targetTable.setHeadLineElement(_targetIdx.col[0], _targetIdx.layer.front(), "A");
 
     cmdParser.setReturnValue(toString(nLen));
     g_logger.info("Seeked portion read.");
@@ -3679,41 +3702,43 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
     // Indices lesen
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
+    std::unique_ptr<Table> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1), VectorIndex(0)))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
 
-    sColHeaders[0] = _mem->getHeadLineElement(0) + "\n(regularized)";
-    sColHeaders[1] = _mem->getHeadLineElement(1) + "\n(regularized)";
+    sColHeaders[0] = _mem->getHeadLineElement(0, 0) + "\n(regularized)";
+    sColHeaders[1] = _mem->getHeadLineElement(1, 0) + "\n(regularized)";
 
-    long long int nLines = _mem->getLines();
+    long long int nLines = _mem->getRows();
 
-    dXmin = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
-    dXmax = _mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
+    dXmin = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0), VectorIndex(0)).real();
+    dXmax = _mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0), VectorIndex(0)).real();
 
     // Create splines
     tk::spline _spline;
-    _spline.set_points(mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(0)).as_cmplx_vector()),
-                       mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(1)).as_cmplx_vector()), false);
+    _spline.set_points(mu::real(_mem->read(VectorIndex(0, nLines-1), VectorIndex(0), VectorIndex(0)).as_cmplx_vector()),
+                       mu::real(_mem->read(VectorIndex(0, nLines-1), VectorIndex(1), VectorIndex(0)).as_cmplx_vector()), false);
 
     if (!nSamples)
         nSamples = nLines;
 
-    long long int nLastCol = _data.getCols(accessParser.getDataObject(), false);
+    Table& table = _data.getTable(accessParser.getDataObject());
+
+    long long int nLastCol = table.getCols();
 
     // Interpolate the data points
     for (long long int i = 0; i < nSamples; i++)
     {
-        _data.writeToTable(i, nLastCol, accessParser.getDataObject(), dXmin + i * (dXmax-dXmin) / (nSamples-1));
-        _data.writeToTable(i, nLastCol + 1, accessParser.getDataObject(), _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
+        table.write(i, nLastCol, accessParser.getIndices().layer.front(), dXmin + i * (dXmax-dXmin) / (nSamples-1));
+        table.write(i, nLastCol + 1, accessParser.getIndices().layer.front(), _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
     }
 
-    _data.setHeadLineElement(nLastCol, accessParser.getDataObject(), sColHeaders[0]);
-    _data.setHeadLineElement(nLastCol + 1, accessParser.getDataObject(), sColHeaders[1]);
+    table.setHeadLineElement(nLastCol, accessParser.getIndices().layer.front(), sColHeaders[0]);
+    table.setHeadLineElement(nLastCol + 1, accessParser.getIndices().layer.front(), sColHeaders[1]);
     return true;
 }
 
@@ -3831,13 +3856,14 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
     Indices& _idx = _accessParser.getIndices();
+    Table& table = _data.getTable(_accessParser.getDataObject());
 
-    if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
+    if (!_data.isValueLike(_idx.col, _idx.layer.front(), _accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(",
                           _accessParser.getDataObject());
 
-    dXmin = _data.min(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1)).real();
-    dXmax = _data.max(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1)).real();
+    dXmin = _data.min(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real();
+    dXmax = _data.max(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real();
 
     _real.Create(_idx.row.size());
     _imag.Create(_idx.row.size());
@@ -3845,7 +3871,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     #pragma omp parallel for
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
-        mu::Value val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
+        mu::Value val = table.read(_idx.row[i], _idx.col[1], _idx.layer.front());
         _real.a[i] = val.as_cmplx().real();
         _imag.a[i] = val.as_cmplx().imag();
     }
@@ -3869,26 +3895,32 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     if (_target.col.isOpenEnd())
         _target.col.setRange(0, _target.col.front() + _result.GetNy()/2 + 1);
 
-    _data.resizeTable(_target.col.max(), sTargetCache);
+    table.reserve(_target.col.max()+1, _target.layer.front()+1);
 
     // Write the time axis
     for (int i = 0; i < _result.GetNx(); i++)
-        _data.writeToTable(_target.row[i], _target.col.front(), sTargetCache, dXmin + i * dSampleSize);
+        table.write(_target.row[i],
+                    _target.col.front(),
+                    _target.layer.front(),
+                    dXmin + i * dSampleSize);
 
     // Define headline
-    _data.setHeadLineElement(_target.col.front(), sTargetCache, _data.getHeadLineElement(_idx.col.front(), _accessParser.getDataObject()));
+    table.setHeadLineElement(_target.col.front(),
+                             _target.layer.front(),
+                             _data.getHeadLineElement(_idx.col.front(), _idx.layer.front(), _accessParser.getDataObject()));
     dSampleSize = 2 * (dFmax - dFmin) / ((double)_result.GetNy() - 1.0);
 
     // Write the frequency axis
     for (int i = 0; i < _result.GetNy() / 2; i++)
-        _data.writeToTable(_target.row[i], _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f
+        table.write(_target.row[i],
+                    _target.col[1],
+                    _target.layer.front(),
+                    dFmin + i * dSampleSize); // Fourier f
 
-    _data.convertColumns(sTargetCache, _target.col.subidx(0, 2), "value.f64");
+    table.convertColumns(_target.col.subidx(0, 2), _target.layer.front(), "value.f64");
 
     // Define headline
-    _data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
-
-    Memory* _mem = _data.getTable(sTargetCache);
+    table.setHeadLineElement(_target.col[1], _target.layer.front(), "f [Hz]");
 
     // Write first row in slow mode for pre-allocation
     for (int j = 0; j < _result.GetNy() / 2; j++)
@@ -3897,13 +3929,18 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
             continue;
 
         // Pre-allocate, first row index has to be valid
-        _mem->writeData(_target.row.front(), _target.col[j+2], _result[(j + _result.GetNy() / 2)*_result.GetNx()]);
+        table.write(_target.row.front(),
+                    _target.col[j+2],
+                    _target.layer.front(),
+                    _result[(j + _result.GetNy() / 2)*_result.GetNx()]);
 
         // Update the headline
-        _mem->setHeadLineElement(_target.col[j+2], "A(f(" + toString(j + 1) + "))");
+        table.setHeadLineElement(_target.col[j+2],
+                                 _target.layer.front(),
+                                 "A(f(" + toString(j + 1) + "))");
     }
 
-    _data.convertColumns(sTargetCache, _target.col.subidx(2, _result.GetNy()), "value.f64");
+    table.convertColumns(_target.col.subidx(2, _result.GetNy()), _target.layer.front(), "value.f64");
 
     // Write the STFA map in fast mode
     #pragma omp parallel for
@@ -3917,7 +3954,10 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
             if (_target.row[i] == VectorIndex::INVALID)
                 break;
 
-            _mem->writeDataDirectUnsafe(_target.row[i], _target.col[j+2], _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
+            table.writeUnsafe(_target.row[i],
+                              _target.col[j+2],
+                              _target.layer.front(),
+                              _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
         }
     }
 
@@ -4006,6 +4046,7 @@ void boneDetection(CommandLineParser& cmdParser)
 
     Indices _target;
     std::string sTargetCache = cmdParser.getTargetTable(_target, "detectdat");
+    Table& targetTable = _data.getTable(sTargetCache);
 
     // Indices lesen
     DataView _dataView = cmdParser.getExprAsDataView();
@@ -4069,17 +4110,17 @@ void boneDetection(CommandLineParser& cmdParser)
                 break;
 
             if (!j)
-                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
-                                   interpolateToGrid(vX, _res.a[j+i*_res.GetNx()]));
+                targetTable.write(_target.row[i], _target.col[j], _target.layer.front(),
+                                  interpolateToGrid(vX, _res.a[j+i*_res.GetNx()]));
             else
-                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache,
-                                   interpolateToGrid(vY, _res.a[j+i*_res.GetNx()]));
+                targetTable.write(_target.row[i], _target.col[j], _target.layer.front(),
+                                  interpolateToGrid(vY, _res.a[j+i*_res.GetNx()]));
         }
     }
 
     // Write axis labels
-    _data.setHeadLineElement(_target.col[0], sTargetCache, "Structure_x");
-    _data.setHeadLineElement(_target.col[1], sTargetCache, "Structure_y");
+    targetTable.setHeadLineElement(_target.col[0], _target.layer.front(), "Structure_x");
+    targetTable.setHeadLineElement(_target.col[1], _target.layer.front(), "Structure_y");
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DETECT_SUCCESS", sTargetCache));
@@ -4105,26 +4146,26 @@ bool calculateSplines(CommandLineParser& cmdParser)
 
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
+    std::unique_ptr<Table> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1), 0))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
 
-    int nLines = _mem->getLines();
+    int nRows = _mem->getRows();
 
-    if (nLines < 2)
+    if (nRows < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
     if (_mem->getCols() < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
-    for (int i = 0; i < nLines; i++)
+    for (int i = 0; i < nRows; i++)
     {
-        xVect.push_back(_mem->readMem(i, 0).getNum().asF64());
-        yVect.push_back(_mem->readMem(i, 1).getNum().asF64());
+        xVect.push_back(_mem->read(i, 0, 0).getNum().asF64());
+        yVect.push_back(_mem->read(i, 1, 0).getNum().asF64());
     }
 
     // Set the points for the spline to calculate
@@ -4190,6 +4231,7 @@ void rotateTable(CommandLineParser& cmdParser)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+    Table& table = _data.getTable(_accessParser.getDataObject());
 
     Indices _idx;
     double dAlpha = 0.0; // radians
@@ -4214,10 +4256,12 @@ void rotateTable(CommandLineParser& cmdParser)
         finalSize.second = vParVal.get(1).getNum().asI64();
     }
 
-    _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
-    _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
+    const Indices& srcIdx = _accessParser.getIndices();
 
-    if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
+    srcIdx.row.setOpenEndIndex(table.getRows()-1);
+    srcIdx.col.setOpenEndIndex(table.getCols()-1);
+
+    if (!_data.isValueLike(srcIdx.col, srcIdx.layer.front(), _accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
                           _accessParser.getDataObject()+"(", _accessParser.getDataObject());
 
@@ -4226,10 +4270,8 @@ void rotateTable(CommandLineParser& cmdParser)
     {
         if (cmdParser.getCommand() == "gridrot")
         {
-            source_x = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1),
-                                                 _accessParser.getDataObject()).as_cmplx_vector());
-            source_y = mu::real(_data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1),
-                                                 _accessParser.getDataObject()).as_cmplx_vector());
+            source_x = mu::real(table.read(srcIdx.row, srcIdx.col.subidx(0, 1), srcIdx.layer.front()).as_cmplx_vector());
+            source_y = mu::real(table.read(srcIdx.row, srcIdx.col.subidx(1, 1), srcIdx.layer.front()).as_cmplx_vector());
 
             // Remove trailing NANs
             while (isnan(source_x.back()))
@@ -4254,20 +4296,22 @@ void rotateTable(CommandLineParser& cmdParser)
         _accessParser.getIndices().col = _accessParser.getIndices().col.subidx(2);
     }
 
+    Table& targetTable = _data.getTable(sTargetTable);
+
     // Extract the range (will pass the ownership)
-    Memory* _source = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
+    Table* _source = table.extractRange(srcIdx.row, srcIdx.col, srcIdx.layer.front());
 
     // Remove obsolete entries (needed since new memory model)
     _source->shrink();
 
     // Get the edges
     Point topLeft(0, 0);
-    Point bottomRightS(_source->getCols(false), _source->getLines(false));
+    Point bottomRightS(_source->getCols(), _source->getRows());
 
     if (cmdParser.hasParam("keepdim") || cmdParser.hasParam("k"))
     {
-        finalSize.first = _source->getLines(false);
-        finalSize.second = _source->getCols(false);
+        finalSize.first = _source->getRows();
+        finalSize.second = _source->getCols();
     }
 
     double topP;
@@ -4278,11 +4322,11 @@ void rotateTable(CommandLineParser& cmdParser)
 
     if (finalSize.first <= 0 || finalSize.second <= 0)
     {
-        Point topRightS(_source->getCols(false), 0);
-        Point topRightP(_source->getCols(false)-1, 0);
-        Point bottomLeftS(0, _source->getLines(false));
-        Point bottomLeftP(0, _source->getLines(false)-1);
-        Point bottomRightP(_source->getCols(false)-1, _source->getLines(false)-1);
+        Point topRightS(_source->getCols(), 0);
+        Point topRightP(_source->getCols()-1, 0);
+        Point bottomLeftS(0, _source->getRows());
+        Point bottomLeftP(0, _source->getRows()-1);
+        Point bottomRightP(_source->getCols()-1, _source->getRows()-1);
 
         // Calculate their final positions
         topLeft.rotate(dAlpha, origin);
@@ -4294,20 +4338,20 @@ void rotateTable(CommandLineParser& cmdParser)
         bottomRightP.rotate(dAlpha, origin);
 
         // Calculate the final image extent
-        double topS   = std::min(topLeft.y, std::min(topRightS.y, std::min(bottomLeftS.y, bottomRightS.y)));
-        topP   = std::min(topLeft.y, std::min(topRightP.y, std::min(bottomLeftP.y, bottomRightP.y)));
-        double bot    = std::max(topLeft.y, std::max(topRightS.y, std::max(bottomLeftS.y, bottomRightS.y)));
-        double leftS  = std::min(topLeft.x, std::min(topRightS.x, std::min(bottomLeftS.x, bottomRightS.x)));
-        leftP  = std::min(topLeft.x, std::min(topRightP.x, std::min(bottomLeftP.x, bottomRightP.x)));
-        double right  = std::max(topLeft.x, std::max(topRightS.x, std::max(bottomLeftS.x, bottomRightS.x)));
+        double topS = std::min(topLeft.y, std::min(topRightS.y, std::min(bottomLeftS.y, bottomRightS.y)));
+        topP = std::min(topLeft.y, std::min(topRightP.y, std::min(bottomLeftP.y, bottomRightP.y)));
+        double bot = std::max(topLeft.y, std::max(topRightS.y, std::max(bottomLeftS.y, bottomRightS.y)));
+        double leftS = std::min(topLeft.x, std::min(topRightS.x, std::min(bottomLeftS.x, bottomRightS.x)));
+        leftP = std::min(topLeft.x, std::min(topRightP.x, std::min(bottomLeftP.x, bottomRightP.x)));
+        double right = std::max(topLeft.x, std::max(topRightS.x, std::max(bottomLeftS.x, bottomRightS.x)));
 
         finalSize.first = ceil(bot - topS);
         finalSize.second = ceil(right - leftS);
     }
     else
     {
-        topP = (_source->getLines(false) - finalSize.first) * 0.5;
-        leftP = (_source->getCols(false) - finalSize.second) * 0.5;
+        topP = (_source->getRows() - finalSize.first) * 0.5;
+        leftP = (_source->getCols() - finalSize.second) * 0.5;
     }
 
     // Insert the axes, if necessary
@@ -4319,7 +4363,7 @@ void rotateTable(CommandLineParser& cmdParser)
             if (_idx.row.size() <= (size_t)i)
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, i+1);
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), i+1);
         }
 
         // Write the y axis
@@ -4328,7 +4372,7 @@ void rotateTable(CommandLineParser& cmdParser)
             if (_idx.row.size() <= (size_t)i)
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, i+1);
+            targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(), i+1);
         }
 
         _idx.col = _idx.col.subidx(2);
@@ -4353,7 +4397,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
             p.rotate(dAlpha, origin_axis);
 
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, p.x);
+            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), p.x);
         }
 
         for (int j = 0; j < finalSize.second; j++)
@@ -4369,16 +4413,14 @@ void rotateTable(CommandLineParser& cmdParser)
 
             p.rotate(dAlpha, origin_axis);
 
-            _data.writeToTable(_idx.row[j], _idx.col[1], sTargetTable, p.y);
+            targetTable.write(_idx.row[j], _idx.col[1], _idx.layer.front(), p.y);
         }
 
         _idx.col = _idx.col.subidx(2);
     }
 
-    Memory* _table = _data.getTable(sTargetTable);
-
     // Prepare the needed number of columns
-    _table->resizeMemory(-1, _idx.col.subidx(0, finalSize.second).max()+1);
+    table.reserve(_idx.col.subidx(0, finalSize.second).max()+1, _idx.layer.front()+1);
 
     // Calculate the rotated grid
     #pragma omp parallel for
@@ -4398,14 +4440,14 @@ void rotateTable(CommandLineParser& cmdParser)
             p.rotate(-dAlpha, origin);
 
             // Store the interpolated value in target coordinates
-            _table->writeDataDirect(_idx.row[i], _idx.col[j], _source->readMemInterpolated(p.y, p.x));
+            table.writeDirect(_idx.row[i], _idx.col[j], _idx.layer.front(), _source->readMemInterpolated(p.y, p.x, srcIdx.layer.front()));
         }
     }
 
     // clear the memory instance
     delete _source;
-    _table->markModified();
-    _data.shrink(sTargetTable);
+    table.markModified();
+    table.shrink();
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));

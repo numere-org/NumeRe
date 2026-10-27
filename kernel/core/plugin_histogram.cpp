@@ -165,6 +165,8 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
 
     int nCount = 0;
 
+    Table& table = _data.getTable(_histParams.sTable);
+
     if (_histParams.bGrid)
     {
         // Repeat for every bin
@@ -180,12 +182,12 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             {
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    if (!_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).getNum().asCF64())
-                        || !_histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).getNum().asCF64())
-                        || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64()))
+                    if (!_histParams.ranges[XCOORD].isInside(table.read(_idx.row[l], _idx.col[0], _idx.layer.front()).getNum().asCF64())
+                        || !_histParams.ranges[YCOORD].isInside(table.read(_idx.row[l], _idx.col[1], _idx.layer.front()).getNum().asCF64())
+                        || !_histParams.ranges[ZCOORD].isInside(table.read(_idx.row[l], _idx.col[i], _idx.layer.front()).getNum().asCF64()))
                         continue;
 
-                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
+                    if (ivl.isInside(table.read(_idx.row[l], _idx.col[i], _idx.layer.front()).getNum().asCF64(), Interval::INCLUDE_LOWER))
                         nCount++;
                 }
 
@@ -216,7 +218,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).getNum().asCF64();
+                    std::complex<double> val = table.read(_idx.row[l], _idx.col[i], _idx.layer.front()).getNum().asCF64();
 
                     if (isXLog)
                     {
@@ -243,7 +245,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             }
 
             // Create the plot legend entry for the current data set
-            vLegends.push_back(replaceToTeX(_data.getTopHeadLineElement(_idx.col[i], _histParams.sTable)));
+            vLegends.push_back(replaceToTeX(_data.getTopHeadLineElement(_idx.col[i], _idx.layer.front(), _histParams.sTable)));
         }
     }
 
@@ -417,7 +419,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     {
         for (size_t i = 1; i < vHistMatrix[0].size() + 1; i++)
         {
-            sOut[0][i] = _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
+            sOut[0][i] = _data.getTopHeadLineElement(_idx.col[i-1], _idx.layer.front(), _histParams.sTable);
         }
     }
 
@@ -839,23 +841,25 @@ static mu::Array isSubSet(const mu::Array& lhs, const mu::Array& rhs)
 /////////////////////////////////////////////////
 static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _histParams, Indices& _idx, mu::Array& vCategories)
 {
+    Table& table = _data.getTable(_histParams.sTable);
+
     // For special column types, we use predefined bins instead of the calculated ones
-    if (_data.getType(_idx.col, _histParams.sTable) == TableColumn::TYPE_CATEGORICAL)
+    if (table.getType(_idx.col, _idx.layer.front()) == TableColumn::TYPE_CATEGORICAL)
     {
         // Try to use the category definitions as bins and labels
         _histParams.binWidth[XCOORD] = 1.0;
-        vCategories = _data.getCategoryList(_idx.col.subidx(0, 1), _histParams.sTable);
+        vCategories = table.getCategoryList(_idx.col.subidx(0, 1), _idx.layer.front());
 
         for (size_t i = 1; i < _idx.col.size(); i++)
         {
             // Ensure that all categories can be described by one common superset
-            if (!(vCategories = isSubSet(vCategories, _data.getCategoryList(_idx.col.subidx(i, 1), _histParams.sTable))).size())
+            if (!(vCategories = isSubSet(vCategories, table.getCategoryList(_idx.col.subidx(i, 1), _idx.layer.front()))).size())
             {
                 // If that's not the case, we simply use their IDs as
                 // abstract categories to at least us reasoable bin values
-                int nCategoryMin = intCast(std::max(_data.min(_histParams.sTable, _idx.row, _idx.col).real(),
+                int nCategoryMin = intCast(std::max(table.min(_idx.row, _idx.col, _idx.layer.front()).real(),
                                                     _histParams.ranges[XCOORD].min()));
-                int nCategoryMax = intCast(std::min(_data.max(_histParams.sTable, _idx.row, _idx.col).real(),
+                int nCategoryMax = intCast(std::min(table.max(_idx.row, _idx.col, _idx.layer.front()).real(),
                                                     _histParams.ranges[XCOORD].max()));
                 _histParams.nBin[XCOORD] = nCategoryMax - nCategoryMin + 1;
 
@@ -868,7 +872,7 @@ static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _hi
             }
         }
     }
-    else if (_data.getType(_idx.col, _histParams.sTable) == TableColumn::TYPE_LOGICAL)
+    else if (table.getType(_idx.col, _idx.layer.front()) == TableColumn::TYPE_LOGICAL)
     {
         // Use logical values as bins and labels
         _histParams.binWidth[XCOORD] = 1.0;
@@ -918,6 +922,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 {
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Table& table = _data.getTable(_histParams.sTable);
 
     int nMax = 0;
 
@@ -928,24 +933,24 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     {
         // x-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges[XCOORD],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real(),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real());
+                                table.min(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real(),
+                                table.max(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real());
 
         // y-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges[YCOORD],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real(),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real());
+                                table.min(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front()).real(),
+                                table.max(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front()).real());
 
         // z-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges[ZCOORD],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real(),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real());
+                                table.min(_idx.row, _idx.col.subidx(2), _idx.layer.front()).real(),
+                                table.max(_idx.row, _idx.col.subidx(2), _idx.layer.front()).real());
     }
     else
     {
         prepareIntervalsForHist(sCmd, _histParams.ranges[XCOORD],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col).real(),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col).real());
+                                table.min(_idx.row, _idx.col, _idx.layer.front()).real(),
+                                table.max(_idx.row, _idx.col, _idx.layer.front()).real());
     }
 
     if (!_histParams.bGrid && _idx.col.size() > 32)
@@ -956,12 +961,12 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2 * _histParams.bGrid; j < _idx.col.size(); j++)
         {
             if (_histParams.bGrid
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
-                && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().asCF64()))
+                && _histParams.ranges[XCOORD].isInside(table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asCF64())
+                && _histParams.ranges[ZCOORD].isInside(table.read(_idx.row[i], _idx.col[j], _idx.layer.front()).getNum().asCF64()))
                 nMax++;
             else if (!_histParams.bGrid
-                     && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).getNum().asCF64()))
+                     && _histParams.ranges[XCOORD].isInside(table.read(_idx.row[i], _idx.col[j], _idx.layer.front()).getNum().asCF64()))
                 nMax++;
         }
     }
@@ -975,10 +980,10 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             if (_histParams.nMethod == STURGES)
                 _histParams.nBin[XCOORD] = (int)rint(1.0 + 3.3 * log10((double)nMax));
             else if (_histParams.nMethod == SCOTT)
-                _histParams.binWidth[XCOORD] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real() / pow((double)nMax, 1.0 / 3.0);
+                _histParams.binWidth[XCOORD] = 3.49 * table.std(_idx.row, _idx.col.subidx(2), _idx.layer.front()).real() / pow((double)nMax, 1.0 / 3.0);
             else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-                _histParams.binWidth[XCOORD] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.75).real()
-                                                 - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.25).real()) / pow((double)nMax, 1.0 / 3.0);
+                _histParams.binWidth[XCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(2), _idx.layer.front(), 0.75).real()
+                                                 - table.pct(_idx.row, _idx.col.subidx(2), _idx.layer.front(), 0.25).real()) / pow((double)nMax, 1.0 / 3.0);
         }
         else
         {
@@ -987,10 +992,10 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                 if (_histParams.nMethod == STURGES)
                     _histParams.nBin[XCOORD] = (int)rint(1.0 + 3.3 * log10((double)nMax / (double)(_idx.col.size())));
                 else if (_histParams.nMethod == SCOTT)
-                    _histParams.binWidth[XCOORD] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+                    _histParams.binWidth[XCOORD] = 3.49 * table.std(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
                 else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-                    _histParams.binWidth[XCOORD] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real()
-                                                     - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+                    _histParams.binWidth[XCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front(), 0.75).real()
+                                                     - table.pct(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front(), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
             }
         }
     }
@@ -1080,10 +1085,12 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     // if desired
     if (bWriteToCache)
     {
-        _data.setHeadLineElement(_tIdx.col.front(), sTargettable, "Bins");
+        Table& target = _data.getTable(sTargettable);
+
+        target.setHeadLineElement(_tIdx.col.front(), _tIdx.layer.front(), "Bins");
 
         if (vCategories.size())
-            _data.convertColumns(sTargettable, _tIdx.col.subidx(0, 1), "string");
+            target.convertColumns(_tIdx.col.subidx(0, 1), _tIdx.layer.front(), "string");
 
         for (size_t i = 0; i < vHistMatrix.size(); i++)
         {
@@ -1091,10 +1098,10 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                 break;
 
             if (vCategories.size() <= i)
-                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable,
-                                   _histParams.ranges[XCOORD].min() + i * _histParams.binWidth[XCOORD]);
+                target.write(_tIdx.row[i], _tIdx.col.front(), _tIdx.layer.front(),
+                             _histParams.ranges[XCOORD].min() + i * _histParams.binWidth[XCOORD]);
             else
-                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, vCategories[i].getStr());
+                target.write(_tIdx.row[i], _tIdx.col.front(), _tIdx.layer.front(), vCategories[i].getStr());
 
             for (size_t j = 0; j < vHistMatrix[0].size(); j++)
             {
@@ -1102,9 +1109,10 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                     break;
 
                 if (!i)
-                    _data.setHeadLineElement(_tIdx.col[j+1], sTargettable, _data.getHeadLineElement(_idx.col[j], _histParams.sTable));
+                    target.setHeadLineElement(_tIdx.col[j+1], _tIdx.layer.front(),
+                                              table.getHeadLineElement(_idx.col[j], _idx.layer.front()));
 
-                _data.writeToTable(_tIdx.row[i], _tIdx.col[j+1], sTargettable, vHistMatrix[i][j]);
+                target.write(_tIdx.row[i], _tIdx.col[j+1], _tIdx.layer.front(), vHistMatrix[i][j]);
             }
         }
     }
@@ -1128,6 +1136,8 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 /////////////////////////////////////////////////
 static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx, const HistogramParameters& _histParams, mglData _hist2DData[3])
 {
+    Table& table = _data.getTable(_histParams.sTable);
+
     if (_idx.col.size() == 3)
     {
         for (unsigned int i = 0; i < 3; i++)
@@ -1137,13 +1147,13 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
-                && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable))
+            if (_histParams.ranges[XCOORD].isInside(table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asCF64())
+                && table.isValidElement(_idx.row[i], _idx.col[2], _idx.layer.front()))
             {
-                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asF64();
-                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asF64();
-                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).getNum().asF64();
+                _hist2DData[0].a[i] = table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asF64();
+                _hist2DData[1].a[i] = table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asF64();
+                _hist2DData[2].a[i] = table.read(_idx.row[i], _idx.col[2], _idx.layer.front()).getNum().asF64();
             }
             else
             {
@@ -1160,15 +1170,15 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asF64();
-            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asF64();
+            _hist2DData[0].a[i] = table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asF64();
+            _hist2DData[1].a[i] = table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asF64();
 
             for (size_t j = 0; j < _idx.col.size() - 2; j++)
             {
-                if (_histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
-                    && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64())
-                    && _data.isValidElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable))
-                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).getNum().asF64();
+                if (_histParams.ranges[XCOORD].isInside(table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asCF64())
+                    && _histParams.ranges[YCOORD].isInside(table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asCF64())
+                    && table.isValidElement(_idx.row[i], _idx.col[j + 2], _idx.layer.front()))
+                    _hist2DData[2].a[i + j * _idx.row.size()] = table.read(_idx.row[i], _idx.col[j + 2], _idx.layer.front()).getNum().asF64();
                 else
                     _hist2DData[2].a[i + j * _idx.row.size()] = NAN;
             }
@@ -1201,6 +1211,7 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
 {
     mglData _histData(_histParams.nBin[isHbar]);
     Interval range(dMin, dMax);
+    Table& table = _data.getTable(_histParams.sTable);
 
     for (int k = 0; k < _histParams.nBin[isHbar]; k++)
     {
@@ -1211,16 +1222,16 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
+            if (ivl.isInside(table.read(_idx.row[i], _idx.col[isHbar], _idx.layer.front()).getNum().asCF64(), Interval::INCLUDE_LOWER))
             {
                 if (_idx.col.size() == 3)
                 {
-                    if (_data.isValidElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)
-                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asCF64())
-                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).getNum().asCF64()))
+                    if (table.isValidElement(_idx.row[i], _idx.col[!isHbar], _idx.layer.front())
+                        && _histParams.ranges[ZCOORD].isInside(table.read(_idx.row[i], _idx.col[ZCOORD], _idx.layer.front()).getNum().asCF64())
+                        && range.isInside(table.read(_idx.row[i], _idx.col[!isHbar], _idx.layer.front()).getNum().asCF64()))
                     {
                         if (_histParams.bSum || _histParams.bAvg)
-                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asF64();
+                            dSum += table.read(_idx.row[i], _idx.col[ZCOORD], _idx.layer.front()).getNum().asF64();
                         else
                             dSum++;
 
@@ -1231,13 +1242,16 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                 {
                     for (size_t l = 0; l < _idx.row.size(); l++)
                     {
-                        if (_data.isValidElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)
-                            && _data.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable)
-                            && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[(!isHbar*i+isHbar*l)],
-                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().asCF64())
-                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).getNum().asCF64()))
+                        if (table.isValidElement(_idx.row[l], _idx.col[!isHbar], _idx.layer.front())
+                            && table.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _idx.layer.front())
+                            && _histParams.ranges[ZCOORD].isInside(table.read(_idx.row[(!isHbar*i+isHbar*l)],
+                                                                              _idx.col[(!isHbar*l+isHbar*i)+2],
+                                                                              _idx.layer.front()).getNum().asCF64())
+                            && range.isInside(table.read(_idx.row[l], _idx.col[!isHbar], _idx.layer.front()).getNum().asCF64()))
                         {
-                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).getNum().asF64();
+                            dSum += table.read(_idx.row[(!isHbar*i+isHbar*l)],
+                                               _idx.col[(!isHbar*l+isHbar*i)+2],
+                                               _idx.layer.front()).getNum().asF64();
                             nCount++;
                         }
                     }
@@ -1274,6 +1288,7 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
     double yInt = _histParams.binWidth[YCOORD];
     bool xLog = NumeReKernel::getInstance()->getPlottingData().getLogscale(XCOORD);
     bool yLog = NumeReKernel::getInstance()->getPlottingData().getLogscale(YCOORD);
+    Table& table = _data.getTable(_histParams.sTable);
 
     for (int x = 0; x < _histParams.nBin[XCOORD]; x++)
     {
@@ -1290,15 +1305,15 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER)
-                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable).getNum().asCF64(), Interval::INCLUDE_LOWER))
+                if (xInterval.isInside(table.read(_idx.row[i], _idx.col[XCOORD], _idx.layer.front()).getNum().asCF64(), Interval::INCLUDE_LOWER)
+                    && yInterval.isInside(table.read(_idx.row[i], _idx.col[YCOORD], _idx.layer.front()).getNum().asCF64(), Interval::INCLUDE_LOWER))
                 {
                     if (_idx.col.size() == 3)
                     {
-                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asCF64()))
+                        if (_histParams.ranges[ZCOORD].isInside(table.read(_idx.row[i], _idx.col[ZCOORD], _idx.layer.front()).getNum().asCF64()))
                         {
                             if (_histParams.bSum || _histParams.bAvg)
-                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).getNum().asF64();
+                                dSum += table.read(_idx.row[i], _idx.col[ZCOORD], _idx.layer.front()).getNum().asF64();
                             else
                                 dSum++;
 
@@ -1309,9 +1324,9 @@ static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data
                     {
                         for (size_t l = 0; l < _idx.row.size(); l++)
                         {
-                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().asCF64()))
+                            if (_histParams.ranges[ZCOORD].isInside(table.read(_idx.row[x], _idx.col[y+2], _idx.layer.front()).getNum().asCF64()))
                             {
-                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).getNum().asF64();
+                                dSum += table.read(_idx.row[x], _idx.col[y+2], _idx.layer.front()).getNum().asF64();
                                 nCount++;
                             }
                         }
@@ -1382,17 +1397,19 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
 
             if (bWriteToCache)
             {
+                Table& table = _data.getTable(sTargettable);
+
                 if (_tIdx.row.size() <= (size_t)k || _tIdx.col.size() < 4)
                     continue;
 
                 if (!k)
                 {
-                    _data.setHeadLineElement(_tIdx.col[0+2*n], sTargettable, "Bins: " + _histParams.sAxisLabels[n]);
-                    _data.setHeadLineElement(_tIdx.col[1+2*n], sTargettable, sCountLabelStart + ": " + _histParams.sAxisLabels[ZCOORD]);
+                    table.setHeadLineElement(_tIdx.col[0+2*n], _tIdx.layer.front(), "Bins: " + _histParams.sAxisLabels[n]);
+                    table.setHeadLineElement(_tIdx.col[1+2*n], _tIdx.layer.front(), sCountLabelStart + ": " + _histParams.sAxisLabels[ZCOORD]);
                 }
 
-                _data.writeToTable(_tIdx.row[k], _tIdx.col[0+2*n], sTargettable, _mAxisVals[n].a[k] - diff[n]);
-                _data.writeToTable(_tIdx.row[k], _tIdx.col[1+2*n], sTargettable, (!n ? _barHistData.a[k] : _hBarHistData.a[k]));
+                table.write(_tIdx.row[k], _tIdx.col[0+2*n], _tIdx.layer.front(), _mAxisVals[n].a[k] - diff[n]);
+                table.write(_tIdx.row[k], _tIdx.col[1+2*n], _tIdx.layer.front(), (!n ? _barHistData.a[k] : _hBarHistData.a[k]));
 
             }
         }
@@ -1401,6 +1418,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
     // Write the binned XY grid to the target table
     if (bWriteToCache && _histParams.bStoreGrid)
     {
+        Table& table = _data.getTable(sTargettable);
         std::vector<std::vector<double>> vGrid = calculateXYHistGrid(_data, _idx, _histParams);
 
         for (size_t x = 0; x < vGrid.size(); x++)
@@ -1414,10 +1432,10 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
                     break;
 
                 if (!x)
-                    _data.setHeadLineElement(_tIdx.col[4+y], sTargettable,
+                    table.setHeadLineElement(_tIdx.col[4+y], _tIdx.layer.front(),
                                              sCountLabelStart + "(x(:),y(" + toString(y+1) + "))");
 
-                _data.writeToTable(_tIdx.row[x], _tIdx.col[4+y], sTargettable, vGrid[x][y]);
+                table.write(_tIdx.row[x], _tIdx.col[4+y], _tIdx.layer.front(), vGrid[x][y]);
             }
         }
     }
@@ -1729,6 +1747,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
     Output& _out = NumeReKernel::getInstance()->getOutput();
+    Table& table = _data.getTable(_histParams.sTable);
 
     int nMax = 0;
 
@@ -1744,16 +1763,16 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // Update the interval ranges using the minimal and maximal
     // data values in the corresponding spatial directions
     prepareIntervalsForHist(sCmd, _histParams.ranges[XCOORD],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real(),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real());
+                            table.min(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real(),
+                            table.max(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real());
 
     prepareIntervalsForHist(sCmd, _histParams.ranges[YCOORD],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real(),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real());
+                            table.min(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front()).real(),
+                            table.max(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front()).real());
 
     prepareIntervalsForHist(sCmd, _histParams.ranges[ZCOORD],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real(),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real());
+                            table.min(_idx.row, _idx.col.subidx(2), _idx.layer.front()).real(),
+                            table.max(_idx.row, _idx.col.subidx(2), _idx.layer.front()).real());
 
     // Adapt the ranges for logscale
     if (_pData.getLogscale(XRANGE) && _histParams.ranges[XCOORD].max() < 0.0)
@@ -1780,9 +1799,9 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     {
         for (size_t j = 2; j < _idx.col.size(); j++)
         {
-            if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable)
-                && _histParams.ranges[XCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).getNum().asCF64())
-                && _histParams.ranges[YCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).getNum().asCF64()))
+            if (table.isValidElement(_idx.row[i], _idx.col[j], _idx.layer.front())
+                && _histParams.ranges[XCOORD].isInside(table.read(_idx.row[i], _idx.col[0], _idx.layer.front()).getNum().asCF64())
+                && _histParams.ranges[YCOORD].isInside(table.read(_idx.row[i], _idx.col[1], _idx.layer.front()).getNum().asCF64()))
                 nMax++;
         }
     }
@@ -1800,15 +1819,15 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         }
         else if (_histParams.nMethod == SCOTT)
         {
-            _histParams.binWidth[XCOORD] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / divisor;
-            _histParams.binWidth[YCOORD] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real() / divisor;
+            _histParams.binWidth[XCOORD] = 3.49 * table.std(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front()).real() / divisor;
+            _histParams.binWidth[YCOORD] = 3.49 * table.std(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front()).real() / divisor;
         }
         else if (_histParams.nMethod == FREEDMAN_DIACONIS)
         {
-            _histParams.binWidth[XCOORD] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real()
-                                             - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / divisor;
-            _histParams.binWidth[YCOORD] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1), 0.75).real()
-                                             - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1), 0.25).real()) / divisor;
+            _histParams.binWidth[XCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(0, 1), 0.75).real()
+                                             - table.pct(_idx.row, _idx.col.subidx(0, 1), 0.25).real()) / divisor;
+            _histParams.binWidth[YCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(1, 1), 0.75).real()
+                                             - table.pct(_idx.row, _idx.col.subidx(1, 1), 0.25).real()) / divisor;
         }
     }
 
@@ -1995,21 +2014,21 @@ void plugin_histogram(CommandLineParser& cmdParser)
             {
                 nDataRowFinal = intCast(StrToDb(sTemp));
 
-                if (nDataRowFinal > _data.getCols(_histParams.sTable) || !nDataRowFinal)
-                    nDataRowFinal = _data.getCols(_histParams.sTable);
+                if (nDataRowFinal > _data.getTable(_histParams.sTable).getCols() || !nDataRowFinal)
+                    nDataRowFinal = _data.getTable(_histParams.sTable).getCols();
             }
             else
-                nDataRowFinal = _data.getCols(_histParams.sTable);
+                nDataRowFinal = _data.getTable(_histParams.sTable).getCols();
         }
         else if (sTemp.length())
             nDataRow = intCast(StrToDb(sTemp));
 
-        _idx.row = VectorIndex(0, _data.getLines(_histParams.sTable)-1);
+        _idx.row = VectorIndex(0, _data.getTable(_histParams.sTable).getRows()-1);
         _idx.col = VectorIndex(nDataRow, nDataRowFinal-1);
     }
 
     // We can only calculate histograms of columns having a value-like character
-    if (!_data.isValueLike(_idx.col, _histParams.sTable))
+    if (!_data.isValueLike(_idx.col, _idx.layer.front(), _histParams.sTable))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _histParams.sTable+"(", _histParams.sTable);
 
     mu::Array vResults;
@@ -2075,7 +2094,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
             sTargettable.erase(sTargettable.find('('));
             _tIdx.row = VectorIndex(0, VectorIndex::OPEN_END);
-            _tIdx.col = VectorIndex(_data.getCols(sTargettable), VectorIndex::OPEN_END);
+            _tIdx.col = VectorIndex(_data.getTable(sTargettable).getCols(), VectorIndex::OPEN_END);
         }
         else if (cmdParser.hasParam("tocache") || cmdParser.hasParam("totable"))
         {
@@ -2086,7 +2105,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
             {
                 sTargettable = "table";
                 _tIdx.row = VectorIndex(0, VectorIndex::OPEN_END);
-                _tIdx.col = VectorIndex(_data.getCols("table"), VectorIndex::OPEN_END);
+                _tIdx.col = VectorIndex(_data.getTable("table").getCols(), VectorIndex::OPEN_END);
             }
         }
     }

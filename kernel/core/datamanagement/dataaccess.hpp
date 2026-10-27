@@ -70,20 +70,15 @@ class DataView
 {
     private:
         mu::Array m_array;
+        Table* m_table;
         DataAccessParser m_access;
         std::string m_dataName;
         size_t m_axisCount;
 
     public:
-        DataView(const mu::Array& arr, const std::string& dataName) : m_array(arr), m_dataName(dataName), m_axisCount(0) { }
-        DataView(const DataAccessParser& acc) : m_access(acc), m_axisCount(0)
-        {
-            m_dataName = m_access.getDataObject() + "(";
-        }
-        DataView(const DataAccessParser&& acc) : m_access(acc), m_axisCount(0)
-        {
-            m_dataName = m_access.getDataObject() + "(";
-        }
+        DataView(const mu::Array& arr, const std::string& dataName);
+        DataView(const DataAccessParser& acc);
+        DataView(const DataAccessParser&& acc);
         DataView(const DataView&) = default;
         DataView(DataView&&) = default;
 
@@ -224,8 +219,8 @@ class DataView
             return m_axisCount;
         }
 
-        mu::Value get(size_t i, size_t j) const;
-        mu::Array get(const VectorIndex& rows, const VectorIndex& cols) const;
+        mu::Value get(size_t i, size_t j, size_t k = 0) const;
+        mu::Array get(const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& layers = VectorIndex(0)) const;
 
         mu::Value sum() const;
         mu::Value min() const;
@@ -246,10 +241,10 @@ bool parser_CheckMultArgFunc(StringView, StringView);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options = REPLACE_NAN);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, int options = NO_OPTION);
-Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
+Table* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
 bool isNotEmptyExpression(StringView);
-mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
-mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
+mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, long long int k, bool isCluster);
+mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, long long int k, bool isCluster);
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 

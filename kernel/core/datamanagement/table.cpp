@@ -29,7 +29,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     /// \brief Default constructor
     /////////////////////////////////////////////////
-    Table::Table()
+    TableView::TableView()
     {
         sTableName.clear();
     }
@@ -40,11 +40,12 @@ namespace NumeRe
     ///
     /// \param nLines int
     /// \param nCols int
+    /// \param sheets int
     ///
     /////////////////////////////////////////////////
-    Table::Table(int nLines, int nCols) : Table()
+    TableView::TableView(int nLines, int nCols, int sheets) : TableView()
     {
-        setSize(nLines, nCols);
+        setSize(nLines, nCols, sheets);
     }
 
 
@@ -54,15 +55,21 @@ namespace NumeRe
     /// \param _table const Table&
     ///
     /////////////////////////////////////////////////
-    Table::Table(const Table& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
+    TableView::TableView(const TableView& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
     {
-        vTableData.resize(_table.vTableData.size());
+        vTableData = _table.vTableData;
+    }
 
-        for (size_t i = 0; i < vTableData.size(); i++)
-        {
-            if (_table.vTableData[i])
-                vTableData[i].reset(_table.vTableData[i]->copy());
-        }
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor
+    ///
+    /// \param _table TableData*
+    ///
+    /////////////////////////////////////////////////
+    TableView::TableView(TableData* _table) : sTableName("")
+    {
+        vTableData = std::move(*_table);
     }
 
 
@@ -72,17 +79,16 @@ namespace NumeRe
     /// \param _table Table&&
     ///
     /////////////////////////////////////////////////
-    Table::Table(Table&& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
+    TableView::TableView(TableView&& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
     {
-        // We move by using the std::swap() functions
-        std::swap(vTableData, _table.vTableData);
+        vTableData = std::move( _table.vTableData);
     }
 
 
     /////////////////////////////////////////////////
     /// \brief Destructor
     /////////////////////////////////////////////////
-    Table::~Table()
+    TableView::~TableView()
     {
         vTableData.clear();
     }
@@ -95,10 +101,10 @@ namespace NumeRe
     /// \return Table&
     ///
     /////////////////////////////////////////////////
-    Table& Table::operator=(Table _table)
+    TableView& TableView::operator=(TableView _table)
     {
         // We move by using the std::swap() functions
-        std::swap(vTableData, _table.vTableData);
+        vTableData = std::move(_table.vTableData);
         sTableName = _table.sTableName;
         m_meta = _table.m_meta;
 
@@ -113,13 +119,18 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setMinSize(size_t i, size_t j)
+    void TableView::setMinSize(size_t i, size_t j, size_t sheet)
     {
-        if (vTableData.size() <= j)
-            vTableData.resize(j);
+        vTableData.reserve(sheet);
+
+        for (size_t k = 0; k < sheet; k++)
+        {
+            vTableData.m_sheets[k]->reserve(j);
+        }
     }
 
 
@@ -133,7 +144,7 @@ namespace NumeRe
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::isNumerical(const std::string& sValue) const
+    bool TableView::isNumerical(const std::string& sValue) const
     {
         return isConvertible(sValue, CONVTYPE_VALUE);
     }
@@ -146,7 +157,7 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::Clear()
+    void TableView::Clear()
     {
         vTableData.clear();
         sTableName.clear();
@@ -159,19 +170,23 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setSize(size_t i, size_t j)
+    void TableView::setSize(size_t i, size_t j, size_t sheet)
     {
-        this->setMinSize(i, j);
+        this->setMinSize(i, j, sheet);
 
-        for (auto& col : vTableData)
+        for (size_t k = 0; k < sheet; k++)
         {
-            if (col)
-                col->resize(i);
-            else
-                col.reset(new ValueColumn(i));
+            for (auto& col : vTableData.m_sheets[k]->m_columns)
+            {
+                if (col)
+                    col->resize(i);
+                else
+                    col.reset(new ValueColumn(i));
+            }
         }
     }
 
@@ -183,7 +198,7 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setName(const std::string& _sName)
+    void TableView::setName(const std::string& _sName)
     {
         sTableName = _sName;
     }
@@ -197,7 +212,7 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setMetaData(const TableMetaData& meta)
+    void TableView::setMetaData(const TableMetaData& meta)
     {
         m_meta = meta;
     }
@@ -210,7 +225,7 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setComment(const std::string& _comment)
+    void TableView::setComment(const std::string& _comment)
     {
         m_meta.comment = _comment;
     }
@@ -222,19 +237,23 @@ namespace NumeRe
     /// headlines automatically.
     ///
     /// \param i size_t
+    /// \param sheet size_t
     /// \param _sHead const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setHead(size_t i, const std::string& _sHead)
+    void TableView::setHead(size_t i, size_t sheet, const std::string& _sHead)
     {
-        if (i >= vTableData.size())
-            vTableData.resize(i+1);
+        vTableData.reserve(sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
-        if (!vTableData[i])
-            vTableData[i].reset(new ValueColumn);
+        if (i >= currSheet.m_columns.size())
+            currSheet.m_columns.resize(i+1);
 
-        vTableData[i]->m_sHeadLine = _sHead;
+        if (!currSheet.m_columns[i])
+            currSheet.m_columns[i].reset(new ValueColumn);
+
+        currSheet.m_columns[i]->m_sHeadLine = _sHead;
     }
 
 
@@ -246,35 +265,39 @@ namespace NumeRe
     /// automatically.
     ///
     /// \param i size_t
+    /// \param sheet size_t
     /// \param part size_t
     /// \param _sHead const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setHeadPart(size_t i, size_t part, const std::string& _sHead)
+    void TableView::setHeadPart(size_t i, size_t sheet, size_t part, const std::string& _sHead)
     {
-        if (i >= vTableData.size())
-            vTableData.resize(i+1);
+        vTableData.reserve(sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
-        if (!vTableData[i])
-            vTableData[i].reset(new ValueColumn);
+        if (i >= currSheet.m_columns.size())
+            currSheet.m_columns.resize(i+1);
+
+        if (!currSheet.m_columns[i])
+            currSheet.m_columns[i].reset(new ValueColumn);
 
         std::string head;
 
         // Compose the new headline using the different
         // parts
-        for (int j = 0; j < getHeadCount(); j++)
+        for (int j = 0; j < getHeadCount(sheet); j++)
         {
             if (j == (int)part)
                 head += _sHead + '\n';
             else
-                head += getCleanHeadPart(i, j) + '\n';
+                head += getCleanHeadPart(i, sheet, j) + '\n';
         }
 
 		if (head.length())
 			head.pop_back();
 
-        vTableData[i]->m_sHeadLine = head;
+        currSheet.m_columns[i]->m_sHeadLine = head;
     }
 
 
@@ -285,16 +308,18 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \param _dValue const mu::Value&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::set(size_t i, size_t j, const mu::Value& _dValue)
+    void TableView::set(size_t i, size_t j, size_t sheet, const mu::Value& _dValue)
     {
-        this->setMinSize(i+1, j+1);
+        this->setMinSize(i+1, j+1, sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
-        convert_if_empty(vTableData[j], j, to_column_type(_dValue));
-        vTableData[j]->set(i, _dValue);
+        convert_if_empty(currSheet.m_columns[j], j, to_column_type(_dValue));
+        currSheet.m_columns[j]->set(i, _dValue);
     }
 
 
@@ -305,16 +330,18 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \param _dValue const std::complex<double>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setValue(size_t i, size_t j, const std::complex<double>& _dValue)
+    void TableView::setValue(size_t i, size_t j, size_t sheet, const std::complex<double>& _dValue)
     {
-        this->setMinSize(i+1, j+1);
+        this->setMinSize(i+1, j+1, sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
-        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE_CF64);
-        vTableData[j]->setValue(i, _dValue);
+        convert_if_empty(currSheet.m_columns[j], j, TableColumn::TYPE_VALUE_CF64);
+        currSheet.m_columns[j]->setValue(i, _dValue);
     }
 
 
@@ -326,69 +353,71 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \param _sValue const string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setValueAsString(size_t i, size_t j, const std::string& _sValue)
+    void TableView::setValueAsString(size_t i, size_t j, size_t sheet, const std::string& _sValue)
     {
         // Resize the table if needed
-        this->setMinSize(i+1, j+1);
+        this->setMinSize(i+1, j+1, sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
         // Empty value means only deletion
         if (!_sValue.length())
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
             return;
         }
-        else if (vTableData[j]
-                 && vTableData[j]->m_type == TableColumn::TYPE_CATEGORICAL
-                 && static_cast<CategoricalColumn*>(vTableData[j].get())->isCategory(toInternalString(_sValue)))
+        else if (currSheet.m_columns[j]
+                 && currSheet.m_columns[j]->m_type == TableColumn::TYPE_CATEGORICAL
+                 && static_cast<CategoricalColumn*>(currSheet.m_columns[j].get())->isCategory(toInternalString(_sValue)))
         {
-            vTableData[j]->setValue(i, toInternalString(_sValue));
+            currSheet.m_columns[j]->setValue(i, toInternalString(_sValue));
         }
         else if (isConvertible(_sValue, CONVTYPE_DURATION))
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DURATION, false);
-            vTableData[j]->setValue(i, parseDuration(_sValue));
+            convert_if_needed(currSheet.m_columns[j], j, TableColumn::TYPE_DURATION, false);
+            currSheet.m_columns[j]->setValue(i, parseDuration(_sValue));
         }
         else if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DATETIME, false);
-            vTableData[j]->setValue(i, to_double(StrToTime(_sValue)));
+            convert_if_needed(currSheet.m_columns[j], j, TableColumn::TYPE_DATETIME, false);
+            currSheet.m_columns[j]->setValue(i, to_double(StrToTime(_sValue)));
         }
         else if (isConvertible(_sValue, CONVTYPE_VALUE))
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
             std::complex<double> val = StrToCmplx(_sValue);
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE_CF64, val.imag() != 0.0);
-            vTableData[j]->setValue(i, val);
+            convert_if_needed(currSheet.m_columns[j], j, TableColumn::TYPE_VALUE_CF64, val.imag() != 0.0);
+            currSheet.m_columns[j]->setValue(i, val);
         }
         else if (isConvertible(_sValue, CONVTYPE_LOGICAL))
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_LOGICAL, false);
-            vTableData[j]->setValue(i, StrToLogical(_sValue));
+            convert_if_needed(currSheet.m_columns[j], j, TableColumn::TYPE_LOGICAL, false);
+            currSheet.m_columns[j]->setValue(i, StrToLogical(_sValue));
         }
         else
         {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+            if (currSheet.m_columns[j])
+                currSheet.m_columns[j]->deleteElements(VectorIndex(i));
 
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING, false);
-            vTableData[j]->setValue(i, toInternalString(_sValue));
+            convert_if_needed(currSheet.m_columns[j], j, TableColumn::TYPE_STRING, false);
+            currSheet.m_columns[j]->setValue(i, toInternalString(_sValue));
         }
     }
 
@@ -398,17 +427,21 @@ namespace NumeRe
     /// array.
     ///
     /// \param j size_t
+    /// \param sheet size_t
     /// \param column TableColumn*
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setColumn(size_t j, TableColumn* column)
+    void TableView::setColumn(size_t j, size_t sheet, TableColumn* column)
     {
-        if (vTableData.size() <= j)
-            vTableData.resize(j+1);
+        vTableData.reserve(sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
 
-        vTableData[j].reset(column);
-        vTableData[j]->shrink();
+        if (currSheet.m_columns.size() <= j)
+            currSheet.m_columns.resize(j+1);
+
+        currSheet.m_columns[j].reset(column);
+        currSheet.m_columns[j]->shrink();
     }
 
 
@@ -417,16 +450,20 @@ namespace NumeRe
     /// selected column.
     ///
     /// \param j size_t
+    /// \param sheet size_t
     /// \param _type TableColumn::ColumnType
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::setColumnType(size_t j, TableColumn::ColumnType _type)
+    bool TableView::setColumnType(size_t j, size_t sheet, TableColumn::ColumnType _type)
     {
-        if (j >= vTableData.size())
+        vTableData.reserve(sheet+1);
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
+        if (j >= currSheet.m_columns.size())
             return false;
 
-        return convert_if_needed(vTableData[j], j, _type, true);
+        return convert_if_needed(currSheet.m_columns[j], j, _type, true);
     }
 
 
@@ -436,7 +473,7 @@ namespace NumeRe
     /// \return string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getName() const
+    std::string TableView::getName() const
     {
         return sTableName;
     }
@@ -449,7 +486,7 @@ namespace NumeRe
     /// \return TableMetaData
     ///
     /////////////////////////////////////////////////
-    TableMetaData Table::getMetaData() const
+    TableMetaData TableView::getMetaData() const
     {
         return m_meta;
     }
@@ -461,7 +498,7 @@ namespace NumeRe
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getComment() const
+    std::string TableView::getComment() const
     {
         return m_meta.comment;
     }
@@ -472,29 +509,35 @@ namespace NumeRe
     /// of headlines (depending on the number of
     /// linebreaks found in the headlines).
     ///
+    /// \param sheet size_t
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int Table::getHeadCount() const
+    int TableView::getHeadCount(size_t sheet) const
     {
+        if (sheet >= vTableData.sheets())
+            return 0;
+
+        const TableSheet& currSheet = vTableData.getSheet(sheet);
+
         int nHeadlineCount = 1;
 
         // Get the dimensions of the complete headline (i.e. including possible linebreaks)
-        for (size_t j = 0; j < vTableData.size(); j++)
+        for (size_t j = 0; j < currSheet.m_columns.size(); j++)
         {
-            if (!vTableData[j])
+            if (!currSheet.m_columns[j])
                 continue;
 
             // No linebreak? Continue
-            if (vTableData[j]->m_sHeadLine.find('\n') == std::string::npos)
+            if (currSheet.m_columns[j]->m_sHeadLine.find('\n') == std::string::npos)
                 continue;
 
             int nLinebreak = 0;
 
             // Count all linebreaks
-            for (size_t n = 0; n < vTableData[j]->m_sHeadLine.length(); n++)
+            for (size_t n = 0; n < currSheet.m_columns[j]->m_sHeadLine.length(); n++)
             {
-                if (vTableData[j]->m_sHeadLine[n] == '\n')
+                if (currSheet.m_columns[j]->m_sHeadLine[n] == '\n')
                     nLinebreak++;
             }
 
@@ -512,13 +555,14 @@ namespace NumeRe
     /// column's headline.
     ///
     /// \param i size_t
+    /// \param sheet size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getHead(size_t i) const
+    std::string TableView::getHead(size_t i, size_t sheet) const
     {
-        if (vTableData.size() > i && vTableData[i])
-            return vTableData[i]->m_sHeadLine;
+        if (sheet < vTableData.sheets() && vTableData.getSheet(sheet).isValidColumn(i))
+            return vTableData.getSheet(sheet).m_columns[i]->m_sHeadLine;
 
         return TableColumn::getDefaultColumnHead(i);
     }
@@ -530,13 +574,14 @@ namespace NumeRe
     /// headlines are replaced on-the-fly.
     ///
     /// \param i size_t
+    /// \param sheet size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getCleanHead(size_t i) const
+    std::string TableView::getCleanHead(size_t i, size_t sheet) const
     {
-        if (vTableData.size() > i && vTableData[i])
-            return vTableData[i]->m_sHeadLine;
+        if (sheet < vTableData.sheets() && vTableData.getSheet(sheet).isValidColumn(i))
+            return vTableData.getSheet(sheet).m_columns[i]->m_sHeadLine;
 
         return TableColumn::getDefaultColumnHead(i);
     }
@@ -549,16 +594,17 @@ namespace NumeRe
     /// on-the-fly.
     ///
     /// \param i size_t
+    /// \param sheet size_t
     /// \param part size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getCleanHeadPart(size_t i, size_t part) const
+    std::string TableView::getCleanHeadPart(size_t i, size_t sheet, size_t part) const
     {
-        if (vTableData.size() > i && vTableData[i] && part < (size_t)getHeadCount())
+        if (sheet < vTableData.sheets() && vTableData.getSheet(sheet).isValidColumn(i) && part < (size_t)getHeadCount(sheet))
         {
             // get the cleaned headline
-            std::string head = getCleanHead(i);
+            std::string head = getCleanHead(i, sheet);
 
             // Simple case: only one line
             if (head.find('\n') == string::npos)
@@ -604,13 +650,14 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return mu::Value
     ///
     /////////////////////////////////////////////////
-    mu::Value Table::get(size_t i, size_t j) const
+    mu::Value TableView::get(size_t i, size_t j, size_t sheet) const
     {
-        if (vTableData.size() > j && vTableData[j])
-            return vTableData[j]->get(i);
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
+            return vTableData.getSheet(sheet).m_columns[j]->get(i);
 
         return mu::Value();
     }
@@ -622,13 +669,14 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    std::complex<double> Table::getValue(size_t i, size_t j) const
+    std::complex<double> TableView::getValue(size_t i, size_t j, size_t sheet) const
     {
-        if (vTableData.size() > j && vTableData[j])
-            return vTableData[j]->getValue(i);
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
+            return vTableData.getSheet(sheet).m_columns[j]->getValue(i);
 
         return NAN;
     }
@@ -641,20 +689,21 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getValueAsString(size_t i, size_t j) const
+    std::string TableView::getValueAsString(size_t i, size_t j, size_t sheet) const
     {
         constexpr size_t MAXSTRINGLENGTH = 1024;
 
-        if (vTableData.size() > j && vTableData[j])
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
         {
             // Invalid number
-            if (!vTableData[j]->isValid(i))
+            if (!vTableData.getSheet(sheet).m_columns[j]->isValid(i))
                 return "---";
 
-            return truncString(vTableData[j]->getValueAsStringLiteral(i), MAXSTRINGLENGTH);
+            return truncString(vTableData.getSheet(sheet).m_columns[j]->getValueAsStringLiteral(i), MAXSTRINGLENGTH);
         }
 
         return "---";
@@ -668,13 +717,14 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
+    /// \param sheet size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getValueAsInternalString(size_t i, size_t j) const
+    std::string TableView::getValueAsInternalString(size_t i, size_t j, size_t sheet) const
     {
-        if (vTableData.size() > j && vTableData[j] && vTableData[j]->isValid(i))
-            return vTableData[j]->getValueAsInternalString(i);
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
+            return vTableData.getSheet(sheet).m_columns[j]->getValueAsInternalString(i);
 
         return "";
     }
@@ -686,13 +736,14 @@ namespace NumeRe
     /// exist or is empty.
     ///
     /// \param j size_t
+    /// \param sheet size_t
     /// \return TableColumn*
     ///
     /////////////////////////////////////////////////
-    TableColumn* Table::getColumn(size_t j) const
+    TableColumn* TableView::getColumn(size_t j, size_t sheet) const
     {
-        if (j < vTableData.size() && vTableData[j])
-            return vTableData[j]->copy();
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
+            return vTableData.getSheet(sheet).m_columns[j]->copy();
 
         return nullptr;
     }
@@ -703,13 +754,14 @@ namespace NumeRe
     /// column.
     ///
     /// \param j size_t
+    /// \param sheet size_t
     /// \return TableColumn::ColumnType
     ///
     /////////////////////////////////////////////////
-    TableColumn::ColumnType Table::getColumnType(size_t j) const
+    TableColumn::ColumnType TableView::getColumnType(size_t j, size_t sheet) const
     {
-        if (j < vTableData.size() && vTableData[j])
-            return vTableData[j]->m_type;
+        if (vTableData.sheets() > sheet && vTableData.getSheet(sheet).isValidColumn(j))
+            return vTableData.getSheet(sheet).m_columns[j]->m_type;
 
         return TableColumn::TYPE_NONE;
     }
@@ -721,17 +773,9 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t Table::getLines() const
+    size_t TableView::getRows() const
     {
-        size_t lines = 0;
-
-        for (const TblColPtr& col : vTableData)
-        {
-            if (col && col->size() > lines)
-                lines = col->size();
-        }
-
-        return lines;
+        return vTableData.rows();
     }
 
 
@@ -741,9 +785,21 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t Table::getCols() const
+    size_t TableView::getCols() const
     {
-        return vTableData.size();
+        return vTableData.cols();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Get the number of sheets.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t TableView::getSheets() const
+    {
+        return vTableData.sheets();
     }
 
 
@@ -753,24 +809,30 @@ namespace NumeRe
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::isEmpty() const
+    bool TableView::isEmpty() const
     {
         return vTableData.empty();
     }
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function inserts lines at
+    /// \brief This member function inserts rows at
     /// the desired position.
     ///
+    /// \param sheet size_t
     /// \param nPos size_t
     /// \param nNum size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::insertLines(size_t nPos, size_t nNum)
+    bool TableView::insertRows(size_t sheet, size_t nPos, size_t nNum)
     {
-        for (TblColPtr& col : vTableData)
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
+        for (TblColPtr& col : currSheet.m_columns)
         {
             if (col)
                 col->insertElements(nPos, nNum);
@@ -781,15 +843,21 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function appends lines.
+    /// \brief This member function appends rows.
     ///
+    /// \param sheet size_t
     /// \param nNum size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::appendLines(size_t nNum)
+    bool TableView::appendRows(size_t sheet, size_t nNum)
     {
-        for (TblColPtr& col : vTableData)
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
+        for (TblColPtr& col : currSheet.m_columns)
         {
             if (col)
                 col->appendElements(nNum);
@@ -800,17 +868,23 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function deletes lines at
+    /// \brief This member function deletes rows at
     /// the desired position.
     ///
+    /// \param sheet size_t
     /// \param nPos size_t
     /// \param nNum size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::deleteLines(size_t nPos, size_t nNum)
+    bool TableView::deleteRows(size_t sheet, size_t nPos, size_t nNum)
     {
-        for (TblColPtr& col : vTableData)
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
+        for (TblColPtr& col : currSheet.m_columns)
         {
             if (col)
                 col->removeElements(nPos, nNum);
@@ -824,15 +898,22 @@ namespace NumeRe
     /// \brief This member function inserts columns
     /// at the desired position.
     ///
+    /// \param sheet size_t
     /// \param nPos size_t
     /// \param nNum size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::insertCols(size_t nPos, size_t nNum)
+    bool TableView::insertCols(size_t sheet, size_t nPos, size_t nNum)
     {
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
         TableColumnArray arr(nNum);
-        vTableData.insert(vTableData.begin()+nPos, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
+        currSheet.m_columns.insert(currSheet.m_columns.begin()+nPos,
+                                   std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
         return true;
     }
 
@@ -840,20 +921,88 @@ namespace NumeRe
     /////////////////////////////////////////////////
     /// \brief This member function appends columns.
     ///
+    /// \param sheet size_t
     /// \param nNum size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::appendCols(size_t nNum)
+    bool TableView::appendCols(size_t sheet, size_t nNum)
     {
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
         TableColumnArray arr(nNum);
-        vTableData.insert(vTableData.end(), std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
+        currSheet.m_columns.insert(currSheet.m_columns.end(),
+                                   std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
         return true;
     }
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function delets columns at
+    /// \brief This member function deletes columns at
+    /// the desired position.
+    ///
+    /// \param sheet size_t
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool TableView::deleteCols(size_t sheet, size_t nPos, size_t nNum)
+    {
+        if (sheet >= vTableData.sheets())
+            return false;
+
+        TableSheet& currSheet = vTableData.getSheet(sheet);
+
+        currSheet.m_columns.erase(currSheet.m_columns.begin()+nPos,
+                                  currSheet.m_columns.begin()+nPos+nNum);
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function inserts sheets
+    /// at the desired position.
+    ///
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool TableView::insertSheets(size_t nPos, size_t nNum)
+    {
+        if (nPos > vTableData.sheets())
+            return false;
+
+        for (size_t s = nPos; s < nPos+nNum; s++)
+        {
+            vTableData.m_sheets.insert(vTableData.m_sheets.begin()+s,
+                                       TblSheetPtr(new TableSheet("Sheet_" + toString(s+1))));
+        }
+
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function appends sheets.
+    ///
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool TableView::appendSheets(size_t nNum)
+    {
+        vTableData.reserve(vTableData.sheets()+nNum);
+        return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function deletes sheets at
     /// the desired position.
     ///
     /// \param nPos size_t
@@ -861,9 +1010,13 @@ namespace NumeRe
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::deleteCols(size_t nPos, size_t nNum)
+    bool TableView::deleteSheets(size_t nPos, size_t nNum)
     {
-        vTableData.erase(vTableData.begin()+nPos, vTableData.begin()+nPos+nNum);
+        if (nPos >= vTableData.sheets())
+            return false;
+
+        vTableData.m_sheets.erase(vTableData.m_sheets.begin()+nPos,
+                                  vTableData.m_sheets.begin()+nPos+nNum);
         return true;
     }
 

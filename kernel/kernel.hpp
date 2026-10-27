@@ -180,7 +180,7 @@ class NumeReKernel
         static int nLastStatusVal;
         static size_t nLastLineLength;
         static bool modifiedSettings;
-        static NumeRe::Table table;
+        static NumeRe::TableView table;
         static bool bSupressAnswer;
         static bool bGettingLine;
         static bool bErrorNotification;
@@ -222,12 +222,12 @@ class NumeReKernel
         static void setDocumentation(const std::string& _sDocumentation);
         static void installationDone();
         static bool GetAsyncCancelState();
-        static void showTable(NumeRe::Table _table, std::string __name, bool openeditable = false);
+        static void showTable(NumeRe::TableView _table, std::string __name, bool openeditable = false);
         static void showStringTable(NumeRe::Container<std::string> _stringtable, std::string __name, bool openeditable = false);
 
         void showWindow(const NumeRe::Window& window);
-        static NumeRe::Table getTable();
-        NumeRe::Table getTable(const std::string& sTableName);
+        static NumeRe::TableView getTable();
+        NumeRe::TableView getTable(const std::string& sTableName);
         NumeRe::Container<std::string> getStringTable(const std::string& sStringTableName);
         static void showDebugEvent(const std::string& sTitle, const std::vector<std::string>& vStacktrace);
         static int waitForContinue();
@@ -365,7 +365,7 @@ struct NumeReTask
     std::string sString;
     size_t nLine;
     std::vector<std::string> vDebugEvent;
-    NumeRe::Table table;
+    NumeRe::TableView table;
     NumeRe::Window window;
     NumeRe::Container<std::string> stringTable;
     int taskType;

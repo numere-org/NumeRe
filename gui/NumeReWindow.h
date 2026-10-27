@@ -160,9 +160,9 @@ class NumeReWindow : public wxFrame
         bool ShowHelp(const wxString& sDocId);
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName);
-        void openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName);
+        void openTable(NumeRe::TableView _table, const std::string& tableDisplayName, const std::string& sIntName);
         void editTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName);
-        void editTable(NumeRe::Table _table, const std::string& tableDisplayName);
+        void editTable(NumeRe::TableView _table, const std::string& tableDisplayName);
         void showTable(const wxString& tableName, const wxString& tableDisplayName);
         void showWindow(NumeRe::Window& window);
         void pass_command(const wxString& command, bool isEvent = false);

@@ -1841,7 +1841,7 @@ void TableViewer::replaceTabSign(wxString& text)
 /////////////////////////////////////////////////
 void TableViewer::createZeroElementTable()
 {
-    SetTable(new GridNumeReTable(NumeRe::Table(1, 1),
+    SetTable(new GridNumeReTable(NumeRe::TableView(1, 1, 1),
                                  NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
 
     isGridNumeReTable = true;
@@ -2035,7 +2035,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const std::string& sIntName)
+void TableViewer::SetData(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName)
 {
     if (m_parentPanel)
         m_parentPanel->update(_table.getMetaData());
@@ -2044,7 +2044,7 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
     m_intName = sIntName;
 
     // Create an empty table, if necessary
-    if (_table.isEmpty() || !_table.getLines())
+    if (_table.isEmpty() || !_table.getRows())
     {
         createZeroElementTable();
         return;
@@ -2052,7 +2052,8 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
 
     // Store the number headlines and create the data
     // providing object
-    nFirstNumRow = _table.getHeadCount();
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+    nFirstNumRow = _table.getHeadCount(0);
     SetTable(new GridNumeReTable(std::move(_table),
                                  NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
     isGridNumeReTable = true;
@@ -2593,9 +2594,9 @@ void TableViewer::saveTable(bool saveAs)
 
     // Get a reference to the table and copy the
     // necessary fields to the file
-    NumeRe::Table& table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
-    file->setDimensions(table.getLines(), table.getCols());
-    file->setData(&table.getTableData(), table.getLines(), table.getCols());
+    NumeRe::TableView& table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
+    file->setDimensions(table.getRows(), table.getCols(), table.getSheets());
+    file->setData(&table.getTableData(), table.getRows(), table.getCols(), table.getSheets());
     file->setTableName(m_displayName.substr(0, m_displayName.find_first_of("({")));
     file->setTextfilePrecision(7);
 
@@ -2631,7 +2632,7 @@ void TableViewer::reloadTable()
 
     if (isGridNumeReTable)
     {
-        NumeRe::Table _tab = term->getTable(m_intName);
+        NumeRe::TableView _tab = term->getTable(m_intName);
         SetData(_tab, m_displayName, m_intName);
     }
     else
@@ -2685,7 +2686,7 @@ void TableViewer::changeColType()
 
     // Change the column types
     wxGridCellsExtent _extent = coordsContainer.getExtent();
-    NumeRe::Table& _table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
+    NumeRe::TableView& _table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
 
     for (int j = _extent.m_topleft.GetCol(); j <= _extent.m_bottomright.GetCol(); j++)
     {
@@ -2693,7 +2694,8 @@ void TableViewer::changeColType()
             continue;
 
         // Change the typ of this column
-        if (_table.setColumnType(j, type))
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+        if (_table.setColumnType(j, 0, type))
         {
             // We have to refresh the alignment and to update the
             // renderers as well
@@ -2948,7 +2950,8 @@ mu::Array TableViewer::getSelectedValues()
 int TableViewer::GetInternalRows(int gridrow) const
 {
     if (isGridNumeReTable)
-        gridrow -= (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount();
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+        gridrow -= (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(0);
     else
         gridrow -= (int)nFirstNumRow;
 
@@ -2970,7 +2973,8 @@ int TableViewer::GetInternalRows(int gridrow) const
 int TableViewer::GetExternalRows(int gridrow) const
 {
     if (isGridNumeReTable)
-        gridrow += (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount();
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+        gridrow += (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(0);
     else
         gridrow += (int)nFirstNumRow;
 
@@ -3047,9 +3051,9 @@ wxSize TableViewer::calculateMinSize() const
 /// a valid state after a call to this function.
 ///
 /////////////////////////////////////////////////
-NumeRe::Table TableViewer::GetData()
+NumeRe::TableView TableViewer::GetData()
 {
-    NumeRe::Table table = static_cast<GridNumeReTable*>(GetTable())->getTable();
+    NumeRe::TableView table = static_cast<GridNumeReTable*>(GetTable())->getTable();
 
     if (!readOnly && m_parentPanel)
         table.setComment(m_parentPanel->getComment());
@@ -3065,9 +3069,9 @@ NumeRe::Table TableViewer::GetData()
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table TableViewer::GetDataCopy()
+NumeRe::TableView TableViewer::GetDataCopy()
 {
-    NumeRe::Table tableCopy = static_cast<GridNumeReTable*>(GetTable())->getTableCopy();
+    NumeRe::TableView tableCopy = static_cast<GridNumeReTable*>(GetTable())->getTableCopy();
 
     if (!readOnly && m_parentPanel)
         tableCopy.setComment(m_parentPanel->getComment());

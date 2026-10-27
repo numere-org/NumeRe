@@ -33,7 +33,7 @@ static bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parse
 /// \brief This function is the main command
 /// handling function.
 ///
-/// \param sCmd string&
+/// \param sCmd std::string&
 /// \return CommandReturnValues
 ///
 /// The function identifies the commands in the
@@ -44,15 +44,15 @@ static bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parse
 /// If no command has been found, the function
 /// will return \c NO_COMMAND
 /////////////////////////////////////////////////
-CommandReturnValues commandHandler(string& sCmd)
+CommandReturnValues commandHandler(std::string& sCmd)
 {
     // Get the command functions as static maps
-    static map<string,CommandFunc> mCommandsWithReturnValue = getCommandFunctionsWithReturnValues();
-    static map<string,CommandFunc> mCommands = getCommandFunctions();
+    static std::map<std::string,CommandFunc> mCommandsWithReturnValue = getCommandFunctionsWithReturnValues();
+    static std::map<std::string,CommandFunc> mCommands = getCommandFunctions();
 
 	StripSpaces(sCmd);
 	sCmd += " ";
-	string sCommand = findCommand(sCmd).sString;
+	std::string sCommand = findCommand(sCmd).sString;
 
 	// Keyword search and application documentation
 	// are most important and will evaluated first
@@ -93,14 +93,14 @@ CommandReturnValues commandHandler(string& sCmd)
 /// argument to the selected command line
 /// parameter and evaluates it.
 ///
-/// \param sCmd const string&
+/// \param sCmd const std::string&
 /// \param nPos size_t
 /// \param _parser Parser&
 /// \param nArgument size_t&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
+static bool parseCmdArg(const std::string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
 {
 	if (!sCmd.length() || !nPos)
 		return false;

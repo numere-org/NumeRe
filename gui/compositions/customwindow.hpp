@@ -50,7 +50,7 @@ struct WindowItemParams
 {
     std::string type, state;
     mu::Array value, label, color;
-    NumeRe::Table table;
+    NumeRe::TableView table;
 };
 
 
@@ -62,7 +62,7 @@ struct WindowItemValue
 {
     std::string type;
     mu::Array val;
-    NumeRe::Table tableValue;
+    NumeRe::TableView tableValue;
 };
 
 

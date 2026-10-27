@@ -99,10 +99,10 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), NumeRe::ClusterManager()
 	sUserdefinedFuncs = "";
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
-	mCachesMap["table"] = std::make_pair(0u, 0u);
-	mCachesMap["string"] = std::make_pair(1u, 1u);
-	vMemory.push_back(new Memory());
-	vMemory.push_back(new Memory());
+	m_tableReferences["table"] = TableReference{0, 0};
+	m_tableReferences["string"] = TableReference{1ull, 1ull};
+	m_tables.push_back(new Table());
+	m_tables.push_back(new Table());
 
 	tableColumnsCount = mu::Value(0.0);
 	tableLinesCount = mu::Value(0.0);
@@ -118,8 +118,8 @@ MemoryManager::~MemoryManager()
     if (cache_file.is_open())
         cache_file.close();
 
-    for (size_t i = 0; i < vMemory.size(); i++)
-        delete vMemory[i];
+    for (size_t i = 0; i < m_tables.size(); i++)
+        delete m_tables[i];
 }
 
 
@@ -141,16 +141,16 @@ void MemoryManager::removeTablesFromMemory()
         bSaveMutex = true;
 
 		// --> Speicher, wo denn noetig freigeben <--
-		for (size_t i = 0; i < vMemory.size(); i++)
-            delete vMemory[i];
+		for (size_t i = 0; i < m_tables.size(); i++)
+            delete m_tables[i];
 
-		vMemory.clear();
+		m_tables.clear();
 		bSaveMutex = false;
-		mCachesMap.clear();
-		mCachesMap["table"] = std::make_pair(0u, 0u);
-		mCachesMap["string"] = std::make_pair(1u, 1u);
-		vMemory.push_back(new Memory());
-		vMemory.push_back(new Memory());
+		m_tableReferences.clear();
+		m_tableReferences["table"] = TableReference{0, 0};
+		m_tableReferences["string"] = TableReference{1ull, 1ull};
+		m_tables.push_back(new Table());
+		m_tables.push_back(new Table());
 		sDataFile.clear();
 	}
 }
@@ -165,12 +165,12 @@ void MemoryManager::removeTablesFromMemory()
 /////////////////////////////////////////////////
 bool MemoryManager::isValid() const
 {
-    if (!vMemory.size())
+    if (!m_tables.size())
         return false;
 
-    for (size_t i = 0; i < vMemory.size(); i++)
+    for (size_t i = 0; i < m_tables.size(); i++)
     {
-        if (vMemory[i]->getCols(false))
+        if (m_tables[i]->getCols())
             return true;
     }
 
@@ -184,13 +184,14 @@ bool MemoryManager::isValid() const
 ///
 /// \param arr const mu::Array&
 /// \param sTable const std::string&
+/// \param sheet size_t
 /// \return VectorIndex
 ///
 /////////////////////////////////////////////////
-VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string& sTable) const
+VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string& sTable, size_t sheet) const
 {
     if (arr.getCommonType() == mu::TYPE_STRING)
-        return VectorIndex(vMemory[findTable(sTable)]->findCols(arr.as_str_vector(), false, false));
+        return VectorIndex(m_tables[findTable(sTable)]->findCols(arr.as_str_vector(), sheet, false, false));
     else if (arr.getCommonType() == mu::TYPE_NUMERICAL)
         return VectorIndex(arr);
 
@@ -202,7 +203,7 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
             idx.push_back(arr.get(i).getNum().asI64()-1);
         else if (arr.get(i).getType() == mu::TYPE_STRING)
         {
-            std::vector<size_t> cols = vMemory[findTable(sTable)]->findCols({arr.get(i).getStr()}, false, false);
+            std::vector<size_t> cols = m_tables[findTable(sTable)]->findCols({arr.get(i).getStr()}, sheet, false, false);
 
             for (size_t c : cols)
             {
@@ -228,12 +229,12 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
 /////////////////////////////////////////////////
 bool MemoryManager::getSaveStatus() const
 {
-    if (!vMemory.size())
+    if (!m_tables.size())
         return true;
 
-    for (size_t i = 0; i < vMemory.size(); i++)
+    for (size_t i = 0; i < m_tables.size(); i++)
     {
-        if (!vMemory[i]->getSaveStatus())
+        if (!m_tables[i]->getSaveStatus())
             return false;
     }
 
@@ -251,9 +252,9 @@ bool MemoryManager::getSaveStatus() const
 /////////////////////////////////////////////////
 void MemoryManager::setSaveStatus(bool _bIsSaved)
 {
-    for (size_t i = 0; i < vMemory.size(); i++)
+    for (size_t i = 0; i < m_tables.size(); i++)
     {
-        vMemory[i]->setSaveStatus(_bIsSaved);
+        m_tables[i]->setSaveStatus(_bIsSaved);
     }
 }
 
@@ -271,15 +272,15 @@ long long int MemoryManager::getLastSaved() const
 {
     long long int nLastSaved = 0;
 
-    if (!vMemory.size())
+    if (!m_tables.size())
         return 0;
 
-    nLastSaved = vMemory[0]->getLastSaved();
+    nLastSaved = m_tables[0]->getLastSaved();
 
-    for (size_t i = 1; i < vMemory.size(); i++)
+    for (size_t i = 1; i < m_tables.size(); i++)
     {
-        if (vMemory[i]->getLastSaved() < nLastSaved)
-            nLastSaved = vMemory[i]->getLastSaved();
+        if (m_tables[i]->getLastSaved() < nLastSaved)
+            nLastSaved = m_tables[i]->getLastSaved();
     }
 
     return nLastSaved;
@@ -314,7 +315,7 @@ std::vector<int> MemoryManager::sortElements(const std::string& sLine)
     }
     else
     {
-        for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+        for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
         {
             if (findParameter(sLine, iter->first, '='))
             {
@@ -340,9 +341,12 @@ std::vector<int> MemoryManager::sortElements(const std::string& sLine)
     if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
-    return vMemory[findTable(sCache)]->sortElements(VectorIndex(0, getLines(sCache, false)-1),
-                                                    VectorIndex(0, getCols(sCache, false)-1),
-                                                    sSortingExpression);
+    Table& table = getTable(sCache);
+
+    return table.sortElements(VectorIndex(0, table.getRows()-1),
+                              VectorIndex(0, table.getCols()-1),
+                              VectorIndex(0, table.getSheets()-1),
+                              sSortingExpression);
 }
 
 
@@ -352,32 +356,16 @@ std::vector<int> MemoryManager::sortElements(const std::string& sLine)
 /// the passed parameter set.
 ///
 /// \param sCache const std::string&
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \param sSortingExpression const std::string&
 /// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-std::vector<int> MemoryManager::sortElements(const std::string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression)
+std::vector<int> MemoryManager::sortElements(const std::string& sCache, const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, const std::string& sSortingExpression)
 {
-    return vMemory[findTable(sCache)]->sortElements(_vLine, _vCol, sSortingExpression);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function updates the name
-/// of the cache file.
-///
-/// \param _sFileName string
-/// \return void
-///
-/////////////////////////////////////////////////
-void MemoryManager::setCacheFileName(string _sFileName)
-{
-    if (_sFileName.length())
-    {
-        sCache_file = ValidFileName(_sFileName, ".cache");
-    }
+    return m_tables[findTable(sCache)]->sortElements(_vRow, _vCol, _vSheet, sSortingExpression);
 }
 
 
@@ -405,24 +393,26 @@ bool MemoryManager::saveToCacheFile()
     {
         NumeRe::CacheFile cacheFile(sTempFile);
 
-        cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
+        cacheFile.setNumberOfTables(m_tableReferences.size() - isTable("data"));
         cacheFile.writeCacheHeader();
 
-        int nLines;
-        int nCols;
+        int64_t nRows;
+        int64_t nCols;
+        int64_t nLayers;
 
-        for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+        for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
         {
             if (iter->first == "data")
                 continue;
 
-            nLines = vMemory[iter->second.first]->getLines(false);
-            nCols = vMemory[iter->second.first]->getCols(false);
+            nRows = m_tables[iter->second.owned]->getRows();
+            nCols = m_tables[iter->second.owned]->getCols();
+            nLayers = m_tables[iter->second.owned]->getSheets();
 
-            cacheFile.setDimensions(nLines, nCols);
-            cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
+            cacheFile.setDimensions(nRows, nCols, nLayers);
+            cacheFile.setData(&m_tables[iter->second.owned]->m_data, nRows, nCols, nLayers);
             cacheFile.setTableName(iter->first);
-            cacheFile.setComment(vMemory[iter->second.first]->m_meta.comment);
+            cacheFile.setComment(m_tables[iter->second.owned]->m_meta.comment);
 
             success = success && cacheFile.write();
         }
@@ -481,36 +471,36 @@ bool MemoryManager::loadFromNewCacheFile()
         cacheFile.readCacheHeader();
         size_t nCaches = cacheFile.getNumberOfTables();
 
-        for (size_t i = 0; i < vMemory.size(); i++)
-            delete vMemory[i];
+        for (size_t i = 0; i < m_tables.size(); i++)
+            delete m_tables[i];
 
-        vMemory.clear();
-        mCachesMap.clear();
+        m_tables.clear();
+        m_tableReferences.clear();
 
         for (size_t i = 0; i < nCaches; i++)
         {
             cacheFile.read();
 
-            mCachesMap[cacheFile.getTableName()] = std::make_pair(vMemory.size(), vMemory.size());
-            vMemory.push_back(new Memory());
+            m_tableReferences[cacheFile.getTableName()] = TableReference{m_tables.size(), m_tables.size()};
+            m_tables.push_back(new Table());
 
-            vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
-            cacheFile.getData(&vMemory.back()->memArray);
+            m_tables.back()->reserve(cacheFile.getCols(), cacheFile.getLayers());
+            cacheFile.getData(&m_tables.back()->m_data);
 
             if (cacheFile.getComment() != "NO COMMENT")
-                vMemory.back()->m_meta.comment = cacheFile.getComment();
+                m_tables.back()->m_meta.comment = cacheFile.getComment();
         }
 
-        if (mCachesMap.find("table") == mCachesMap.end())
+        if (m_tableReferences.find("table") == m_tableReferences.end())
         {
-            mCachesMap["table"] = std::make_pair(vMemory.size(), vMemory.size());
-            vMemory.push_back(new Memory());
+            m_tableReferences["table"] = TableReference{m_tables.size(), m_tables.size()};
+            m_tables.push_back(new Table());
         }
 
-        if (mCachesMap.find("string") == mCachesMap.end())
+        if (m_tableReferences.find("string") == m_tableReferences.end())
         {
-            mCachesMap["string"] = std::make_pair(vMemory.size(), vMemory.size());
-            vMemory.push_back(new Memory());
+            m_tableReferences["string"] = TableReference{m_tables.size(), m_tables.size()};
+            m_tables.push_back(new Table());
         }
 
         bSaveMutex = false;
@@ -588,11 +578,11 @@ bool MemoryManager::loadFromLegacyCacheFile()
             nLayers *= -1;
             cache_file.read((char*)&cachemapssize, sizeof(size_t));
 
-            for (size_t i = 0; i < vMemory.size(); i++)
-                delete vMemory[i];
+            for (size_t i = 0; i < m_tables.size(); i++)
+                delete m_tables[i];
 
-            vMemory.clear();
-            mCachesMap.clear();
+            m_tables.clear();
+            m_tableReferences.clear();
 
             for (size_t i = 0; i < cachemapssize; i++)
             {
@@ -612,8 +602,8 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
                 delete[] cCachesMap;
                 cCachesMap = 0;
-                mCachesMap[sTemp] = std::pair<size_t,size_t>(nLayerIndex, nLayerIndex);
-                vMemory.push_back(new Memory());
+                m_tableReferences[sTemp] = TableReference{nLayerIndex, nLayerIndex};
+                m_tables.push_back(new Table());
             }
         }
         else
@@ -641,7 +631,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 }
 
                 if (i < (int)cachemapssize)
-                    vMemory[i]->setHeadLineElement(j, sHead);
+                    m_tables[i]->setHeadLineElement(j, 0, sHead);
             }
         }
 
@@ -654,7 +644,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 cache_file.read((char*)dCache, sizeof(double)*nLayers);
 
                 for (long long int k = 0; k < (long long int)cachemapssize; k++)
-                    vMemory[k]->writeData(i, j, dCache[k]);
+                    m_tables[k]->write(i, j, 0, dCache[k]);
             }
         }
 
@@ -667,14 +657,14 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 for (long long int k = 0; k < (long long int)cachemapssize; k++)
                 {
                     if (!bValidData[k])
-                        vMemory[k]->writeData(i, j, NAN);
+                        m_tables[k]->write(i, j, 0, NAN);
                 }
             }
         }
 
-        for (size_t i = 0; i < vMemory.size(); i++)
+        for (size_t i = 0; i < m_tables.size(); i++)
         {
-            vMemory[i]->shrink();
+            m_tables[i]->shrink();
         }
 
         cache_file.close();
@@ -730,50 +720,40 @@ bool MemoryManager::loadFromLegacyCacheFile()
 /// in the selected column range.
 ///
 /// \param cols const VectorIndex&
+/// \param sheets const VectorIndex&
 /// \param _sTable const std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int MemoryManager::getColElements(const VectorIndex& cols, const std::string& _sTable) const
+int MemoryManager::getColElements(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const
 {
     if (!exists(_sTable))
         return 0;
 
-    Memory* _mem = vMemory[findTable(_sTable)];
+    Table* _mem = m_tables[findTable(_sTable)];
 
     int nElems = 0;
 
     if (cols.isOpenEnd())
         cols.setOpenEndIndex(_mem->getCols()-1);
 
-    for (size_t i = 0; i < cols.size(); i++)
+    if (sheets.isOpenEnd())
+        sheets.setOpenEndIndex(_mem->getSheets()-1);
+
+    for (size_t k = 0; k < sheets.size(); k++)
     {
-        if (_mem->getElemsInColumn(cols[i]) > nElems)
-            nElems = _mem->getElemsInColumn(cols[i]);
+        int s = sheets[k];
+
+        if (s < 0 || s >= _mem->getSheets())
+            continue;
+
+        for (size_t i = 0; i < cols.size(); i++)
+        {
+            nElems = std::max(nElems, _mem->getElemsInColumn(cols[i], s));
+        }
     }
 
     return nElems;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function converts the
-/// selected column to the needed type, if this
-/// column shall be overwritten by another than
-/// the current type.
-///
-/// \param col int
-/// \param _sCache const std::string&
-/// \param type TableColumn::ColumnType
-/// \return void
-///
-/////////////////////////////////////////////////
-void MemoryManager::overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type)
-{
-    if (getCols(_sCache) <= col)
-        return;
-
-    convert_for_overwrite(vMemory[findTable(_sCache)]->memArray[col], col, type);
 }
 
 
@@ -792,10 +772,15 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
 {
     int iterationDimension;
 
+#warning TODO (numere#1#10/25/26): Fix the sheets in this function
+    size_t sheet = 0;
+
+    const Table& table = getTable(sTableName);
+
     if (sType == "every")
-        iterationDimension = sDir.find("cols") != std::string::npos ? getCols(sTableName) : getLines(sTableName);
+        iterationDimension = sDir.find("cols") != std::string::npos ? table.getCols() : table.getRows();
     else
-        iterationDimension = sDir.find("cols") != std::string::npos ? getLines(sTableName) : getCols(sTableName);
+        iterationDimension = sDir.find("cols") != std::string::npos ? table.getRows() : table.getCols();
 
     if (sDir.find(sType + "=(") != std::string::npos
         && (sDir.find("cols") != std::string::npos || sDir.find("lines") != std::string::npos))
@@ -816,7 +801,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             _parser.SetExpr(sEveryCell);
             int nResults;
             const mu::StackItem* v = _parser.Eval(nResults);
-            return arrayToIndex(v[0].get(), sTableName);
+            return arrayToIndex(v[0].get(), sTableName, sheet);
         }
         else
         {
@@ -850,7 +835,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return arrayToIndex(v[0].get(), sTableName);
+                return arrayToIndex(v[0].get(), sTableName, sheet);
         }
     }
 
@@ -870,28 +855,36 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, std::complex<double> (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
+std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& sTableName,
+                                                            std::string sDir,
+                                                            std::complex<double> (MemoryManager::*MAF)(const std::string&,
+                                                                                                       const VectorIndex&,
+                                                                                                       const VectorIndex&,
+                                                                                                       const VectorIndex&) const) const
 {
     std::vector<std::complex<double>> vResults;
-    int nlines = getLines(sTableName, false);
-    int ncols = getCols(sTableName, false);
+    const Table& table = getTable(sTableName);
+    int nlines = table.getRows();
+    int ncols = table.getCols();
+    int nsheets = table.getSheets();
 
     // Find the "grid" parameter and use it as an offset
     int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
-
-    // If a grid is required, get the grid dimensions
-    // of this table
-    if (nGridOffset)
-    {
-        std::vector<std::complex<double>> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
-        nlines = vSize.front().real();
-        ncols = vSize.back().real()+nGridOffset; // compensate the offset
-    }
 
     // Get the vector index corresponding to a possible
     // every or cell definition
     VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTableName);
     VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTableName);
+    VectorIndex _sheetIdx(0, nsheets-1);
+
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), _sheetIdx.front(), GRID);
+        nlines = vSize.front().real();
+        ncols = vSize.back().real()+nGridOffset; // compensate the offset
+    }
 
     // Get the moving window definition
     WindowSet win(sDir);
@@ -918,12 +911,16 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
                 {
                     vResults.push_back((this->*MAF)(sTableName,
                                                     _cellsIdx.subidx(nCurStep, win.rowWin.width),
-                                                    VectorIndex(_everyIdx[i]+nGridOffset)));
+                                                    VectorIndex(_everyIdx[i]+nGridOffset),
+                                                    _sheetIdx));
                     nCurStep += win.rowWin.step;
                 }
             }
             else
-                vResults.push_back((this->*MAF)(sTableName, _cellsIdx, VectorIndex(_everyIdx[i]+nGridOffset)));
+                vResults.push_back((this->*MAF)(sTableName,
+                                                _cellsIdx,
+                                                VectorIndex(_everyIdx[i]+nGridOffset),
+                                                _sheetIdx));
         }
     }
     else if (sDir.find("lines") != std::string::npos)
@@ -945,16 +942,23 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
                 {
                     vResults.push_back((this->*MAF)(sTableName,
                                                     VectorIndex(_everyIdx[i]),
-                                                    _cellsIdx.subidx(nCurStep, win.colWin.width)));
+                                                    _cellsIdx.subidx(nCurStep, win.colWin.width),
+                                                    _sheetIdx));
                     nCurStep += win.colWin.step;
                 }
             }
             else
-                vResults.push_back((this->*MAF)(sTableName, VectorIndex(_everyIdx[i]), _cellsIdx));
+                vResults.push_back((this->*MAF)(sTableName,
+                                                VectorIndex(_everyIdx[i]),
+                                                _cellsIdx,
+                                                _sheetIdx));
         }
     }
     else
-        vResults.push_back((this->*MAF)(sTableName, VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(nGridOffset, VectorIndex::OPEN_END)));
+        vResults.push_back((this->*MAF)(sTableName,
+                                        VectorIndex(0, VectorIndex::OPEN_END),
+                                        VectorIndex(nGridOffset, VectorIndex::OPEN_END),
+                                        _sheetIdx));
 
     if (!vResults.size())
         vResults.push_back(NAN);
@@ -973,7 +977,7 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
 /////////////////////////////////////////////////
 void MemoryManager::removeData(bool bAutoSave)
 {
-    if (vMemory.size() && mCachesMap.find("data") != mCachesMap.end())
+    if (m_tables.size() && m_tableReferences.find("data") != m_tableReferences.end())
     {
         deleteTable("data");
         sDataFile = "";
@@ -982,21 +986,66 @@ void MemoryManager::removeData(bool bAutoSave)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function returns a pointer
-/// to an existing Memory instance representing
-/// the selected table or a nullpointer, if the
-/// table does not exist.
+/// \brief This member function returns a
+/// reference to an existing Memory instance
+/// representing the selected table. Throws, if
+/// the table does not exist.
 ///
 /// \param sTable const string&
-/// \return Memory*
+/// \return Memory&
 ///
 /////////////////////////////////////////////////
-Memory* MemoryManager::getTable(const string& sTable)
+Table& MemoryManager::getTable(const string& sTable)
 {
-    if (mCachesMap.find(sTable.substr(0, sTable.find('('))) == mCachesMap.end())
-        return nullptr;
+    return *m_tables[findTable(sTable.substr(0, sTable.find('(')))];
+}
 
-    return vMemory[findTable(sTable.substr(0, sTable.find('(')))];
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a
+/// reference to an existing Memory instance
+/// representing the selected table. Throws, if
+/// the table does not exist.
+///
+/// \param sTable StringView
+/// \return Memory&
+///
+/////////////////////////////////////////////////
+Table& MemoryManager::getTable(StringView sTable)
+{
+    return *m_tables[mapStringViewFind(sTable.subview(0, sTable.find('(')))];
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a const
+/// reference to an existing Memory instance
+/// representing the selected table. Throws, if
+/// the table does not exist.
+///
+/// \param sTable const string&
+/// \return const Memory&
+///
+/////////////////////////////////////////////////
+const Table& MemoryManager::getTable(const string& sTable) const
+{
+    return *m_tables[findTable(sTable.substr(0, sTable.find('(')))];
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a const
+/// reference to an existing Memory instance
+/// representing the selected table. Throws, if
+/// the table does not exist.
+///
+/// \param sTable StringView
+/// \return const Memory&
+///
+/////////////////////////////////////////////////
+const Table& MemoryManager::getTable(StringView sTable) const
+{
+    return *m_tables[mapStringViewFind(sTable.subview(0, sTable.find('(')))];
 }
 
 
@@ -1012,13 +1061,13 @@ Memory* MemoryManager::getTable(const string& sTable)
 /////////////////////////////////////////////////
 void MemoryManager::copyTable(const std::string& source, const std::string& target)
 {
-    Memory* sourceTable = vMemory[findTable(source.substr(0, source.find('(')))];
+    Table* sourceTable = m_tables[findTable(source.substr(0, source.find('(')))];
 
     // Create the target table, if it does not exist
     if (!exists(target.substr(0, target.find('('))))
         addTable(target, NumeReKernel::getInstance()->getSettings());
 
-    Memory* targetTable = vMemory[findTable(target.substr(0, target.find('(')))];
+    Table* targetTable = m_tables[findTable(target.substr(0, target.find('(')))];
 
     // Use the assignment operator overload
     *targetTable = *sourceTable;
@@ -1040,22 +1089,25 @@ void MemoryManager::copyTable(const std::string& source, const std::string& targ
 /////////////////////////////////////////////////
 void MemoryManager::copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx)
 {
-    if (sourceIdx.row.isFullRange(getLines(source)-1) && sourceIdx.col.isFullRange(getCols(source)-1)
-        && targetIdx.row.isFullRange(getLines(target)-1) && targetIdx.col.isFullRange(getCols(target)-1))
+    Table& sourceTable = getTable(source);
+    Table& targetTable = getTable(target);
+
+    if (sourceIdx.row.isFullRange(sourceTable.getRows()-1) && sourceIdx.col.isFullRange(sourceTable.getCols()-1)
+        && targetIdx.row.isFullRange(targetTable.getRows()-1) && targetIdx.col.isFullRange(targetTable.getCols()-1))
     {
         copyTable(source, target);
         return;
     }
 
     // Get the extract as a table
-    NumeRe::Table extract = extractTable(source, sourceIdx.row, sourceIdx.col);
+    NumeRe::TableView extract = sourceTable.extractView(source, sourceIdx.row, sourceIdx.col, sourceIdx.layer);
 
     // Create the target table, if it does not exist
     if (!exists(target.substr(0, target.find('('))))
         addTable(target, NumeReKernel::getInstance()->getSettings());
 
     // Insert the copied table at the new location
-    insertCopiedTable(extract, target, targetIdx.row, targetIdx.col, false);
+    targetTable.insertCopiedView(extract, targetIdx.row, targetIdx.col, targetIdx.layer, false);
 }
 
 
@@ -1072,45 +1124,44 @@ void MemoryManager::copyTable(const std::string& source, const Indices& sourceId
 /// \return void
 ///
 /////////////////////////////////////////////////
-void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget)
+void MemoryManager::melt(Table* _mem, const string& sTable, bool overrideTarget)
 {
     // Ensure that the table exists
-    if (!_mem || !_mem->memArray.size())
+    if (!_mem || _mem->m_data.empty())
         return;
 
     // Is a corresponding table known?
-    if (mCachesMap.find(sTable) == mCachesMap.end())
+    if (m_tableReferences.find(sTable) == m_tableReferences.end())
     {
         // Append the new table
-        mCachesMap[sTable] = std::make_pair(vMemory.size(), vMemory.size());
-        vMemory.push_back(_mem);
+        m_tableReferences[sTable] = TableReference{m_tables.size(), m_tables.size()};
+        m_tables.push_back(_mem);
     }
     else if (overrideTarget)
     {
         // Shall the original table be overwritten?
-        delete vMemory[mCachesMap[sTable].second];
-        vMemory[mCachesMap[sTable].second] = _mem;
+        delete m_tables[m_tableReferences[sTable].referenced];
+        m_tables[m_tableReferences[sTable].referenced] = _mem;
     }
     else
     {
         // Combine both tables
-        Memory* _existingMem = vMemory[mCachesMap[sTable].second];
+        Table* _existingMem = m_tables[m_tableReferences[sTable].referenced];
 
-        size_t nCols = _existingMem->memArray.size();
+        size_t sheets = _existingMem->m_data.sheets();
 
         // Resize the existing table to fit the contents
         // of both tables
-        _existingMem->resizeMemory(1, nCols + _mem->memArray.size());
+        _existingMem->m_data.reserve(sheets + _mem->m_data.sheets());
 
         // Move the contents
-        for (size_t j = 0; j < _mem->memArray.size(); j++)
+        for (size_t k = 0; k < _mem->m_data.sheets(); k++)
         {
-            if (_mem->memArray[j])
-                _existingMem->memArray[j+nCols].reset(_mem->memArray[j].release());
+            if (_mem->m_data.m_sheets[k])
+                _existingMem->m_data.m_sheets[k+sheets].reset(_mem->m_data.m_sheets[k].release());
         }
 
         _existingMem->setSaveStatus(false);
-        _existingMem->nCalcLines = -1;
         _existingMem->setMetaData(_existingMem->getMetaData().melt(_mem->getMetaData()));
 
         // Delete the passed instance (it is not
@@ -1133,8 +1184,8 @@ bool MemoryManager::updateDimensionVariables(StringView sTableName) const
 {
     // Update the dimensions for the selected
     // table
-    tableLinesCount = mu::Value(getLines(sTableName, false));
-    tableColumnsCount = mu::Value(getCols(sTableName, false));
+    tableLinesCount = mu::Value(getTable(sTableName).getRows());
+    tableColumnsCount = mu::Value(getTable(sTableName).getCols());
 
     return true;
 }
@@ -1195,7 +1246,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
             }
 
             // Try to find the candidate in the internal map
-            if (mCachesMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
+            if (m_tableReferences.find(sCmdLine.substr(nStartPos, i - nStartPos)) != m_tableReferences.end())
                 return true;
         }
 
@@ -1247,7 +1298,7 @@ bool MemoryManager::isTable(const std::string& sTable, bool only) const
                  || getMatchingParenthesis(sTable) != sTable.length() - 1))
         return false;
 
-    if (mCachesMap.find(sTable.substr(0, sTable.find('('))) != mCachesMap.end())
+    if (m_tableReferences.find(sTable.substr(0, sTable.find('('))) != m_tableReferences.end())
         return true;
 
     return false;
@@ -1273,7 +1324,7 @@ bool MemoryManager::isTable(StringView sTable, bool only) const
     sTable = sTable.subview(0, sTable.find('('));
     sTable.strip();
 
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
     {
         if (sTable == iter->first)
             return true;
@@ -1340,7 +1391,7 @@ bool MemoryManager::containsTables(const std::string& sExpression)
             }
 
             // Try to find the candidate in the internal map
-            if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
+            if (m_tableReferences.find(sExpression.substr(nStartPos, i - nStartPos)) != m_tableReferences.end())
                 return true;
         }
     }
@@ -1381,7 +1432,7 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 
     // Ensure that the new table does not already
     // exist
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
     {
         if (iter->first == sCacheName)
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName+"()");
@@ -1396,8 +1447,8 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
         NumeReKernel::print(LineBreak(_lang.get("CACHE_WARNING_PLUGIN_OVERLAP"), _option));
 
     // Actually create the new table
-    mCachesMap[sCacheName] = std::make_pair(vMemory.size(), vMemory.size());
-    vMemory.push_back(new Memory());
+    m_tableReferences[sCacheName] = TableReference{m_tables.size(), m_tables.size()};
+    m_tables.push_back(new Table());
 
     return true;
 }
@@ -1416,32 +1467,32 @@ bool MemoryManager::deleteTable(const string& sTable)
     if (sTable == "table" || sTable == "string")
         return false;
 
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    for (auto iter = m_tableReferences.begin(); iter != m_tableReferences.end(); ++iter)
     {
         if (iter->first == sTable)
         {
-            if (vMemory.size() > iter->second.first)
+            if (m_tables.size() > iter->second.owned)
             {
-                delete vMemory[iter->second.first];
-                vMemory.erase(vMemory.begin() + iter->second.first);
+                delete m_tables[iter->second.owned];
+                m_tables.erase(m_tables.begin() + iter->second.owned);
             }
             else
                 return false;
 
-            for (auto iter2 = mCachesMap.begin(); iter2 != mCachesMap.end(); ++iter2)
+            for (auto iter2 = m_tableReferences.begin(); iter2 != m_tableReferences.end(); ++iter2)
             {
-                if (iter2->second.first > iter->second.first)
-                    iter2->second.first--;
+                if (iter2->second.owned > iter->second.owned)
+                    iter2->second.owned--;
 
-                if (iter2->second.second > iter->second.first)
-                    iter2->second.second--;
-                else if (iter2->second.second == iter->second.first)
-                    iter2->second.second = iter2->second.first;
+                if (iter2->second.referenced > iter->second.owned)
+                    iter2->second.referenced--;
+                else if (iter2->second.referenced == iter->second.owned)
+                    iter2->second.referenced = iter2->second.owned;
 
-                mCachesMap[iter2->first] = iter2->second;
+                m_tableReferences[iter2->first] = iter2->second;
             }
 
-            mCachesMap.erase(iter);
+            m_tableReferences.erase(iter);
 
             if (getSaveStatus() && MemoryManager::isValid())
                 setSaveStatus(false);

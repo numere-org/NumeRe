@@ -472,7 +472,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Write the return values to cache
     if (bWriteToCache)
-        _data.writeToTable(_idx, sCache, v[0].get());
+        _data.getTable(sCache).write(_idx, v[0].get());
 
     // Clear the vector variables after the loop returned
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
@@ -1385,8 +1385,10 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                             else
                                 _data.copyTable(_return.sReturnedTable, sTargetTable);
 
-                            sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_data.getLines(sTargetTable),
-                                                                                             _data.getCols(sTargetTable)}))
+                            Table& target = _data.getTable(sTargetTable);
+
+                            sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({target.getRows(),
+                                                                                             target.getCols()}))
                                     + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                         }
                         else
@@ -2700,8 +2702,8 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             // Copy efficient move operations
             if (_return.delayDelete
                 && sTargetTable.ends_with("()")
-                && _return.sourceIdx.row.isFullRange(_data.getLines(_return.sReturnedTable)-1)
-                && _return.sourceIdx.col.isFullRange(_data.getCols(_return.sReturnedTable)-1))
+                && _return.sourceIdx.row.isFullRange(_data.getTable(_return.sReturnedTable).getRows()-1)
+                && _return.sourceIdx.col.isFullRange(_data.getTable(_return.sReturnedTable).getCols()-1))
             {
                 sTargetTable.erase(sTargetTable.find('('));
 
@@ -2734,9 +2736,10 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
         {
             // If we only return a single row or column, then we can convert
             // it in a simple vector instead
-            _parser.SetInternalVar(sReplaceName, _data.getElement(_return.sourceIdx.row,
-                                                                  _return.sourceIdx.col,
-                                                                  _return.sReturnedTable));
+            _parser.SetInternalVar(sReplaceName,
+                                   _data.getTable(_return.sReturnedTable).read(_return.sourceIdx.row,
+                                                                               _return.sourceIdx.col,
+                                                                               _return.sourceIdx.layer));
             sLine.replace(nPos, nPos2-nPos, sReplaceName);
 
             if (_return.delayDelete)

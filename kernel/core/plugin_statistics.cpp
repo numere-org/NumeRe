@@ -74,22 +74,22 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
     for (size_t j = 0; j < _idx.col.size(); j++)
     {
-        bool isValueLike = _data.isValueLike(_idx.col.subidx(j, 1), sTable);
+        bool isValueLike = _data.isValueLike(_idx.col.subidx(j, 1), _idx.layer.front(), sTable);
 
         // Calculate built-in statistical values (short-cuts)
-        vStats[STATS_AVG].push_back(isValueLike ? _data.avg(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_STD].push_back(isValueLike ? _data.std(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_MED].push_back(isValueLike ? _data.med(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_Q1].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.25).real() : NAN);
-        vStats[STATS_Q3].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.75).real() : NAN);
-        vStats[STATS_MIN].push_back(isValueLike ? _data.min(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_MAX].push_back(isValueLike ? _data.max(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_NUM].push_back(_data.num(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_CNT].push_back(_data.cnt(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
-        vStats[STATS_RMS].push_back(isValueLike ? _data.rms(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_EXC].push_back(isValueLike ? _data.exc(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_SKEW].push_back(isValueLike ? _data.skew(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
-        vStats[STATS_STDERR].push_back(isValueLike ? _data.stderr_func(sTable, _idx.row, _idx.col.subidx(j, 1)).real() : NAN);
+        vStats[STATS_AVG].push_back(isValueLike ? _data.avg(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_STD].push_back(isValueLike ? _data.std(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_MED].push_back(isValueLike ? _data.med(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_Q1].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front(), 0.25).real() : NAN);
+        vStats[STATS_Q3].push_back(isValueLike ? _data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front(), 0.75).real() : NAN);
+        vStats[STATS_MIN].push_back(isValueLike ? _data.min(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_MAX].push_back(isValueLike ? _data.max(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_NUM].push_back(_data.num(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real());
+        vStats[STATS_CNT].push_back(_data.cnt(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real());
+        vStats[STATS_RMS].push_back(isValueLike ? _data.rms(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_EXC].push_back(isValueLike ? _data.exc(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_SKEW].push_back(isValueLike ? _data.skew(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
+        vStats[STATS_STDERR].push_back(isValueLike ? _data.stderr_func(sTable, _idx.row, _idx.col.subidx(j, 1), _idx.layer.front()).real() : NAN);
 
         // Many values make no sense if no data
         // is available
@@ -194,7 +194,8 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
 {
     int nLine = vStats.size();
     int nCol = vStats[0].size();
-    int nHeadlines = _data.getHeadlineCount(sTable);
+    const Table& table = _data.getTable(sTable);
+    int nHeadlines = table.getHeadlineCount(_idx.layer.front());
     const int nPrecision = 4;
 
     // Create an output string matrix
@@ -216,7 +217,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         }
 
         // Add the headlines to the columns
-        std::string sHeadline = _data.getHeadLineElement(_idx.col[j], sTable);
+        std::string sHeadline = table.getHeadLineElement(_idx.col[j], _idx.layer.front());
 
         for (int i = 0; i < nHeadlines; i++)
         {
@@ -234,13 +235,13 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         // Write the table values to the single columns
         for (int i = 0; i < nLine; i++)
         {
-            if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
+            if (!table.isValidElement(_idx.row[i], _idx.col[j], _idx.layer.front()))
             {
                 sOut[i + nHeadlines][j] = "---";
                 continue;
             }
 
-            sOut[i + nHeadlines][j] = _data.getElement(_idx.row[i], _idx.col[j], sTable).print(_option.getPrecision()); // Kopieren der Matrix in die Ausgabe
+            sOut[i + nHeadlines][j] = table.read(_idx.row[i], _idx.col[j], _idx.layer.front()).print(_option.getPrecision()); // Kopieren der Matrix in die Ausgabe
         }
 
         // Write the calculated stats to the columns
@@ -290,7 +291,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
 static void createStatsOutput(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Indices& _idx, const Settings& _option)
 {
     int nCol = vStats[0].size();
-    int nHeadlines = _data.getHeadlineCount(sTable);
+    int nHeadlines = _data.getTable(sTable).getHeadlineCount(_idx.layer.front());
     const int nPrecision = 4;
 
     // Redirect the control, if necessary
@@ -305,8 +306,8 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
     for (int j = 0; j < nCol; j++)
     {
         // Write the table column headlines
-        std::string sHeadline = _data.getHeadLineElement(_idx.col[j], sTable);
-        std::string sUnit = _data.getUnit(_idx.col[j], sTable);
+        std::string sHeadline = _data.getHeadLineElement(_idx.col[j], _idx.layer.front(), sTable);
+        std::string sUnit = _data.getTable(sTable).getUnit(_idx.col[j], _idx.layer.front());
 
         if (sUnit.length())
             sUnit.insert(0, 1, ' ');
@@ -439,29 +440,35 @@ void plugin_statistics(CommandLineParser& cmdParser)
     // target table was specified
     if (sTarget.length())
     {
+        Table& target = _data.getTable(sTarget);
+
         for (size_t i = 0; i < vStats.size(); i++)
         {
             for (size_t j = 0; j < vStats[i].size(); j++)
             {
                 if (!i && j < _idx.col.size())
-                    _data.setHeadLineElement(_idx.col[j+1], sTarget, _data.getHeadLineElement(accessParser.getIndices().col[j], sDatatable));
+                    target.setHeadLineElement(_idx.col[j+1],
+                                              _idx.layer.front(),
+                                              _data.getHeadLineElement(accessParser.getIndices().col[j],
+                                                                       accessParser.getIndices().layer.front(),
+                                                                       sDatatable));
 
                 if (!vStats[STATS_NUM][j])
                     continue;
 
                 if (i < _idx.row.size() && j < _idx.col.size())
-                    _data.writeToTable(_idx.row[i], _idx.col[j+1], sTarget, vStats[i][j]);
+                    target.write(_idx.row[i], _idx.col[j+1], _idx.layer.front(), vStats[i][j]);
             }
         }
 
         std::vector<std::string> sRet;
-        _data.convertColumns(sTarget, _idx.col.subidx(0, 1), "string");
-        _data.setHeadLineElement(_idx.col[0], sTarget, "Stats");
+        target.convertColumns(_idx.col.subidx(0, 1), _idx.layer.front(), "string");
+        target.setHeadLineElement(_idx.col[0], _idx.layer.front(), "Stats");
 
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
             sRet.push_back(getStatFieldName(n));
-            _data.writeToTable(_idx.row[n], _idx.col[0], sTarget, getStatFieldName(n));
+            target.write(_idx.row[n], _idx.col[0], _idx.layer.front(), getStatFieldName(n));
         }
 
         cmdParser.setReturnValue(sRet);

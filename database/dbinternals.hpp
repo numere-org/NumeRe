@@ -54,7 +54,7 @@ int64_t openDbConnection(const std::string& fileName, DatabaseType type = DB_SQL
 int64_t openDbConnection(const std::string& host, const std::string& user, const std::string& password,
                          const std::string& dbname, size_t port = 0, DatabaseType type = DB_MYSQL, const std::string& driver = "", const std::string& sConnectionString = "");
 bool closeDbConnection(int64_t dbId);
-NumeRe::Table executeSql(int64_t dbId, const SqlStatement& statement);
+NumeRe::TableView executeSql(int64_t dbId, const SqlStatement& statement);
 std::vector<std::string> getOdbcDrivers();
 
 #endif // DBINTERNALS_HPP

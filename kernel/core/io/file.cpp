@@ -279,8 +279,9 @@ namespace NumeRe
 
 		// Create the target storage
 		createStorage();
+		TableSheet& sheet = fileData->getSheet(0);
 
-		for (TblColPtr& col : *fileData)
+		for (TblColPtr& col : sheet.getCols())
         {
             col.reset(new StringColumn);
         }
@@ -313,7 +314,7 @@ namespace NumeRe
 
                 // Do not add tokenizer placeholders
                 if (vLine[j] != "_")
-                    fileData->at(j)->setValue(nLine, vLine[j]);
+                    sheet.getCols().at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
@@ -429,10 +430,10 @@ namespace NumeRe
                 fFileStream.precision(nPrecFields);
 
                 // Handle NaNs correctly
-                if (!fileData->at(j)->isValid(i))
+                if (!fileData->getSheet(0).getCols().at(j)->isValid(i))
                     fFileStream << "---";
                 else
-                    fFileStream << fileData->at(j)->get(i).printVal(nPrecFields);
+                    fFileStream << fileData->getSheet(0).getCols().at(j)->get(i).printVal(nPrecFields);
             }
 
             fFileStream.width(0);
@@ -854,16 +855,18 @@ namespace NumeRe
                                 break;
                         }
 
+                        TableSheet& sheet = fileData->getSheet(0);
+
                         // Copy the decoded column headings to
                         // the internal memory
                         for (size_t col = 0; col < std::min(vHeadline.size(), (size_t)nCols); col++)
                         {
-                            if (!fileData->at(col))
-                                fileData->at(col).reset(new StringColumn);
+                            if (!sheet.getCols().at(col))
+                                sheet.getCols().at(col).reset(new StringColumn);
 
                             std::pair<std::string, std::string> headAndUnit = findAndParseUnit(vHeadline[col]);
-                            fileData->at(col)->m_sHeadLine = headAndUnit.first;
-                            fileData->at(col)->m_sUnit = headAndUnit.second;
+                            sheet.getCols().at(col)->m_sHeadLine = headAndUnit.first;
+                            sheet.getCols().at(col)->m_sUnit = headAndUnit.second;
                         }
 
                         // Return here
@@ -891,42 +894,44 @@ namespace NumeRe
         const size_t DATEFIELDLENGTH = 24;
         const size_t DURATIONFIELDLENGTH = 28;
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Go through the column heads in memory, determine
         // their cell extents and store the maximal value of
         // the extents and the needed width for the numerical
         // value
         for (long long int j = 0; j < nCols; j++)
         {
-            if (!fileData->at(j))
+            if (!sheet.getCols().at(j))
             {
                 vColumnWidths.push_back(TableColumn::getDefaultColumnHead(j).length());
                 continue;
             }
 
-            std::pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine, fileData->at(j)->m_sUnit);
+            std::pair<size_t, size_t> pCellExtents = calculateCellExtents(sheet.getCols().at(j)->m_sHeadLine, sheet.getCols().at(j)->m_sUnit);
 
-            if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+            if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_STRING)
             {
                 size_t len = 4;
 
-                for (size_t i = 0; i < fileData->at(j)->size(); i++)
+                for (size_t i = 0; i < sheet.getCols().at(j)->size(); i++)
                 {
-                    len = std::max(len, fileData->at(j)->getValueAsInternalString(i).length());
+                    len = std::max(len, sheet.getCols().at(j)->getValueAsInternalString(i).length());
                 }
 
                 vColumnWidths.push_back(std::max(len, pCellExtents.first));
             }
-            else if (fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL)
+            else if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_CATEGORICAL)
             {
-                const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(fileData->at(j).get())->getCategories();
+                const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(sheet.getCols().at(j).get())->getCategories();
                 size_t maxCat = std::max_element(vCategories.begin(), vCategories.end(),
                                                  [](const std::string& cat1, const std::string& cat2)
                                                  {return cat1.length() < cat2.length();})->length();
                 vColumnWidths.push_back(std::max({maxCat, pCellExtents.first, size_t(4)}));
             }
-            else if (fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
+            else if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_DATETIME)
                 vColumnWidths.push_back(std::max(DATEFIELDLENGTH, pCellExtents.first));
-            else if (fileData->at(j)->m_type == TableColumn::TYPE_DURATION)
+            else if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_DURATION)
                 vColumnWidths.push_back(std::max(DURATIONFIELDLENGTH, pCellExtents.first));
             else
                 vColumnWidths.push_back(std::max(NUMBERFIELDLENGTH, pCellExtents.first));
@@ -1001,6 +1006,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void MarkDownFile::writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
+        TableSheet& sheet = fileData->getSheet(0);
+
         for (size_t i = 0; i < nNumberOfLines; i++)
         {
             fFileStream << "| ";
@@ -1009,7 +1016,7 @@ namespace NumeRe
             {
                 fFileStream.width(vColumnWidth[j]);
                 fFileStream.fill(' ');
-                std::string sHead = fileData->at(j)->m_sHeadLine;
+                std::string sHead = sheet.getCols().at(j)->m_sHeadLine;
                 replaceAll(sHead, "\n", " ");
                 fFileStream << sHead;
 
@@ -1036,6 +1043,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void MarkDownFile::writeTableContents(const std::vector<size_t>& vColumnWidth)
     {
+        TableSheet& sheet = fileData->getSheet(0);
+
         for (long long int i = 0; i < nRows; i++)
         {
             fFileStream << "| ";
@@ -1047,16 +1056,17 @@ namespace NumeRe
                 fFileStream.precision(nPrecFields);
 
                 // Handle NaNs correctly
-                if (!fileData->at(j)->isValid(i))
+                if (!sheet.getCols().at(j)->isValid(i))
                     fFileStream << "---";
-                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                else if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_STRING)
                 {
-                    std::string cellValue = fileData->at(j)->get(i).printVal();
+                    std::string cellValue = sheet.getCols().at(j)->get(i).printVal();
                     replaceAll(cellValue, "\n", " ");
                     fFileStream << cellValue;
                 }
                 else
-                    fFileStream << fileData->at(j)->get(i).printVal(nPrecFields) + formatUnit(fileData->at(j)->m_sUnit);
+                    fFileStream << sheet.getCols().at(j)->get(i).printVal(nPrecFields)
+                        + formatUnit(sheet.getCols().at(j)->m_sUnit);
 
                 if (j+1 < nCols)
                 {
@@ -1082,12 +1092,13 @@ namespace NumeRe
     void MarkDownFile::addSeparator(const std::vector<size_t>& vColumnWidth)
     {
         fFileStream << "|";
+        TableSheet& sheet = fileData->getSheet(0);
 
         for (size_t j = 0; j < vColumnWidth.size(); j++)
         {
-            if (fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL
-                || fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL
-                || fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+            if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_LOGICAL
+                || sheet.getCols().at(j)->m_type == TableColumn::TYPE_CATEGORICAL
+                || sheet.getCols().at(j)->m_type == TableColumn::TYPE_STRING)
                 fFileStream << ":";
             else
                 fFileStream << " ";
@@ -1096,11 +1107,11 @@ namespace NumeRe
             fFileStream.fill('-');
             fFileStream << "-";
 
-            if (fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL
-                || fileData->at(j)->m_type == TableColumn::TYPE_CATEGORICAL
-                || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME
-                || fileData->at(j)->m_type == TableColumn::TYPE_DURATION
-                || TableColumn::isValueType(fileData->at(j)->m_type))
+            if (sheet.getCols().at(j)->m_type == TableColumn::TYPE_LOGICAL
+                || sheet.getCols().at(j)->m_type == TableColumn::TYPE_CATEGORICAL
+                || sheet.getCols().at(j)->m_type == TableColumn::TYPE_DATETIME
+                || sheet.getCols().at(j)->m_type == TableColumn::TYPE_DURATION
+                || TableColumn::isValueType(sheet.getCols().at(j)->m_type))
                 fFileStream << ":";
             else
                 fFileStream << " ";
@@ -1137,6 +1148,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void HtmlFile::writeFile()
     {
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Open the file
         open(std::ios::out | std::ios::trunc);
         fFileStream << "<!DOCTYPE html>\n<meta charset=\"UTF-8\">\n<html>\n<head>\n<title>Table: " << sTableName << "</title>\n";
@@ -1145,9 +1158,9 @@ namespace NumeRe
 
         for (int n = 0; n < nCols; n++)
         {
-            std::string sHead = fileData->at(n)->m_sHeadLine;
+            std::string sHead = sheet.getCols().at(n)->m_sHeadLine;
             replaceAll(sHead, "\n", "<br/>");
-            fFileStream << "\t\t<th>" << ansiToUtf8(sHead) << "</th>\n";
+            fFileStream << "\t\t<th>" << sHead << "</th>\n";
         }
 
         fFileStream << "\t</tr>\n";
@@ -1158,24 +1171,24 @@ namespace NumeRe
 
             for (int m = 0; m < nCols; m++)
             {
-                if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL
-                    || fileData->at(m)->m_type == TableColumn::TYPE_CATEGORICAL)
+                if (sheet.getCols().at(m)->m_type == TableColumn::TYPE_LOGICAL
+                    || sheet.getCols().at(m)->m_type == TableColumn::TYPE_CATEGORICAL)
                     fFileStream << "\t\t<td align=\"center\">";
-                else if (TableColumn::isValueType(fileData->at(m)->m_type)
-                         || fileData->at(m)->m_type == TableColumn::TYPE_DATETIME
-                         || fileData->at(m)->m_type == TableColumn::TYPE_DURATION)
+                else if (TableColumn::isValueType(sheet.getCols().at(m)->m_type)
+                         || sheet.getCols().at(m)->m_type == TableColumn::TYPE_DATETIME
+                         || sheet.getCols().at(m)->m_type == TableColumn::TYPE_DURATION)
                     fFileStream << "\t\t<td align=\"right\">";
                 else
                     fFileStream << "\t\t<td>";
 
-                if (!fileData->at(m)->isValid(n))
+                if (!sheet.getCols().at(m)->isValid(n))
                     fFileStream << "&mdash;" << "</td>\n";
                 else
                 {
-                    if (fileData->at(m)->m_type == TableColumn::TYPE_LOGICAL || fileData->at(m)->m_type == TableColumn::TYPE_STRING)
-                        fFileStream << ansiToUtf8(mu::to_html(fileData->at(m)->get(n))) << "</td>\n";
+                    if (sheet.getCols().at(m)->m_type == TableColumn::TYPE_LOGICAL || sheet.getCols().at(m)->m_type == TableColumn::TYPE_STRING)
+                        fFileStream << mu::to_html(sheet.getCols().at(m)->get(n)) << "</td>\n";
                     else
-                        fFileStream << mu::to_html(fileData->at(m)->get(n)) + formatUnit(fileData->at(m)->m_sUnit) << "</td>\n";
+                        fFileStream << mu::to_html(sheet.getCols().at(m)->get(n)) + formatUnit(sheet.getCols().at(m)->m_sUnit) << "</td>\n";
                 }
             }
 
@@ -1259,17 +1272,27 @@ namespace NumeRe
         writeStringField("FTYPE=LLINT");
         int64_t t = _time64(0);
         writeNumBlock<int64_t>(&t, 1);
-        writeStringField("FTYPE=DOUBLE");
-        writeNumBlock<double>(nullptr, 0);
-        writeStringField("FTYPE=DOUBLE");
-        writeNumBlock<double>(nullptr, 0);
+
+        std::vector<uint64_t> sheetSizes;
+        std::vector<std::string> sheetNames;
+
+        for (const TblSheetPtr& sheet : fileData->m_sheets)
+        {
+            sheetSizes.push_back(sheet->cols());
+            sheetNames.push_back(sheet->m_sheetName);
+        }
+
+        writeStringField("FTYPE=LUINT");
+        writeNumBlock<uint64_t>(&sheetSizes[0], sheetSizes.size());
+        writeStringField("FTYPE=STRING");
+        writeNumBlock<std::string>(&sheetNames[0], sheetNames.size());
         writeStringField("FTYPE=DOUBLE");
         writeNumBlock<double>(nullptr, 0);
 
         // Finally, write the dimensions of the
         // target data
         writeNumField(nRows);
-        writeNumField(nCols);
+        writeNumField((int64_t)std::accumulate(sheetSizes.begin(), sheetSizes.end(), 0ull));
     }
 
 
@@ -1319,8 +1342,13 @@ namespace NumeRe
         writeHeader();
 
         // Write the columns
-        for (TblColPtr& col : *fileData)
-            writeColumn(col);
+        for (const TblSheetPtr& sheet : fileData->m_sheets)
+        {
+            for (const TblColPtr& col : sheet->getCols())
+            {
+                writeColumn(col);
+            }
+        }
 
         size_t posEnd = tellp();
 
@@ -1492,6 +1520,8 @@ namespace NumeRe
         // reading and deleting arbitary data types
         int64_t size;
         std::string type;
+        std::vector<size_t> sheetSizes;
+        std::vector<std::string> sheetNames;
         void* data = readGenericField(type, size);
 
         // Version 2.1 introduces 64 bit time stamps
@@ -1503,9 +1533,29 @@ namespace NumeRe
         deleteGenericData(data, type);
 
         data = readGenericField(type, size);
+
+        if (fileVersionRead >= 4.50 && type == "LUINT")
+        {
+            for (int64_t i = 0; i < size; i++)
+            {
+                sheetSizes.push_back(static_cast<uint64_t*>(data)[i]);
+            }
+
+            nLayers = sheetSizes.size();
+        }
+
         deleteGenericData(data, type);
 
         data = readGenericField(type, size);
+
+        if (fileVersionRead >= 4.50 && type == "STRING")
+        {
+            for (int64_t i = 0; i < size; i++)
+            {
+                sheetNames.push_back(static_cast<std::string*>(data)[i]);
+            }
+        }
+
         deleteGenericData(data, type);
 
         // Version 3.0 introduces another generic field
@@ -1527,6 +1577,19 @@ namespace NumeRe
         // Read the dimensions of the table
         nRows = readNumField<int64_t>();
         nCols = readNumField<int64_t>();
+
+        if (fileVersionRead >= 4.50)
+        {
+            fileData = new TableData;
+            fileData->create(sheetSizes);
+
+            for (size_t i = 0; i < sheetNames.size(); i++)
+            {
+                fileData->getSheet(i).m_sheetName = sheetNames[i];
+            }
+
+            nCols = fileData->cols();
+        }
     }
 
 
@@ -1580,7 +1643,8 @@ namespace NumeRe
         }
 
         // Create empty storage
-        createStorage();
+        if (fileVersionRead < 4.50)
+            createStorage();
 
         // Version 3.0 introduces column-like layout and v4.0 added
         // more columns and improved backwards compatibility
@@ -1588,9 +1652,12 @@ namespace NumeRe
         {
             if (fileData)
             {
-                for (TblColPtr& col : *fileData)
+                for (TblSheetPtr& sheet : fileData->m_sheets)
                 {
-                    readColumnV4(col);
+                    for (TblColPtr& col : sheet->getCols())
+                    {
+                        readColumnV4(col);
+                    }
                 }
             }
 
@@ -1600,7 +1667,7 @@ namespace NumeRe
         {
             if (fileData)
             {
-                for (TblColPtr& col : *fileData)
+                for (TblColPtr& col : fileData->getSheet(0).getCols())
                 {
                     readColumn(col);
                 }
@@ -1619,14 +1686,16 @@ namespace NumeRe
         std::string* sHeads = readStringBlock(stringBlockSize);
         double** data = readDataArray<double>(dataarrayrows, dataarraycols);
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         for (int64_t j = 0; j < dataarraycols; j++)
         {
-            fileData->at(j).reset(new ValueColumn);
-            fileData->at(j)->m_sHeadLine = sHeads[j];
+            sheet.getCols().at(j).reset(new ValueColumn);
+            sheet.getCols().at(j)->m_sHeadLine = sHeads[j];
 
             for (int64_t i = 0; i < dataarrayrows; i++)
             {
-                fileData->at(j)->setValue(i, data[i][j]);
+                sheet.getCols().at(j)->setValue(i, data[i][j]);
             }
         }
 
@@ -1830,24 +1899,26 @@ namespace NumeRe
         // Create the internal storage
         createStorage();
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Read the table heads to the internal
         // storage
         for (int64_t i = 0; i < nCols; i++)
         {
-            fileData->at(i).reset(new ValueColumn);
+            sheet.getCols().at(i).reset(new ValueColumn);
 
             nLength = 0;
             fFileStream.read((char*)&nLength, sizeof(uint32_t));
             cHeadLine[i] = new char[nLength];
             fFileStream.read(cHeadLine[i], sizeof(char)*nLength);
-            fileData->at(i)->m_sHeadLine.resize(nLength-1);
+            sheet.getCols().at(i)->m_sHeadLine.resize(nLength-1);
 
             for (uint32_t j = 0; j < nLength-1; j++)
             {
-                fileData->at(i)->m_sHeadLine[j] = cHeadLine[i][j];
+                sheet.getCols().at(i)->m_sHeadLine[j] = cHeadLine[i][j];
             }
 
-            fileData->at(i)->m_sHeadLine = ansiToUtf8(fileData->at(i)->m_sHeadLine);
+            sheet.getCols().at(i)->m_sHeadLine = ansiToUtf8(sheet.getCols().at(i)->m_sHeadLine);
         }
 
         // Read the appended zeros field, which
@@ -1870,7 +1941,7 @@ namespace NumeRe
 
             for (int64_t j = 0; j < nCols; j++)
             {
-                fileData->at(j)->setValue(i, data[j]);
+                sheet.getCols().at(j)->setValue(i, data[j]);
             }
         }
 
@@ -1885,7 +1956,7 @@ namespace NumeRe
             for (int64_t j = 0; j < nCols; j++)
             {
                 if (!bValidEntry[j])
-                    fileData->at(j)->setValue(i, NAN);
+                    sheet.getCols().at(j)->setValue(i, NAN);
             }
         }
 
@@ -2325,11 +2396,13 @@ namespace NumeRe
         // the already decoded headlines
         createStorage();
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         for (long long int i = 0; i < nCols; i++)
         {
-            fileData->at(i).reset(new F64ValueColumn);
-            fileData->at(i)->m_sHeadLine = vHeadLines[i];
-            fileData->at(i)->m_sUnit = vUnits[i];
+            sheet.getCols().at(i).reset(new F64ValueColumn);
+            sheet.getCols().at(i)->m_sHeadLine = vHeadLines[i];
+            sheet.getCols().at(i)->m_sUnit = vUnits[i];
         }
 
         long long int nElements = 0;
@@ -2353,7 +2426,7 @@ namespace NumeRe
                 // storage
                 for (long long int j = 0; j < std::min(nElements, nRows); j++)
                 {
-                    fileData->at(i)->setValue(j, extractValueFromTag(vCols[i].substr(vCols[i].find("<value"),
+                    sheet.getCols().at(i)->setValue(j, extractValueFromTag(vCols[i].substr(vCols[i].find("<value"),
                                                                                      vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value"))));
                     vCols[i].erase(0, vCols[i].find('>', vCols[i].find('/'))+1);
                 }
@@ -2533,12 +2606,13 @@ namespace NumeRe
 
         // Prepare the internal storage
         createStorage();
+        TableSheet& sheet = fileData->getSheet(0);
 
         // We start with string-only and try to
         // convert them later
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new StringColumn);
+            sheet.getCols().at(j).reset(new StringColumn);
         }
 
         // Copy the already decoded table heads to
@@ -2550,8 +2624,8 @@ namespace NumeRe
             for (long long int j = 0; j < nCols; j++)
             {
                 std::pair<std::string,std::string> headAndUnit = findAndParseUnit(vHeadLine[j]);
-                fileData->at(j)->m_sHeadLine = headAndUnit.first;
-                fileData->at(j)->m_sUnit = headAndUnit.second;
+                sheet.getCols().at(j)->m_sHeadLine = headAndUnit.first;
+                sheet.getCols().at(j)->m_sUnit = headAndUnit.second;
             }
         }
 		else
@@ -2562,9 +2636,9 @@ namespace NumeRe
 			if (nCols == 1)
 			{
                 if (sFileName.find('/') == std::string::npos)
-                    fileData->at(0)->m_sHeadLine = sFileName.substr(0, sFileName.rfind('.'));
+                    sheet.getCols().at(0)->m_sHeadLine = sFileName.substr(0, sFileName.rfind('.'));
                 else
-                    fileData->at(0)->m_sHeadLine = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
+                    sheet.getCols().at(0)->m_sHeadLine = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
 			}
 		}
 
@@ -2586,9 +2660,9 @@ namespace NumeRe
                 // Just append additional cells at the end, if more than nCols cells
                 // are part of this row
                 if (j >= (size_t)nCols)
-                    fileData->at(nCols-1)->setValue(i-nComment, fileData->at(nCols-1)->getValueAsInternalString(i-nComment) + cSep + vTokens[j]);
+                    sheet.getCols().at(nCols-1)->setValue(i-nComment, sheet.getCols().at(nCols-1)->getValueAsInternalString(i-nComment) + cSep + vTokens[j]);
                 else
-                    fileData->at(j)->setValue(i-nComment, vTokens[j]);
+                    sheet.getCols().at(j)->setValue(i-nComment, vTokens[j]);
             }
         }
     }
@@ -2614,18 +2688,20 @@ namespace NumeRe
         // Set the desired output precision
         fFileStream.precision(nPrecFields);
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Write the data to the file
         for (long long int i = 0; i < nRows; i++)
         {
             for (long long int j = 0; j < nCols; j++)
             {
-                if (fileData->at(j) && fileData->at(j)->isValid(i))
+                if (sheet.getCols().at(j) && sheet.getCols().at(j)->isValid(i))
                 {
-                    if (TableColumn::isValueType(fileData->at(j)->m_type))
-                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
+                    if (TableColumn::isValueType(sheet.getCols().at(j)->m_type))
+                        fFileStream << toString(sheet.getCols().at(j)->getValue(i), DEFAULT_PRECISION);
                     else
                     {
-                        std::string sValue = fileData->at(j)->getValueAsInternalString(i);
+                        std::string sValue = sheet.getCols().at(j)->getValueAsInternalString(i);
 
                         if (sValue.find_first_of("\n\",") != std::string::npos)
                         {
@@ -2657,6 +2733,7 @@ namespace NumeRe
     void CommaSeparatedValues::writeHeader()
     {
         size_t nNumberOfHeadlines = 1u;
+        TableSheet& sheet = fileData->getSheet(0);
 
         // Go through the column heads in memory, determine
         // their cell extents and store the maximal value of
@@ -2664,10 +2741,10 @@ namespace NumeRe
         // value
         for (long long int j = 0; j < nCols; j++)
         {
-            if (!fileData->at(j))
+            if (!sheet.getCols().at(j))
                 continue;
 
-            std::pair<std::size_t, std::size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine, fileData->at(j)->m_sUnit);
+            std::pair<std::size_t, std::size_t> pCellExtents = calculateCellExtents(sheet.getCols().at(j)->m_sHeadLine, sheet.getCols().at(j)->m_sUnit);
 
             if (nNumberOfHeadlines < pCellExtents.second)
                 nNumberOfHeadlines = pCellExtents.second;
@@ -2678,7 +2755,7 @@ namespace NumeRe
         {
             for (long long int j = 0; j < nCols; j++)
             {
-                if (fileData->at(j))
+                if (sheet.getCols().at(j))
                     fFileStream << getLineFromHead(j, i);
 
                 fFileStream << ",";
@@ -2933,6 +3010,8 @@ namespace NumeRe
             fFileStream << "\\endlastfoot\n";
         }
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Write the actual data formatted as
         // LaTeX numbers into the file and insert
         // the needed column separators
@@ -2943,12 +3022,12 @@ namespace NumeRe
                 fFileStream.width(nPrecFields+20);
                 fFileStream.fill(' ');
 
-                if (!fileData->at(j))
+                if (!sheet.getCols().at(j))
                     fFileStream << "---";
-                else if (TableColumn::isValueType(fileData->at(j)->m_type))
-                    fFileStream << formatNumber(fileData->at(j)->getValue(i));
+                else if (TableColumn::isValueType(sheet.getCols().at(j)->m_type))
+                    fFileStream << formatNumber(sheet.getCols().at(j)->getValue(i));
                 else
-                    fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                    fFileStream << sheet.getCols().at(j)->getValueAsInternalString(i);
 
                 if (j+1 < nCols)
                     fFileStream << " &";
@@ -3047,16 +3126,18 @@ namespace NumeRe
     size_t LaTeXTable::countHeadLines()
     {
         size_t headlines = 0u;
+        TableSheet& sheet = fileData->getSheet(0);
 
         // Get the cell extents of each table
         // column head and store the maximal
         // value
         for (long long int i = 0; i < nCols; i++)
         {
-            if (!fileData->at(i))
+            if (!sheet.getCols().at(i))
                 continue;
 
-            auto extents = calculateCellExtents(fileData->at(i)->m_sHeadLine, fileData->at(i)->m_sUnit);
+            auto extents = calculateCellExtents(sheet.getCols().at(i)->m_sHeadLine,
+                                                sheet.getCols().at(i)->m_sUnit);
 
             if (extents.second > headlines)
                 headlines = extents.second;
@@ -3390,11 +3471,7 @@ namespace NumeRe
         while (nTableStart + 1 < vFileContents.size());
 
         // Find maximal number of rows
-        for (long long int j = 0; j < nCols; j++)
-        {
-            if (fileData->at(j)->size() > (size_t)nRows)
-                nRows = fileData->at(j)->size();
-        }
+        nRows = fileData->rows();
     }
 
 
@@ -3496,14 +3573,16 @@ namespace NumeRe
 
         // Prepare the internal storage
         if (!fileData)
-            fileData = new TableColumnArray;
+            createStorage();
 
-        fileData->resize(nCols);
+        TableSheet& sheet = fileData->getSheet(0);
+
+        sheet.reserve(nCols);
 
         // We only create numerical columns for this data type
         for (long long int j = nPageOffset; j < nCols; j++)
         {
-            fileData->at(j).reset(new F64ValueColumn);
+            sheet.getCols().at(j).reset(new F64ValueColumn);
         }
 
         // Prepare some decoding variables
@@ -3587,14 +3666,14 @@ namespace NumeRe
 
         meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);
         size_t currentRow = 0;
-        fileData->at(nPageOffset + 0)->m_sHeadLine = meta.m_xUnit.substr(0, meta.m_xUnit.find('|'));
-        fileData->at(nPageOffset + 1)->m_sHeadLine = meta.m_yUnit.substr(0, meta.m_yUnit.find('|'));
+        sheet.getCols().at(nPageOffset + 0)->m_sHeadLine = meta.m_xUnit.substr(0, meta.m_xUnit.find('|'));
+        sheet.getCols().at(nPageOffset + 1)->m_sHeadLine = meta.m_yUnit.substr(0, meta.m_yUnit.find('|'));
 
         if (meta.m_xUnit.find('|') != std::string::npos)
-            fileData->at(nPageOffset + 0)->m_sUnit = meta.m_xUnit.substr(meta.m_xUnit.find('|')+1);
+            sheet.getCols().at(nPageOffset + 0)->m_sUnit = meta.m_xUnit.substr(meta.m_xUnit.find('|')+1);
 
         if (meta.m_yUnit.find('|') != std::string::npos)
-            fileData->at(nPageOffset + 1)->m_sUnit = meta.m_yUnit.substr(meta.m_yUnit.find('|')+1);
+            sheet.getCols().at(nPageOffset + 1)->m_sUnit = meta.m_yUnit.substr(meta.m_yUnit.find('|')+1);
 
         // Now go through the actual data section
         // of the file and convert it into
@@ -3635,7 +3714,7 @@ namespace NumeRe
             {
                 for (size_t k = 0; k < vLine.size(); k++)
                 {
-                    fileData->at(nPageOffset + k % 2)->setValue(currentRow, vLine[k] * (k % 2 ? meta.m_yFactor : meta.m_xFactor));
+                    sheet.getCols().at(nPageOffset + k % 2)->setValue(currentRow, vLine[k] * (k % 2 ? meta.m_yFactor : meta.m_xFactor));
                     currentRow += k % 2;
                 }
             }
@@ -3646,14 +3725,14 @@ namespace NumeRe
                                                + ". Expected: " + toString(meta.m_firstX+meta.m_deltaX*currentRow)
                                                + " Found: " + toString(vLine[0]*meta.m_xFactor));
 
-                fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
-                fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[1] * meta.m_yFactor);
+                sheet.getCols().at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                sheet.getCols().at(nPageOffset + 1)->setValue(currentRow, vLine[1] * meta.m_yFactor);
                 currentRow++;
 
                 for (size_t k = 2; k < vLine.size(); k++)
                 {
-                    fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
-                    fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
+                    sheet.getCols().at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                    sheet.getCols().at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
                     currentRow++;
                 }
             }
@@ -3661,8 +3740,8 @@ namespace NumeRe
             {
                 for (size_t k = 0; k < vLine.size(); k++)
                 {
-                    fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
-                    fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
+                    sheet.getCols().at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                    sheet.getCols().at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
                     currentRow++;
                 }
             }
@@ -4036,8 +4115,10 @@ namespace NumeRe
         // Prepare the table column array and create string columns
         createStorage();
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         for (long long int i = 0; i < nCols; i++)
-            fileData->at(i).reset(new StringColumn);
+            sheet.getCols().at(i).reset(new StringColumn);
 
         // Return to the first table
         table = odsDocument.FirstChildElement()->FirstChildElement("office:body")
@@ -4070,21 +4151,21 @@ namespace NumeRe
                         // that to the current columns headline
                         if (cell->FirstChildElement("text:p"))
                         {
-                            if (fileData->at(colCount + nOffSet)->m_sHeadLine.length())
-                                fileData->at(colCount + nOffSet)->m_sHeadLine += "\n";
+                            if (sheet.getCols().at(colCount + nOffSet)->m_sHeadLine.length())
+                                sheet.getCols().at(colCount + nOffSet)->m_sHeadLine += "\n";
 
-                            fileData->at(colCount + nOffSet)->m_sHeadLine += cell->FirstChildElement("text:p")->GetText();
+                            sheet.getCols().at(colCount + nOffSet)->m_sHeadLine += cell->FirstChildElement("text:p")->GetText();
                         }
                     }
                     else
                     {
                         // Some data types need some special pre-processing
                         if (cell->Attribute("office:value-type", "string"))
-                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement()->GetText());
+                            sheet.getCols().at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement()->GetText());
                         else if (cell->Attribute("office:value-type", "boolean"))
-                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->Attribute("office:boolean-value"));
+                            sheet.getCols().at(colCount + nOffSet)->setValue(rowCount, cell->Attribute("office:boolean-value"));
                         else if (cell->FirstChildElement("text:p"))
-                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement("text:p")->GetText());
+                            sheet.getCols().at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement("text:p")->GetText());
                     }
 
                     colCount += cell->IntAttribute("table:number-columns-repeated", 1);
@@ -4105,7 +4186,7 @@ namespace NumeRe
 
         // Now calculate the total number of rows in this data set and
         // separate column headers and their units
-        for (TblColPtr& col : *fileData)
+        for (TblColPtr& col : sheet.getCols())
         {
             std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
             col->m_sHeadLine = headAndUnit.first;
@@ -4240,12 +4321,13 @@ namespace NumeRe
         nRows = nExcelLines;
         nCols = nExcelCols;
         createStorage();
+        TableSheet& sheet = fileData->getSheet(0);
 
         // We create a string-only table and try to convert it
         // afterwards
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new StringColumn);
+            sheet.getCols().at(j).reset(new StringColumn);
         }
 
         // Copy the pure text lines into the corresponding
@@ -4286,10 +4368,10 @@ namespace NumeRe
 
                     // Append the string to the current table
                     // column head, if it is not empty
-                    if (!fileData->at(j+nOffset)->m_sHeadLine.length())
-                        fileData->at(j+nOffset)->m_sHeadLine = sEntry;
-                    else if (fileData->at(j+nOffset)->m_sHeadLine != sEntry)
-                        fileData->at(j+nOffset)->m_sHeadLine += "\n" + sEntry;
+                    if (!sheet.getCols().at(j+nOffset)->m_sHeadLine.length())
+                        sheet.getCols().at(j+nOffset)->m_sHeadLine = sEntry;
+                    else if (sheet.getCols().at(j+nOffset)->m_sHeadLine != sEntry)
+                        sheet.getCols().at(j+nOffset)->m_sHeadLine += "\n" + sEntry;
                 }
             }
 
@@ -4325,22 +4407,22 @@ namespace NumeRe
                     switch (_cell->Type())
                     {
                         case YExcel::BasicExcelCell::UNDEFINED:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], "");
                             break;
                         case YExcel::BasicExcelCell::INT:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], (double)_cell->GetInteger());
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], (double)_cell->GetInteger());
                             break;
                         case YExcel::BasicExcelCell::DOUBLE:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetDouble());
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetDouble());
                             break;
                         case YExcel::BasicExcelCell::STRING:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetString());
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetString());
                             break;
                         case YExcel::BasicExcelCell::WSTRING:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], boost::nowide::narrow(_cell->GetWString()));
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], boost::nowide::narrow(_cell->GetWString()));
                             break;
                         default:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
+                            sheet.getCols().at(j+nOffset)->setValue(i-vCommentLines[n], "");
                     }
                 }
             }
@@ -4349,7 +4431,7 @@ namespace NumeRe
         }
 
         // Now separate column headers and their units
-        for (TblColPtr& col : *fileData)
+        for (TblColPtr& col : sheet.getCols())
         {
             std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
             col->m_sHeadLine = headAndUnit.first;
@@ -4393,10 +4475,12 @@ namespace NumeRe
         if (!_cell)
             throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        TableSheet& sheet = fileData->getSheet(0);
+
         // Write the headlines in the first row
         for (long long int j = 0; j < nCols; j++)
         {
-            if (!fileData->at(j))
+            if (!sheet.getCols().at(j))
                 continue;
 
             // Get the current cell and the headline string
@@ -4405,7 +4489,7 @@ namespace NumeRe
             if (!_cell)
                 throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-            sHeadLine = fileData->at(j)->m_sHeadLine + (fileData->at(j)->m_sUnit.length() ? " [" + fileData->at(j)->m_sUnit + "]" : "");
+            sHeadLine = sheet.getCols().at(j)->m_sHeadLine + (sheet.getCols().at(j)->m_sUnit.length() ? " [" + sheet.getCols().at(j)->m_sUnit + "]" : "");
 
             // Replace newlines with the corresponding character code
             for (size_t i = 0; i < sHeadLine.length(); i++)
@@ -4421,14 +4505,14 @@ namespace NumeRe
         // Now write the actual table
         for (long long int j = 0; j < nCols; j++)
         {
-            if (!fileData->at(j))
+            if (!sheet.getCols().at(j))
                 continue;
 
             for (long long int i = 0; i < nRows; i++)
             {
                 // Write the cell contents, if the data table contains valid data
                 // otherwise clear the cell
-                if (!fileData->at(j)->isValid(i))
+                if (!sheet.getCols().at(j)->isValid(i))
                     continue;
 
                 // Get the current cell (skip over the first row, because it contains the headline)
@@ -4437,10 +4521,10 @@ namespace NumeRe
                 if (!_cell)
                     throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-                if (TableColumn::isValueType(fileData->at(j)->m_type) || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
-                    _cell->SetDouble(fileData->at(j)->getValue(i).real());
+                if (TableColumn::isValueType(sheet.getCols().at(j)->m_type) || sheet.getCols().at(j)->m_type == TableColumn::TYPE_LOGICAL)
+                    _cell->SetDouble(sheet.getCols().at(j)->getValue(i).real());
                 else
-                    _cell->SetWString(boost::nowide::widen(fileData->at(j)->getValueAsInternalString(i)).c_str());
+                    _cell->SetWString(boost::nowide::widen(sheet.getCols().at(j)->getValueAsInternalString(i)).c_str());
             }
         }
 
@@ -4711,11 +4795,12 @@ namespace NumeRe
 
         // Allocate the memory
         createStorage();
+        TableSheet& sheet = fileData->getSheet(0);
 
         // We create a text-only table first
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new StringColumn);
+            sheet.getCols().at(j).reset(new StringColumn);
         }
 
         // Walk through the sheets and extract the
@@ -4855,13 +4940,13 @@ namespace NumeRe
                         {
                             if (nRow - vCommentLines[i] < 0)
                             {
-                                if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
-                                    fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
-                                else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
-                                    fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sEntry;
+                                if (!sheet.getCols().at(nCol+nOffset)->m_sHeadLine.length())
+                                    sheet.getCols().at(nCol+nOffset)->m_sHeadLine = sEntry;
+                                else if (sheet.getCols().at(nCol+nOffset)->m_sHeadLine != sEntry)
+                                    sheet.getCols().at(nCol+nOffset)->m_sHeadLine += "\n" + sEntry;
                             }
                             else
-                                fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sEntry);
+                                sheet.getCols().at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sEntry);
                         }
 
                         continue;
@@ -4909,13 +4994,13 @@ namespace NumeRe
                         // Write the decoded string to the table column array
                         if (nRow - vCommentLines[i] < 0)
                         {
-                            if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
-                                fileData->at(nCol+nOffset)->m_sHeadLine = sValue;
-                            else if (fileData->at(nCol+nOffset)->m_sHeadLine != sValue)
-                                fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sValue;
+                            if (!sheet.getCols().at(nCol+nOffset)->m_sHeadLine.length())
+                                sheet.getCols().at(nCol+nOffset)->m_sHeadLine = sValue;
+                            else if (sheet.getCols().at(nCol+nOffset)->m_sHeadLine != sValue)
+                                sheet.getCols().at(nCol+nOffset)->m_sHeadLine += "\n" + sValue;
                         }
                         else
-                            fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sValue);
+                            sheet.getCols().at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sValue);
                     }
                 }
                 while ((_element = _element->NextSiblingElement()));
@@ -4926,7 +5011,7 @@ namespace NumeRe
         }
 
         // Now separate column headers and their units
-        for (TblColPtr& col : *fileData)
+        for (TblColPtr& col : sheet.getCols())
         {
             std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
             col->m_sHeadLine = headAndUnit.first;
@@ -5122,40 +5207,41 @@ namespace NumeRe
         // Create the internal storage using the
         // final dimensions
         createStorage();
+        TableSheet& sheet = fileData->getSheet(0);
 
         // We create plain value column tables
         for (long long int j = 0; j < nCols; j++)
         {
             if (j < nFirstCol)
-                fileData->at(j).reset(new F64ValueColumn);
+                sheet.getCols().at(j).reset(new F64ValueColumn);
             else if (bReadComplexData)
             {
                 if (nType & NT_FP64)
-                    fileData->at(j).reset(new CF64ValueColumn);
+                    sheet.getCols().at(j).reset(new CF64ValueColumn);
                 else
-                    fileData->at(j).reset(new CF32ValueColumn);
+                    sheet.getCols().at(j).reset(new CF32ValueColumn);
             }
             else if (nType & NT_FP64)
-                fileData->at(j).reset(new F64ValueColumn);
+                sheet.getCols().at(j).reset(new F64ValueColumn);
             else if (nType & NT_FP32)
-                fileData->at(j).reset(new F32ValueColumn);
+                sheet.getCols().at(j).reset(new F32ValueColumn);
             else if (nType & NT_I8)
-                fileData->at(j).reset(new I8ValueColumn);
+                sheet.getCols().at(j).reset(new I8ValueColumn);
             else if (nType & NT_I16)
-                fileData->at(j).reset(new I16ValueColumn);
+                sheet.getCols().at(j).reset(new I16ValueColumn);
             else if (nType & NT_I32)
-                fileData->at(j).reset(new I32ValueColumn);
+                sheet.getCols().at(j).reset(new I32ValueColumn);
         }
 
         // Fill the x column and its corresponding
         // table column head
         for (long long int j = 0; j < nFirstCol; j++)
         {
-            fileData->at(j)->m_sHeadLine = cName + std::string("_[")+(char)('x'+j)+std::string("]");
+            sheet.getCols().at(j)->m_sHeadLine = cName + std::string("_[")+(char)('x'+j)+std::string("]");
 
             for (long long int i = 0; i < nDim[j]; i++)
             {
-                fileData->at(j)->setValue(i, dScalingFactorA[j]*(double)i + dScalingFactorB[j]);
+                sheet.getCols().at(j)->setValue(i, dScalingFactorA[j]*(double)i + dScalingFactorB[j]);
             }
         }
 
@@ -5178,9 +5264,9 @@ namespace NumeRe
             // Write the corresponding table column
             // head
             if (nCols == 2 && !j)
-                fileData->at(1)->m_sHeadLine = cName + std::string("_[y]");
+                sheet.getCols().at(1)->m_sHeadLine = cName + std::string("_[y]");
             else
-                fileData->at(j+nFirstCol)->m_sHeadLine = cName + std::string("_["+toString(j+1)+"]");
+                sheet.getCols().at(j+nFirstCol)->m_sHeadLine = cName + std::string("_["+toString(j+1)+"]");
 
             // Write the actual data to the table.
             // We have to take care about the type
@@ -5193,43 +5279,43 @@ namespace NumeRe
                 if (dData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion,
                                                                         std::complex<double>(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
                     else
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
                 }
                 else if (fData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion,
                                                                         std::complex<double>(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
                     else
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
                 }
                 else if (n8_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion,
                                                                         std::complex<double>(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
                     else
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
 
                 }
                 else if (n16_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion,
                                                                         std::complex<double>(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
                     else
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
                 }
                 else if (n32_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion,
                                                                         std::complex<double>(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
                     else
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
+                        sheet.getCols().at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
                 }
 
                 nInsertion++;
@@ -5334,11 +5420,12 @@ namespace NumeRe
         // Create the internal storage using the
         // final dimensions
         createStorage();
+        TableSheet& sheet = fileData->getSheet(0);
 
         // We create plain value column tables
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new F64ValueColumn);
+            sheet.getCols().at(j).reset(new F64ValueColumn);
         }
 
         uint16_t colOffset = 0;
@@ -5346,15 +5433,15 @@ namespace NumeRe
         // Copy each layer to the target data
         for (const ZygoLib::InterferogramData& layer : fileContent)
         {
-            fileData->at(colOffset)->m_sHeadLine = "x";
-            fileData->at(colOffset)->m_sUnit = "m";
-            fileData->at(colOffset+1)->m_sHeadLine = "y";
-            fileData->at(colOffset+1)->m_sUnit = "m";
+            sheet.getCols().at(colOffset)->m_sHeadLine = "x";
+            sheet.getCols().at(colOffset)->m_sUnit = "m";
+            sheet.getCols().at(colOffset+1)->m_sHeadLine = "y";
+            sheet.getCols().at(colOffset+1)->m_sUnit = "m";
 
             // Write the x column
             for (uint16_t i = 0; i < layer.header.cn_width; i++)
             {
-                fileData->at(colOffset)->setValue(i, i * (layer.header.pixel_width > 0
+                sheet.getCols().at(colOffset)->setValue(i, i * (layer.header.pixel_width > 0
                                                           ? layer.header.pixel_width
                                                           : layer.header.camera_res));
             }
@@ -5362,7 +5449,7 @@ namespace NumeRe
             // Write the y column
             for (uint16_t j = 0; j < layer.header.cn_height; j++)
             {
-                fileData->at(colOffset+1)->setValue(j, j * (layer.header.pixel_height > 0
+                sheet.getCols().at(colOffset+1)->setValue(j, j * (layer.header.pixel_height > 0
                                                             ? layer.header.pixel_height
                                                             : layer.header.camera_res));
             }
@@ -5374,11 +5461,11 @@ namespace NumeRe
                 {
                     if (!i)
                     {
-                        fileData->at(j+colOffset+2)->m_sHeadLine = "z(x(:),y(" + toString(j+1) + "))";
-                        fileData->at(j+colOffset+2)->m_sUnit = "m";
+                        sheet.getCols().at(j+colOffset+2)->m_sHeadLine = "z(x(:),y(" + toString(j+1) + "))";
+                        sheet.getCols().at(j+colOffset+2)->m_sUnit = "m";
                     }
 
-                    fileData->at(j+colOffset+2)->setValue(i, layer.phaseMatrix[j][i]);
+                    sheet.getCols().at(j+colOffset+2)->setValue(i, layer.phaseMatrix[j][i]);
                 }
             }
 

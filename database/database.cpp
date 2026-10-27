@@ -107,8 +107,8 @@ void databaseCommand(CommandLineParser& cmdParser)
         for (size_t i = 0; i < sqlCommands.size(); i++)
         {
             statement.stmt = sqlCommands.get(i).getStr();
-            NumeRe::Table result = executeSql(expression.front().getAsScalarInt(),
-                                              statement);
+            NumeRe::TableView result = executeSql(expression.front().getAsScalarInt(),
+                                                  statement);
 
             // TODO How to handle multiple results for an array of SQL statements
             if (i+1 < sqlCommands.size())
@@ -118,7 +118,11 @@ void databaseCommand(CommandLineParser& cmdParser)
             {
                 Indices _idx;
                 std::string sTable = cmdParser.getTargetTable(_idx, "");
-                NumeReKernel::getInstance()->getMemoryManager().insertCopiedTable(std::move(result), sTable, _idx.row, _idx.col);
+                NumeReKernel::getInstance()->getMemoryManager().getTable(sTable).insertCopiedView(std::move(result),
+                                                                                                  _idx.row,
+                                                                                                  _idx.col,
+                                                                                                  _idx.layer,
+                                                                                                  false);
             }
             else if (!result.isEmpty())
             {

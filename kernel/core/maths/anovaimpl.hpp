@@ -24,7 +24,7 @@
 #ifndef ANOVAIMPL_HPP
 #define ANOVAIMPL_HPP
 
-class Memory;
+class Table;
 
 /////////////////////////////////////////////////
 /// \brief This class is representing a Node in the Anova
@@ -80,7 +80,7 @@ public:
     }
 
     void calculateSS();
-    void calculateMean(const Memory* mem, const std::vector<std::string>& factorSet, size_t facIdx);
+    void calculateMean(const Table* mem, const std::vector<std::string>& factorSet, size_t facIdx);
     void calculateDof(size_t factorCnt);
 };
 
@@ -92,7 +92,7 @@ class AnovaCalculationStructure
 {
 private:
     FactorNode* root;
-    Memory* mem;
+    Table* mem;
     double significance = 0;
     std::vector<std::vector<std::string>> factors;
 
@@ -116,7 +116,7 @@ public:
 
     AnovaCalculationStructure();
     ~AnovaCalculationStructure();
-    void buildTree(const std::vector<std::vector<std::string>>& _factors, Memory* _mem, double _significance);
+    void buildTree(const std::vector<std::vector<std::string>>& _factors, Table* _mem, double _significance);
     void calculateResults();
     std::vector<AnovaResult> getResults();
 };

@@ -99,7 +99,7 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 			 * der Voreinstellung weiterverarbeitet.
 			 */
 		void format(std::vector<std::vector<std::string>>& _sMatrix, size_t nHeadLineCount = 1);
-		void format(NumeRe::Table _table, size_t digits = 0, size_t chars = 0);
+		void format(NumeRe::TableView _table, size_t digits = 0, size_t chars = 0, size_t sheet = 0);
 		void print(std::string sOutput); 			// Zentrale Methode
 												// 		|-> Schreibt den String in das Ziel.
 												// 		|-> Prueft ggf., ob bFileOpen == true und ruft ggf. start() auf.

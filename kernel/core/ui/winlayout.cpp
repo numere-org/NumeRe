@@ -543,7 +543,7 @@ static void getParametersFromWindow(CommandLineParser& cmdParser)
                 std::string sTarget = cmdParser.getTargetTable(_idx, "valtable");
 
                 cmdParser.setReturnValue(mu::Value(sTarget + "()"));
-                _memManager.importTable(val.tableValue, sTarget, _idx.row, _idx.col);
+                _memManager.getTable(sTarget).importView(val.tableValue, _idx.row, _idx.col, _idx.layer);
             }
         }
     }
@@ -604,8 +604,13 @@ static void setParametersInWindow(CommandLineParser& cmdParser)
             {
                 DataAccessParser _access(sValue, false);
                 _access.evalIndices(true);
-                value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
-                value.val = _memManager.getElement(_access.getIndices().row, _access.getIndices().col, _access.getDataObject());
+                value.tableValue = _memManager.getTable(_access.getDataObject()).extractView(_access.getDataObject(),
+                                                                                             _access.getIndices().row,
+                                                                                             _access.getIndices().col,
+                                                                                             _access.getIndices().layer);
+                value.val = _memManager.getTable(_access.getDataObject()).read(_access.getIndices().row,
+                                                                               _access.getIndices().col,
+                                                                               _access.getIndices().layer);
             }
             else
                 value.val = cmdParser.getParsedParameterValue("value");

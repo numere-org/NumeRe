@@ -3577,10 +3577,10 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
             else
             {
                 if (_accessParser.getIndices().row.isOpenEnd())
-                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+                    _accessParser.getIndices().row.setRange(0, _data.getTable(_accessParser.getDataObject()).getRows()-1);
 
                 if (_accessParser.getIndices().col.isOpenEnd())
-                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+                    _accessParser.getIndices().col.setRange(0, _data.getTable(_accessParser.getDataObject()).getCols()-1);
             }
         }
 
@@ -3699,8 +3699,7 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
             continue;
         }
 
-        std::vector<size_t> cols = _data.findCols(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('(')),
-                                                  {col.get(i).getStr()}, false, false);
+        std::vector<size_t> cols = _data.getTable(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('('))).findCols({col.get(i).getStr()}, 0, false, false);
 
         if (cols.size())
             ret.emplace_back(cols);

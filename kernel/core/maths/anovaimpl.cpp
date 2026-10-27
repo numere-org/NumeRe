@@ -33,20 +33,20 @@
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FactorNode::calculateMean(const Memory* mem, const std::vector<std::string>& factorSet, size_t facIdx)
+void FactorNode::calculateMean(const Table* mem, const std::vector<std::string>& factorSet, size_t facIdx)
 {
     for (size_t i = 0; i < factorSet.size(); i++)
     {
         // positions of all elements, which correspond to the passed values
-        mu::Array catIndex1 = mem->getIndex(facIdx+1, std::vector<std::string>(1, factorSet[i]), false);
+        mu::Array catIndex1 = mem->getIndex(facIdx+1, 0, std::vector<std::string>(1, factorSet[i]), false);
 
         if (!catIndex1.front().isValid())
             continue;
 
         if (parent == nullptr)
         {
-            means.push_back(mem->avg(catIndex1, VectorIndex(0)));
-            nums.push_back(mem->num(catIndex1, VectorIndex(0)));
+            means.push_back(mem->avg(catIndex1, VectorIndex(0), VectorIndex(0)));
+            nums.push_back(mem->num(catIndex1, VectorIndex(0), VectorIndex(0)));
 
             catIndex.push_back(catIndex1);
         }
@@ -67,8 +67,8 @@ void FactorNode::calculateMean(const Memory* mem, const std::vector<std::string>
                 if (intersection.size() == 0)
                     continue;
 
-                means.push_back(mem->avg(intersection, VectorIndex(0)));
-                nums.push_back(mem->num(intersection, VectorIndex(0)));
+                means.push_back(mem->avg(intersection, VectorIndex(0), VectorIndex(0)));
+                nums.push_back(mem->num(intersection, VectorIndex(0), VectorIndex(0)));
 
 
                 catIndex.push_back(intersection);
@@ -143,14 +143,10 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, size_t start, 
         child->calculateDof(factors[i].size());
 
         // Use the category column names as prefixes
-        child->name = mem->memArray[child->subset[0]+1]->m_sHeadLine;
+        child->name = mem->m_data.m_sheets[0]->m_columns[child->subset[0]+1]->m_sHeadLine;
 
         for (size_t i = 1; i < child->subset.size(); i++)
-            child->name += " x " + mem->memArray[child->subset[i]+1]->m_sHeadLine;
-
-//        g_logger.info(child->name + ":");
-//        g_logger.info("SS: " + toString(child->SS, 7));;
-//        g_logger.info("Dof: " + toString(child->dof, 7));;
+            child->name += " x " + mem->m_data.m_sheets[0]->m_columns[child->subset[i]+1]->m_sHeadLine;
 
         node->addChild(child);
         buildTreeHelper(child, i + 1, n, newSubset);
@@ -234,7 +230,7 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
         for (const auto& idx : node->catIndex[i])
         {
             // these indeces start at 1 ?
-            std::complex<double> val_j = mem->readMem(idx.getNum().asI64()-1, 0).as_cmplx();
+            std::complex<double> val_j = mem->read(idx.getNum().asI64()-1, 0, 0).as_cmplx();
 
             if (!mu::isnan(val_j))
                 SS_Within += val_j * val_j; // S_W
@@ -372,13 +368,13 @@ AnovaCalculationStructure::~AnovaCalculationStructure()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void AnovaCalculationStructure::buildTree(const std::vector<std::vector<std::string>>& _factors, Memory* _mem, double _significance)
+void AnovaCalculationStructure::buildTree(const std::vector<std::vector<std::string>>& _factors, Table* _mem, double _significance)
 {
     significance = _significance;
     factors = _factors;
     mem = _mem;
-    overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
-    overallNum = _mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+    overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0), VectorIndex(0));
+    overallNum = _mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0), VectorIndex(0));
 
     size_t n = factors.size()-1;
     std::vector<size_t> startSet;

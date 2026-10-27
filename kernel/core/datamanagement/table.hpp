@@ -19,7 +19,7 @@
 #ifndef TABLE_HPP
 #define TABLE_HPP
 
-#include "tablecolumn.hpp"
+#include "tabledata.hpp"
 #include <ctime>
 
 namespace NumeRe
@@ -88,66 +88,71 @@ namespace NumeRe
     /// efficient table to interchange data between
     /// Kernel and GUI.
     /////////////////////////////////////////////////
-    class Table
+    class TableView
     {
         private:
-            TableColumnArray vTableData;
+            TableData vTableData;
             std::string sTableName;
             TableMetaData m_meta;
 
-            void setMinSize(size_t i, size_t j);
+            void setMinSize(size_t i, size_t j, size_t sheet);
             bool isNumerical(const std::string& sValue) const;
 
         public:
-            Table();
-            Table(int nLines, int nCols);
-            Table(const Table& _table);
-            Table(Table&& _table);
-            ~Table();
+            TableView();
+            TableView(int nLines, int nCols, int sheets);
+            TableView(const TableView& _table);
+            TableView(TableData* data);
+            TableView(TableView&& _table);
+            ~TableView();
 
-            Table& operator=(Table _table);
+            TableView& operator=(TableView _table);
 
             void Clear();
 
-            void setSize(size_t i, size_t j);
+            void setSize(size_t i, size_t j, size_t sheet);
 
             void setName(const std::string& _sName);
             void setComment(const std::string& _comment);
             void setMetaData(const TableMetaData& meta);
-            void setHead(size_t i, const std::string& _sHead);
-            void setHeadPart(size_t i, size_t part, const std::string& _sHead);
-            void set(size_t i, size_t j, const mu::Value& _dValue);
-            void setValue(size_t i, size_t j, const std::complex<double>& _dValue);
-            void setValueAsString(size_t i, size_t j, const std::string& _sValue);
-            void setColumn(size_t j, TableColumn* column);
-            bool setColumnType(size_t j, TableColumn::ColumnType _type);
+            void setHead(size_t i, size_t sheet, const std::string& _sHead);
+            void setHeadPart(size_t i, size_t sheet, size_t part, const std::string& _sHead);
+            void set(size_t i, size_t j, size_t sheet, const mu::Value& _dValue);
+            void setValue(size_t i, size_t j, size_t sheet, const std::complex<double>& _dValue);
+            void setValueAsString(size_t i, size_t j, size_t sheet, const std::string& _sValue);
+            void setColumn(size_t j, size_t sheet, TableColumn* column);
+            bool setColumnType(size_t j, size_t sheet, TableColumn::ColumnType _type);
 
             std::string getName() const;
             std::string getComment() const;
             TableMetaData getMetaData() const;
-            int getHeadCount() const;
-            std::string getHead(size_t i) const;
-            std::string getCleanHead(size_t i) const;
-            std::string getCleanHeadPart(size_t i, size_t part = 0) const;
-            mu::Value get(size_t i, size_t j) const;
-            std::complex<double> getValue(size_t i, size_t j) const;
-            std::string getValueAsString(size_t i, size_t j) const;
-            std::string getValueAsInternalString(size_t i, size_t j) const;
-            TableColumn* getColumn(size_t j) const;
-            TableColumn::ColumnType getColumnType(size_t j) const;
-            TableColumnArray& getTableData() {return vTableData;};
+            int getHeadCount(size_t sheet) const;
+            std::string getHead(size_t i, size_t sheet) const;
+            std::string getCleanHead(size_t i, size_t sheet) const;
+            std::string getCleanHeadPart(size_t i, size_t sheet, size_t part = 0) const;
+            mu::Value get(size_t i, size_t j, size_t sheet) const;
+            std::complex<double> getValue(size_t i, size_t j, size_t sheet) const;
+            std::string getValueAsString(size_t i, size_t j, size_t sheet) const;
+            std::string getValueAsInternalString(size_t i, size_t j, size_t sheet) const;
+            TableColumn* getColumn(size_t j, size_t sheet) const;
+            TableColumn::ColumnType getColumnType(size_t j, size_t sheet) const;
+            TableData& getTableData() {return vTableData;};
 
-            size_t getLines() const;
+            size_t getRows() const;
             size_t getCols() const;
+            size_t getSheets() const;
 
             bool isEmpty() const;
 
-            bool insertLines(size_t nPos = 0, size_t nNum = 1);
-            bool appendLines(size_t nNum = 1);
-            bool deleteLines(size_t nPos = 0, size_t nNum = 1);
-            bool insertCols(size_t nPos = 0, size_t nNum = 1);
-            bool appendCols(size_t nNum = 1);
-            bool deleteCols(size_t nPos = 0, size_t nNum = 1);
+            bool insertRows(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool appendRows(size_t sheet, size_t nNum = 1);
+            bool deleteRows(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool insertCols(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool appendCols(size_t sheet, size_t nNum = 1);
+            bool deleteCols(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool insertSheets(size_t nPos = 0, size_t nNum = 1);
+            bool appendSheets(size_t nNum = 1);
+            bool deleteSheets(size_t nPos = 0, size_t nNum = 1);
 
     };
 

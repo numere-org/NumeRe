@@ -4198,17 +4198,18 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
             // fill the open end indices
             _accessParser.evalIndices();
+            Table& table = _data.getTable(sDataTable);
 
-            if (_idx.row.last() >= _data.getLines(sDataTable, false))
-                _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
+            if (_idx.row.last() >= table.getRows())
+                _idx.row.setRange(0, table.getRows()-1);
 
-            if (_idx.col.last() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d")
-                _idx.col.setRange(0, _data.getCols(sDataTable)-1);
+            if (_idx.col.last() >= table.getCols() && _pInfo.sCommand != "plot3d")
+                _idx.col.setRange(0, table.getCols()-1);
 
             // Validize the indices depending on whether a cluster or
             // a table is used for the current data access
-            if (_idx.row.front() >= _data.getLines(sDataTable, false)
-                || (_idx.col.front() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d"))
+            if (_idx.row.front() >= table.getRows()
+                || (_idx.col.front() >= table.getCols() && _pInfo.sCommand != "plot3d"))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCurrentExpr, sDataTable, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             rows = _idx.row.size();
@@ -4250,7 +4251,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             else
             {
                 mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                    _idx.row, _idx.col.front(), false);
+                                                    _idx.row, _idx.col.front(), _idx.layer.front(), false);
 
                 if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
                     isTimeAxis[XRANGE] = true;
@@ -4284,7 +4285,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             else if (datarows == 1 && _idx.col.numberOfNodes() == 2 && !openEnd)
             {
                 vVals = getDataFromObject(_accessParser.getDataObject(),
-                                          _idx.row, _idx.col.last(), false);
+                                          _idx.row, _idx.col.last(), _idx.layer.front(), false);
 
                 if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
                     isTimeAxis[YRANGE] = true;
@@ -4312,7 +4313,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     else
                     {
                         vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                  _idx.row, _idx.col[q+1], false);
+                                                  _idx.row, _idx.col[q+1], _idx.layer.front(), false);
 
                         if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
                             isTimeAxis[YRANGE] = true;
@@ -4423,7 +4424,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     }
                 }
                 else if (_idx.col[q] == VectorIndex::INVALID
-                         || !_data.getColElements(_idx.col.subidx(q, 1), _accessParser.getDataObject()))
+                         || !_data.getColElements(_idx.col.subidx(q, 1), _idx.layer.front(), _accessParser.getDataObject()))
                 {
                     for (size_t t = 0; t < rows; t++)
                         m_manager.assets[typeCounter].writeData(0.0, q, t);
@@ -4431,7 +4432,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 else
                 {
                     vVals = getDataFromObject(_accessParser.getDataObject(),
-                                              _idx.row, _idx.col[q], false);
+                                              _idx.row, _idx.col[q], _idx.layer.front(), false);
 
                     if (vVals.getCommonType() == mu::TYPE_NUMERICAL
                         && vVals.getCommonNumericalType() == mu::DATETIME
@@ -4487,7 +4488,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 if (isTablePlot)
                 {
                     mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                        _idx.row, _idx.col[axis], false);
+                                                        _idx.row, _idx.col[axis], _idx.layer.front(), false);
 
                     if (vAxis.getCommonType() == mu::TYPE_NUMERICAL
                         && vAxis.getCommonNumericalType() == mu::DATETIME
@@ -4530,7 +4531,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 for (size_t y = 0; y < samples[1]-isBars; y++)
                 {
                     mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
-                                                       _idx.row, _idx.col[y+2], false);
+                                                       _idx.row, _idx.col[y+2], _idx.layer.front(), false);
 
                     if (vals.getCommonType() == mu::TYPE_NUMERICAL
                         && vals.getCommonNumericalType() == mu::DATETIME
@@ -4631,7 +4632,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 for (size_t axis = 0; axis < samples.size(); axis++)
                 {
                     mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                        _idx.row, _idx.col[axis], false);
+                                                        _idx.row, _idx.col[axis], _idx.layer.front(), false);
 
                     if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
                         isTimeAxis[axis] = true;
@@ -4660,7 +4661,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 for (size_t y = 0; y < samples[1]; y++)
                 {
                     mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
-                                                       _idx.row, _idx.col[y+2], false);
+                                                       _idx.row, _idx.col[y+2], _idx.layer.front(), false);
 
                     for (size_t x = 0; x < std::min(samples[0], vals.size()); x++)
                     {
@@ -4818,9 +4819,10 @@ void Plot::createDataLegends()
             //_access.evalIndices();
             std::string sTableName = _access.getDataObject();
             const VectorIndex& vCols = _access.getIndices().col;
+            const VectorIndex& vLayers = _access.getIndices().layer;
 
             if (vCols.numberOfNodes() == 1)
-                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.front(), sTableName));
+                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.front(), vLayers.front(), sTableName));
             else if (vCols.numberOfNodes() == 2)
             {
                 // First and second index value available
@@ -4833,7 +4835,7 @@ void Plot::createDataLegends()
                         if (isBarPlot)
                         {
                             sTemp.clear();
-                            vCols.setOpenEndIndex(_data.getCols(sTableName)-1);
+                            vCols.setOpenEndIndex(_data.getTable(sTableName).getCols()-1);
 
                             // Don't use the first one
                             for (size_t i = 1; i < vCols.size(); i++)
@@ -4841,7 +4843,7 @@ void Plot::createDataLegends()
                                 if (sTemp.length())
                                     sTemp += "\n";
 
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                                sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                             }
 
                             sTemp = toExternalString(sTemp);
@@ -4849,25 +4851,25 @@ void Plot::createDataLegends()
                         else
                         {
                             if (vCols.isOpenEnd())
-                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                         + _data.getTopHeadLineElement(vCols[0], sTableName));
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                             else
-                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                                                         + _data.getTopHeadLineElement(vCols.front(), sTableName));
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.last(), vLayers.front(), sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols.front(), vLayers.front(), sTableName));
                         }
                     }
                     else
                     {
-                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
-                    sTemp = toExternalString(_data.getTopHeadLineElement(vCols[0], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vCols[1], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vCols[2], sTableName));
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[2], vLayers.front(), sTableName));
                 }
             }
             else if (vCols.numberOfNodes() == 3)
@@ -4888,28 +4890,28 @@ void Plot::createDataLegends()
                                 if (sTemp.length())
                                     sTemp += "\n";
 
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                                sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                             }
 
                             sTemp = toExternalString(sTemp);
                         }
                         else
-                            sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                     + _data.getTopHeadLineElement(vCols[0], sTableName));
+                            sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                     + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                     else
                     {
-                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
                     std::vector<int> vNodes = vCols.getVector();
-                    sTemp = toExternalString(_data.getTopHeadLineElement(vNodes[0], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vNodes[2], sTableName));
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vNodes[0], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[1], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[2], vLayers.front(), sTableName));
                 }
             }
             else
@@ -4925,7 +4927,7 @@ void Plot::createDataLegends()
                         if (sTemp.length())
                             sTemp += "\n";
 
-                        sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                        sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                     }
 
                     sTemp = toExternalString(sTemp);

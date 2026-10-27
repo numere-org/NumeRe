@@ -751,7 +751,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     Indices _idx;
                     _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                     _idx.col = VectorIndex(0);
-                    _dataRef->writeToTable(_idx, sNewArgName, v);
+                    _dataRef->getTable(sNewArgName).write(_idx, v);
                 }
                 catch (...)
                 {
@@ -1146,7 +1146,7 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
                         Indices _idx;
                         _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                         _idx.col = VectorIndex(0);
-                        _dataRef->writeToTable(_idx, currentVar, v);
+                        _dataRef->getTable(currentVar).write(_idx, v);
                     }
                 }
             }

@@ -747,18 +747,19 @@ static std::string formatUnit(const std::string& sValue, const std::string& sUni
 }
 
 
-void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+void Output::format(NumeRe::TableView _table, size_t digits, size_t chars, size_t sheet)
 {
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    size_t nHeadLineCount = _table.getHeadCount();
-    size_t nRows = _table.getLines();
-    size_t nCols = _table.getCols();
+    size_t nHeadLineCount = _table.getHeadCount(sheet);
+    size_t nRows = _table.getTableData().getSheet(sheet).rows();
+    size_t nCols = _table.getTableData().getSheet(sheet).cols();
     std::vector<TableColumn::ColumnType> vTypes;
 
     for (size_t i = 0; i < nCols; i++)
     {
-        vTypes.push_back(_table.getColumnType(i));
+        vTypes.push_back(_table.getColumnType(i, sheet));
     }
 
     if (bPrintCSV)
@@ -769,7 +770,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
         {
             for (size_t j = 0; j < nCols; j++)
             {
-                sPrint += _table.getCleanHeadPart(j, i) + ",";
+                sPrint += _table.getCleanHeadPart(j, sheet, i) + ",";
             }
 
             print(sPrint);
@@ -780,8 +781,8 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
         {
             for (size_t j = 0; j < nCols; j++)
             {
-                if (_table.get(i, j).isValid())
-                    sPrint += _table.get(i, j).printVal();
+                if (_table.get(i, j, sheet).isValid())
+                    sPrint += _table.get(i, j, sheet).printVal();
 
                 sPrint += ",";
             }
@@ -806,7 +807,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
         std::string sLabel = sFileName;
 
         if (sLabel.find('/') != string::npos)
-            sLabel.erase(0,sLabel.rfind('/')+1);
+            sLabel.erase(0, sLabel.rfind('/')+1);
 
         if (sLabel.find(".tex") != string::npos)
             sLabel.erase(sLabel.rfind(".tex"));
@@ -829,7 +830,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
             for (size_t i = 0; i < nHeadLineCount; i++)
             {
                 for (size_t j = 0; j < nCols; j++)
-                    sPrint += _table.getCleanHeadPart(j, i) + " & ";
+                    sPrint += _table.getCleanHeadPart(j, sheet, i) + " & ";
 
                 sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
             }
@@ -890,14 +891,14 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                 if (j)
                     sPrint += " &";
 
-                if (_table.get(i, j).isValid() && TableColumn::isValueType(vTypes[j]))
+                if (_table.get(i, j, sheet).isValid() && TableColumn::isValueType(vTypes[j]))
                     sPrint += "$";
                 else
                     sPrint += "  ";
 
-                sPrint += replaceTeXControls(_table.get(i, j).printVal());
+                sPrint += replaceTeXControls(_table.get(i, j, sheet).printVal());
 
-                if (_table.get(i, j).isValid() && TableColumn::isValueType(vTypes[j]))
+                if (_table.get(i, j, sheet).isValid() && TableColumn::isValueType(vTypes[j]))
                     sPrint += "$";
             }
 
@@ -938,7 +939,7 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
     for (size_t i = 0; i < nHeadLineCount; i++)
     {
         for (size_t j = 0; j < nCols; j++)
-            nLongest[j] = std::max(nLongest[j], countUnicodePoints(_table.getCleanHeadPart(j, i)));
+            nLongest[j] = std::max(nLongest[j], countUnicodePoints(_table.getCleanHeadPart(j, sheet, i)));
     }
 
     if (!bCompact || nRows < 12)
@@ -946,13 +947,13 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
         // --> Laufe durch jedes Element der Tabelle <--
         for (size_t j = 0; j < nCols; j++)
         {
-            if (_table.getColumn(j))
+            if (_table.getColumn(j, sheet))
             {
                 for (size_t i = 0; i < nRows; i++)
                 {
                     nLongest[j] = std::max(nLongest[j],
-                                           countUnicodePoints(formatUnit(_table.get(i, j).print(digits, chars),
-                                                              _table.getColumn(j)->m_sUnit)));
+                                           countUnicodePoints(formatUnit(_table.get(i, j, sheet).print(digits, chars),
+                                                              _table.getColumn(j, sheet)->m_sUnit)));
                 }
             }
 
@@ -963,15 +964,15 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
     {
         for (size_t j = 0; j < nCols; j++)
         {
-            if (_table.getColumn(j))
+            if (_table.getColumn(j, sheet))
             {
                 for (size_t i = 0; i < nRows; i++)
                 {
                     if (i < 5 || i >= nRows - 5)
                     {
                         nLongest[j] = std::max(nLongest[j],
-                                               countUnicodePoints(formatUnit(_table.get(i, j).print(digits, chars),
-                                                                  _table.getColumn(j)->m_sUnit)));
+                                               countUnicodePoints(formatUnit(_table.get(i, j, sheet).print(digits, chars),
+                                                                  _table.getColumn(j, sheet)->m_sUnit)));
                     }
                 }
             }
@@ -1083,10 +1084,10 @@ void Output::format(NumeRe::Table _table, size_t digits, size_t chars)
                 {
                     std::string sValue = "---";
 
-                    if (_table.getColumn(j))
+                    if (_table.getColumn(j, sheet))
                     {
-                        sValue = _table.get(i,j).isValid() ? formatUnit(_table.get(i, j).print(digits, chars),
-                                                                        _table.getColumn(j)->m_sUnit) : "---";
+                        sValue = _table.get(i, j, sheet).isValid() ? formatUnit(_table.get(i, j, sheet).print(digits, chars),
+                                                                                _table.getColumn(j, sheet)->m_sUnit) : "---";
                     }
 
                     if (!bFile && j == nLineStartCol*nNotRepeatFirstCol)

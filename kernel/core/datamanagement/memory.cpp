@@ -48,9 +48,8 @@ using namespace std;
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-Memory::Memory()
+Table::Table()
 {
-    nCalcLines = -1;
     bSaveMutex = false;
     m_meta.save();
 }
@@ -61,11 +60,12 @@ Memory::Memory()
 /// defined table size.
 ///
 /// \param _nCols size_t
+/// \param _nSheets size_t
 ///
 /////////////////////////////////////////////////
-Memory::Memory(size_t _nCols) : Memory()
+Table::Table(size_t _nCols, size_t _nSheets) : Table()
 {
-    Allocate(_nCols);
+    Allocate(_nCols, _nSheets);
 }
 
 
@@ -73,7 +73,7 @@ Memory::Memory(size_t _nCols) : Memory()
 /// \brief Memory class destructor, which will
 /// free the allocated memory.
 /////////////////////////////////////////////////
-Memory::~Memory()
+Table::~Table()
 {
     clear();
 }
@@ -84,31 +84,26 @@ Memory::~Memory()
 /// class allocator. It will handle all memory
 /// allocations.
 ///
-/// \param _nNCols size_t
+/// \param nCols size_t
+/// \param nSheets size_t
 /// \param shrink bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::Allocate(size_t _nNCols, bool shrink)
+bool Table::Allocate(size_t nCols, size_t nSheets, bool shrink)
 {
-    if (_nNCols > MAX_TABLE_COLS)
+    if (nCols*nSheets > MAX_TABLE_COLS)
         throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, "", SyntaxError::invalid_position);
 
-    // We simply resize the number of columns. Note, that
-    // this only affects the column count. The column themselves
-    // are not automatically allocated
-    memArray.resize(std::max(_nNCols, memArray.size()));
+    m_data.reserve(nSheets);
+
+    for (size_t k = 0; k < nSheets; k++)
+    {
+        m_data.getSheet(k).reserve(nCols);
+    }
 
     if (shrink)
-    {
-        // Iterate through the columns
-        for (TblColPtr& col : memArray)
-        {
-            // If a column exist, call the shrink method
-            if (col)
-                col->shrink();
-        }
-    }
+        this->shrink();
 
     return true;
 }
@@ -121,15 +116,20 @@ bool Memory::Allocate(size_t _nNCols, bool shrink)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::createTableHeaders()
+void Table::createTableHeaders()
 {
-    for (size_t j = 0; j < memArray.size(); j++)
+    for (size_t k = 0; k < m_data.sheets(); k++)
     {
-        if (!memArray[j])
-            memArray[j].reset(new DEFAULT_COL_TYPE);
+        TableSheet& sheet = m_data.getSheet(k);
 
-        if (!memArray[j]->m_sHeadLine.length())
-            memArray[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
+        for (size_t j = 0; j < sheet.cols(); j++)
+        {
+            if (!sheet.m_columns[j])
+                sheet.m_columns[j].reset(new DEFAULT_COL_TYPE);
+
+            if (!sheet.m_columns[j]->m_sHeadLine.length())
+                sheet.m_columns[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
+        }
     }
 }
 
@@ -141,11 +141,10 @@ void Memory::createTableHeaders()
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::clear()
+bool Table::clear()
 {
-    memArray.clear();
+    m_data.clear();
 
-    nCalcLines = -1;
     m_meta.modify();
     bSaveMutex = false;
 
@@ -160,55 +159,12 @@ bool Memory::clear()
 /// \return Memory&
 ///
 /////////////////////////////////////////////////
-Memory& Memory::operator=(const Memory& other)
+Table& Table::operator=(const Table& other)
 {
     clear();
 
-    memArray.resize(other.memArray.size());
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < other.memArray.size(); i++)
-    {
-        if (!other.memArray[i])
-            continue;
-
-        switch (other.memArray[i]->m_type)
-        {
-            case TableColumn::TYPE_DATETIME:
-                memArray[i].reset(new DateTimeColumn);
-                break;
-            case TableColumn::TYPE_DURATION:
-                memArray[i].reset(new DurationColumn);
-                break;
-            case TableColumn::TYPE_STRING:
-                memArray[i].reset(new StringColumn);
-                break;
-            case TableColumn::TYPE_LOGICAL:
-                memArray[i].reset(new LogicalColumn);
-                break;
-            case TableColumn::TYPE_CATEGORICAL:
-                memArray[i].reset(new CategoricalColumn);
-                break;
-
-            // These labels are only for getting warnings
-            // if new column types are added
-            case TableColumn::TYPE_NONE:
-            case TableColumn::VALUELIKE:
-            case TableColumn::STRINGLIKE:
-            case TableColumn::TYPE_MIXED:
-                break;
-            default:
-            {
-                if (TableColumn::isValueType(other.memArray[i]->m_type))
-                    memArray[i].reset(createValueTypeColumn(other.memArray[i]->m_type));
-            }
-        }
-
-        memArray[i]->assign(other.memArray[i].get());
-    }
-
+    m_data = other.m_data;
     m_meta = other.m_meta;
-    nCalcLines = other.nCalcLines;
     m_meta.modify();
 
     return *this;
@@ -221,17 +177,14 @@ Memory& Memory::operator=(const Memory& other)
 /// size, which shall be incremented, as long as
 /// it is smaller than the requested size.
 ///
-/// \param _nLines size_t
 /// \param _nCols size_t
+/// \param _nSheets size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::resizeMemory(size_t _nLines, size_t _nCols)
+bool Table::reserve(size_t _nCols, size_t _nSheets)
 {
-    if (!Allocate(_nCols))
-        return false;
-
-    return true;
+    return Allocate(_nCols, _nSheets);
 }
 
 
@@ -240,52 +193,40 @@ bool Memory::resizeMemory(size_t _nLines, size_t _nCols)
 /// number of columns, which are currently
 /// available in this table.
 ///
-/// \param _bFull bool true, if the reserved
-/// number of columns is requested, false if only
-/// the non-empty ones are requested
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Memory::getCols(bool _bFull) const
+int Table::getCols() const
 {
-    return memArray.size();
+    return m_data.cols();
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This member function will return the
-/// number of lines, which are currently
+/// number of rows, which are currently
 /// available in this table.
 ///
-/// \param _bFull bool true, if the reserved
-/// number of lines is requested, false if only
-/// the non-empty ones are requested
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Memory::getLines(bool _bFull) const
+int Table::getRows() const
 {
-    if (memArray.size())
-    {
-        if (nCalcLines != -1)
-            return nCalcLines;
+    return m_data.rows();
+}
 
-        size_t nReturn = 0;
 
-        for (const TblColPtr& col : memArray)
-        {
-            if (col && col->size() > nReturn)
-                nReturn = col->size();
-        }
-
-        // Cache the number of lines until invalidation
-        // for faster access
-        nCalcLines = nReturn;
-
-        return nReturn;
-    }
-
-    return 0;
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of available layers ("sheets"), which
+/// are currently available in this table.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int Table::getSheets() const
+{
+    return m_data.sheets();
 }
 
 
@@ -295,13 +236,14 @@ int Memory::getLines(bool _bFull) const
 /// values).
 ///
 /// \param col size_t
+/// \param sheet size_t
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Memory::getElemsInColumn(size_t col) const
+int Table::getElemsInColumn(size_t col, size_t sheet) const
 {
-    if (memArray.size() > col && memArray[col])
-        return memArray[col]->size();
+    if (m_data.sheets() > sheet)
+        return m_data.getSheet(sheet).getElemsInColumn(col);
 
     return 0;
 }
@@ -313,13 +255,14 @@ int Memory::getElemsInColumn(size_t col) const
 /// but with the internal invalid values.
 ///
 /// \param col size_t
+/// \param sheet size_t
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Memory::getFilledElemsInColumn(size_t col) const
+int Table::getFilledElemsInColumn(size_t col, size_t sheet) const
 {
-    if (memArray.size() > col && memArray[col])
-        return memArray[col]->getNumFilledElements();
+   if (m_data.sheets() > sheet)
+        return m_data.getSheet(sheet).getFilledElemsInColumn(col);
 
     return 0;
 }
@@ -332,17 +275,9 @@ int Memory::getFilledElemsInColumn(size_t col) const
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Memory::getSize() const
+size_t Table::getSize() const
 {
-    size_t bytes = 0;
-
-    for (const TblColPtr& col : memArray)
-    {
-        if (col)
-            bytes += col->getBytes();
-    }
-
-    return bytes + m_meta.comment.length();
+    return m_data.getSize() + m_meta.comment.length();
 }
 
 
@@ -350,17 +285,15 @@ size_t Memory::getSize() const
 /// \brief This member function returns the
 /// element stored at the selected position.
 ///
-/// \param _nLine size_t
+/// \param _nRow size_t
 /// \param _nCol size_t
+/// \param _nSheet size_t
 /// \return mu::Value
 ///
 /////////////////////////////////////////////////
-mu::Value Memory::readMem(size_t _nLine, size_t _nCol) const
+mu::Value Table::read(size_t _nRow, size_t _nCol, size_t _nSheet) const
 {
-    if (memArray.size() > _nCol && memArray[_nCol])
-        return memArray[_nCol]->get(_nLine);
-
-    return mu::Value();
+    return m_data.read(_nRow, _nCol, _nSheet);
 }
 
 
@@ -400,12 +333,13 @@ static std::complex<double> nanAvg(const std::vector<std::complex<double>>& valu
 ///
 /// \param _dLine double
 /// \param _dCol double
+/// \param sheet size_t
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) const
+std::complex<double> Table::readMemInterpolated(double _dLine, double _dCol, size_t sheet) const
 {
-    if (std::isnan(_dLine) || std::isnan(_dCol))
+    if (std::isnan(_dLine) || std::isnan(_dCol) || sheet >= m_data.sheets())
         return NAN;
 
     // Find the base index
@@ -416,14 +350,14 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
     double x = _dLine - nBaseRow;
     double y = _dCol - nBaseCol;
 
-    auto readCmplx = [&](int nRow, int nCol)
-        {return nCol < 0 || nCol >= (int)memArray.size() || !memArray[nCol] ? NAN : memArray[nCol]->getValue(nRow);};
+    auto readCmplx = [&](int nRow, int nCol, size_t sheet)
+        {return nCol < 0 || !m_data.getSheet(sheet).isValidColumn(nCol) ? NAN : m_data.getSheet(sheet).m_columns[nCol]->getValue(nRow);};
 
     // Find the surrounding four entries
-    std::complex<double> f00 = readCmplx(nBaseRow, nBaseCol);
-    std::complex<double> f10 = readCmplx(nBaseRow+1, nBaseCol);
-    std::complex<double> f01 = readCmplx(nBaseRow, nBaseCol+1);
-    std::complex<double> f11 = readCmplx(nBaseRow+1, nBaseCol+1);
+    std::complex<double> f00 = readCmplx(nBaseRow, nBaseCol, sheet);
+    std::complex<double> f10 = readCmplx(nBaseRow+1, nBaseCol, sheet);
+    std::complex<double> f01 = readCmplx(nBaseRow, nBaseCol+1, sheet);
+    std::complex<double> f11 = readCmplx(nBaseRow+1, nBaseCol+1, sheet);
 
     // If all are NAN, return NAN
     if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
@@ -454,40 +388,15 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
 /// \brief This member function returns the
 /// elements stored at the selected positions.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::Array Table::read(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    mu::Array vReturn;
-
-    if (!memArray.size())
-        return vReturn;
-
-    vReturn.resize(_vLine.size()*_vCol.size(), mu::Value());
-
-    //#pragma omp parallel for
-    for (size_t j = 0; j < _vCol.size(); j++)
-    {
-        if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            vReturn[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
-        }
-    }
-
-    // Set the corresponding dimension sizes
-    if (_vLine.size() > 1 && _vCol.size() > 1)
-        vReturn.setDimSizes({_vLine.size(), _vCol.size()});
-
-    return vReturn;
+    return m_data.read(TableIndices(_vRow, _vCol, _vSheet));
 }
 
 
@@ -496,108 +405,37 @@ mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) c
 /// elements stored at the selected positions as
 /// a Matrix.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+Matrix Table::readMemAsMatrix(const VectorIndex& _vRow, const VectorIndex& _vCol) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return Matrix(1, 1);
 
-    Matrix mat(_vLine.size(), _vCol.size());
+    Matrix mat(_vRow.size(), _vCol.size());
+    const TableSheet& sheet = m_data.getSheet(0);
 
     #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
+        if (_vCol[j] < 0 || !sheet.isValidColumn(_vCol[j]))
             continue;
 
         // Get the complete column as a whole because it seems
         // to be much faster (VTABLE issues? Cache locality?)
-        std::vector<std::complex<double>> vEntries = memArray[_vCol[j]]->getValue(_vLine);
+        std::vector<std::complex<double>> vEntries = sheet.m_columns[_vCol[j]]->getValue(_vRow);
 
         for (size_t i = 0; i < vEntries.size(); i++)
         {
             mat(i, j) = vEntries[i];
         }
 
-        /*int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mat(i, j) = memArray[_vCol[j]]->getValue(_vLine[i]);
-        }*/
     }
 
     return mat;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// elements stored at the selected positions.
-///
-/// \param _vLine const VectorIndex&
-/// \param _vCol const VectorIndex&
-/// \return mu::Array
-///
-/////////////////////////////////////////////////
-mu::Array Memory::readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const
-{
-    mu::Array vReturn;
-
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vReturn.push_back("");
-    else
-    {
-        vReturn.resize(_vLine.size()*_vCol.size(), "");
-
-        //#pragma omp parallel for
-        for (size_t j = 0; j < _vCol.size(); j++)
-        {
-            if (_vCol[j] < 0)
-                continue;
-
-            int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;
-
-            for (size_t i = 0; i < _vLine.size(); i++)
-            {
-                if (_vLine[i] < 0)
-                    continue;
-
-                if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }
-
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
-            }
-        }
-    }
-
-    return vReturn;
 }
 
 
@@ -606,26 +444,13 @@ mu::Array Memory::readMemAsString(const VectorIndex& _vLine, const VectorIndex& 
 /// selected columns.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \return TableColumn::ColumnType
 ///
 /////////////////////////////////////////////////
-TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
+TableColumn::ColumnType Table::getType(const VectorIndex& _vCol, const VectorIndex& _vSheets) const
 {
-    TableColumn::ColumnType type = TableColumn::TYPE_NONE;
-
-    for (size_t i = 0; i < _vCol.size(); i++)
-    {
-        if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
-        {
-            if (type == TableColumn::TYPE_NONE)
-                type = memArray[_vCol[i]]->m_type;
-            else if (type != memArray[_vCol[i]]->m_type
-                     && (type > TableColumn::STRINGLIKE || memArray[_vCol[i]]->m_type > TableColumn::STRINGLIKE))
-                return TableColumn::TYPE_MIXED;
-        }
-    }
-
-    return type;
+    return m_data.getType(_vCol, _vSheets);
 }
 
 
@@ -635,19 +460,26 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 /// string-like data.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::isValueLike(const VectorIndex& _vCol) const
+bool Table::isValueLike(const VectorIndex& _vCol, const VectorIndex& _vSheets) const
 {
     _vCol.setOpenEndIndex(getCols()-1);
+    _vSheets.setOpenEndIndex(getSheets()-1);
 
-    for (size_t i = 0; i < _vCol.size(); i++)
+    for (size_t k = 0; k < _vSheets.size(); k++)
     {
-        if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
+        const TableSheet& sheet = m_data.getSheet(k);
+
+        for (size_t i = 0; i < _vCol.size(); i++)
         {
-            if (memArray[_vCol[i]]->m_type >= TableColumn::STRINGLIKE)
-                return false;
+            if (_vCol[i] >= 0 && sheet.isValidColumn(_vCol[i]))
+            {
+                if (sheet.m_columns[_vCol[i]]->m_type >= TableColumn::STRINGLIKE)
+                    return false;
+            }
         }
     }
 
@@ -660,24 +492,33 @@ bool Memory::isValueLike(const VectorIndex& _vCol) const
 /// the categories and their respective index.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array Memory::getCategoryList(const VectorIndex& _vCol) const
+mu::Array Table::getCategoryList(const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
     mu::Array vRet;
 
-    for (size_t i = 0; i < _vCol.size(); i++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
-        {
-            if (memArray[_vCol[i]]->m_type == TableColumn::TYPE_CATEGORICAL)
-            {
-                const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(memArray[_vCol[i]].get())->getCategories();
+        if (_vSheet[k] < 0 || _vSheet[k] >= (int)m_data.sheets())
+            continue;
 
-                for (size_t c = 0; c < vCategories.size(); c++)
+        const TableSheet& sheet = m_data.getSheet(_vSheet[k]);
+
+        for (size_t i = 0; i < _vCol.size(); i++)
+        {
+            if (_vCol[i] >= 0 && sheet.isValidColumn(_vCol[i]))
+            {
+                if (sheet.m_columns[_vCol[i]]->m_type == TableColumn::TYPE_CATEGORICAL)
                 {
-                    vRet.push_back(mu::Category{mu::Numerical(c+1), vCategories[c]});
+                    const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(sheet.m_columns[_vCol[i]].get())->getCategories();
+
+                    for (size_t c = 0; c < vCategories.size(); c++)
+                    {
+                        vRet.push_back(mu::Category{mu::Numerical(c+1), vCategories[c]});
+                    }
                 }
             }
         }
@@ -692,50 +533,26 @@ mu::Array Memory::getCategoryList(const VectorIndex& _vCol) const
 /// of this table and returns it as a new Memory
 /// instance.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \return Memory*
 ///
 /// \remark The caller gets ownership of the
 /// returned Memory instance.
 ///
 /////////////////////////////////////////////////
-Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+Table* Table::extractRange(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheets) const
 {
-    Memory* _memCopy = new Memory();
+    Table* _memCopy = new Table();
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    _vRow.setOpenEndIndex(getRows()-1);
+    _vCol.setOpenEndIndex(getCols()-1);
+    _vSheets.setOpenEndIndex(getSheets()-1);
 
-    _memCopy->Allocate(_vCol.size());
-
-    size_t cols = _vCol.size();
-
-    if (cols * _vLine.size() > 10000)
-    {
-        #pragma omp parallel for
-        for (size_t j = 0; j < cols; j++)
-        {
-            if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
-            {
-                _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
-                _memCopy->memArray[j]->shrink();
-            }
-        }
-    }
-    else
-    {
-        for (size_t j = 0; j < cols; j++)
-        {
-            if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
-            {
-                _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
-                _memCopy->memArray[j]->shrink();
-            }
-        }
-    }
-
+    _memCopy->m_data = *m_data.extract(TableIndices(_vRow, _vCol, _vSheets));
     _memCopy->m_meta = m_meta;
+
     return _memCopy;
 }
 
@@ -748,37 +565,15 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// the target instance.
 ///
 /// \param vTarget mu::Variable*
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+void Table::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheets) const
 {
-    if (!memArray.size())
-        vTarget->std::vector<mu::Value>::assign(1, mu::Value());
-    else
-    {
-        vTarget->std::vector<mu::Value>::assign(_vLine.size()*_vCol.size(), mu::Value());
-
-        //#pragma omp parallel for
-        for (size_t j = 0; j < _vCol.size(); j++)
-        {
-            if (_vCol[j] < 0 || (int)memArray.size() <= _vCol[j] || !memArray[_vCol[j]])
-                continue;
-
-            for (size_t i = 0; i < _vLine.size(); i++)
-            {
-                if (_vLine[i] < 0)
-                    continue;
-
-                (*vTarget)[i + j * _vLine.size()] = memArray[_vCol[j]]->get(_vLine[i]);
-            }
-        }
-
-        if (_vLine.size() > 1 && _vCol.size() > 1)
-            vTarget->setDimSizes({_vLine.size(), _vCol.size()});
-    }
+    m_data.read(TableIndices(_vRow, _vCol, _vSheets), vTarget);
 }
 
 
@@ -787,17 +582,15 @@ void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, 
 /// selected positions is valid. Only checks
 /// internally, if the value is not a NaN value.
 ///
-/// \param _nLine size_t
+/// \param _nRow size_t
 /// \param _nCol size_t
+/// \param _nSheet size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::isValidElement(size_t _nLine, size_t _nCol) const
+bool Table::isValidElement(size_t _nRow, size_t _nCol, size_t _nSheet) const
 {
-    if (_nCol < memArray.size() && _nCol >= 0 && memArray[_nCol])
-        return memArray[_nCol]->isValid(_nLine); // THIS CHANGE MIGHT HAVE BROKEN OTHER THINGS
-
-    return false;
+    return m_data.read(_nRow, _nCol, _nSheet).isValid();
 }
 
 
@@ -808,9 +601,9 @@ bool Memory::isValidElement(size_t _nLine, size_t _nCol) const
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::isValid() const
+bool Table::isValid() const
 {
-    return getLines();
+    return !m_data.empty();
 }
 
 
@@ -820,45 +613,38 @@ bool Memory::isValid() const
 /// reachable in powers of two.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::shrink(const VectorIndex& _vCol)
+bool Table::shrink(const VectorIndex& _vCol, const VectorIndex& _vSheets)
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return true;
 
     _vCol.setOpenEndIndex(getCols()-1);
+    _vSheets.setOpenEndIndex(getSheets()-1);
 
-    // Shrink each column
-    for (size_t i = 0; i < _vCol.size(); i++)
+    for (size_t k = 0; k < _vSheets.size(); k++)
     {
-        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
+        if (_vSheets[k] < 0 || (size_t)_vSheets[k] >= m_data.sheets())
             continue;
 
-        TblColPtr& col = memArray[_vCol[i]];
-
-        if (col)
-            col->shrink();
-
-        if (col && !col->size())
-            col.reset(nullptr);
+        m_data.getSheet(_vSheets[k]).shrink(_vCol);
     }
 
-    nCalcLines = -1;
-
-    // Remove obsolete columns
-    for (int i = memArray.size()-1; i >= 0; i--)
+    // Remove obsolete sheets
+    for (int i = m_data.sheets()-1; i >= 0; i--)
     {
-        if (memArray[i])
+        if (m_data.getSheet(i).rows())
         {
-            memArray.resize(i+1);
+            m_data.resize(i+1);
             return true;
         }
     }
 
     // if this place is reached, delete everything
-    memArray.clear();
+    m_data.clear();
     return true;
 }
 
@@ -871,19 +657,24 @@ bool Memory::shrink(const VectorIndex& _vCol)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::convert()
+void Table::convert()
 {
     #pragma omp parallel for
-    for (size_t i = 0; i < memArray.size(); i++)
+    for (size_t k = 0; k < m_data.sheets(); k++)
     {
-        if (memArray[i] && memArray[i]->m_type == TableColumn::TYPE_STRING)
-        {
-            TableColumn* col = memArray[i]->convert();
+        TableSheet& sheet = m_data.getSheet(k);
 
-            // Only valid conversions return a non-zero
-            // pointer
-            if (col && col != memArray[i].get())
-                memArray[i].reset(col);
+        for (size_t i = 0; i < sheet.cols(); i++)
+        {
+            if (sheet.isValidColumn(i) && sheet.m_columns[i]->m_type == TableColumn::TYPE_STRING)
+            {
+                TableColumn* col = sheet.m_columns[i]->convert();
+
+                // Only valid conversions return a non-zero
+                // pointer
+                if (col && col != sheet.m_columns[i].get())
+                    sheet.m_columns[i].reset(col);
+            }
         }
     }
 }
@@ -895,80 +686,46 @@ void Memory::convert()
 /// type, if it is possible.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \param _sType const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
+bool Table::convertColumns(const VectorIndex& _vCol, const VectorIndex& _vSheets, const std::string& _sType)
 {
     TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
-    //else if (_type == TableColumn::TYPE_MIXED)
-    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
-
-    _vCol.setOpenEndIndex(memArray.size()-1);
 
     bool success = true;
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheets.setOpenEndIndex(m_data.sheets()-1);
 
-    for (size_t i = 0; i < _vCol.size(); i++)
+    for (size_t k = 0; k < _vSheets.size(); k++)
     {
-        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
+        if (_vSheets[k] < 0 || (size_t)_vSheets[k] >= m_data.sheets())
             continue;
 
-        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type && memArray[_vCol[i]]->m_type != TableColumn::TYPE_NONE)
+        TableSheet& sheet = m_data.getSheet(_vSheets[k]);
+
+        for (size_t i = 0; i < _vCol.size(); i++)
         {
-            TableColumn* col = memArray[_vCol[i]]->convert(_type);
+            if (_vCol[i] < 0 || !sheet.isValidColumn(_vCol[i]))
+                continue;
 
-            // Only valid conversions return a non-zero
-            // pointer
-            if (col && col != memArray[_vCol[i]].get())
-                memArray[_vCol[i]].reset(col);
-            else
-                success = _type == TableColumn::TYPE_MIXED; // Auto conversions do not flag errors
+            if (sheet.m_columns[_vCol[i]]->m_type != _type && sheet.m_columns[_vCol[i]]->m_type != TableColumn::TYPE_NONE)
+            {
+                TableColumn* col = sheet.m_columns[_vCol[i]]->convert(_type);
+
+                // Only valid conversions return a non-zero
+                // pointer
+                if (col && col != sheet.m_columns[_vCol[i]].get())
+                    sheet.m_columns[_vCol[i]].reset(col);
+                else
+                    success = _type == TableColumn::TYPE_MIXED; // Auto conversions do not flag errors
+            }
         }
-    }
-
-    // If successful: mark the whole table as modified
-    if (success)
-        m_meta.modify();
-
-    return success;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function tries to convert
-/// the selected columns to the target column
-/// type, if they are empty.
-///
-/// \param _vCol const VectorIndex&
-/// \param _sType const std::string&
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _sType)
-{
-    TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
-
-    if (_type == TableColumn::TYPE_NONE)
-        return false;
-    //else if (_type == TableColumn::TYPE_MIXED)
-    //    _type = TableColumn::TYPE_NONE; // Enable autoconversions
-
-    _vCol.setOpenEndIndex(memArray.size()-1);
-
-    bool success = true;
-
-    for (size_t i = 0; i < _vCol.size(); i++)
-    {
-        if (_vCol[i] < 0)
-            continue;
-        else if (_vCol[i] >= (int)memArray.size())
-            memArray.resize(_vCol[i]+1);
-
-        convert_if_empty(memArray[_vCol[i]], _vCol[i], _type);
     }
 
     // If successful: mark the whole table as modified
@@ -985,38 +742,45 @@ bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _s
 /// type if necessary.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \param vCategories const std::vector<std::string>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::setCategories(const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
+bool Table::setCategories(const VectorIndex& _vCol, const VectorIndex& _vSheets, const std::vector<std::string>& vCategories)
 {
     bool success = true;
-    _vCol.setOpenEndIndex(memArray.size()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheets.setOpenEndIndex(m_data.sheets()-1);
 
-    for (size_t i = 0; i < _vCol.size(); i++)
+    for (size_t k = 0; k < _vSheets.size(); k++)
     {
-        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
+        if (_vSheets[k] < 0 || (size_t)_vSheets[k] >= m_data.sheets())
             continue;
 
-        if (memArray[_vCol[i]])
+        TableSheet& sheet = m_data.getSheet(_vSheets[k]);
+
+        for (size_t i = 0; i < _vCol.size(); i++)
         {
-            if (memArray[_vCol[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
+            if (_vCol[i] < 0 || !sheet.isValidColumn(_vCol[i]))
+                continue;
+
+            if (sheet.m_columns[_vCol[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
             {
-                TableColumn* col = memArray[_vCol[i]]->convert(TableColumn::TYPE_CATEGORICAL);
+                TableColumn* col = sheet.m_columns[_vCol[i]]->convert(TableColumn::TYPE_CATEGORICAL);
 
                 // Only valid conversions return a non-zero
                 // pointer
-                if (col && col != memArray[_vCol[i]].get())
+                if (col && col != sheet.m_columns[_vCol[i]].get())
                 {
-                    memArray[_vCol[i]].reset(col);
+                    sheet.m_columns[_vCol[i]].reset(col);
                     static_cast<CategoricalColumn*>(col)->setCategories(vCategories);
                 }
                 else
                     success = false;
             }
             else
-                static_cast<CategoricalColumn*>(memArray[_vCol[i]].get())->setCategories(vCategories);
+                static_cast<CategoricalColumn*>(sheet.m_columns[_vCol[i]].get())->setCategories(vCategories);
         }
     }
 
@@ -1035,7 +799,7 @@ bool Memory::setCategories(const VectorIndex& _vCol, const std::vector<std::stri
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::getSaveStatus() const
+bool Table::getSaveStatus() const
 {
     return m_meta.isSaved;
 }
@@ -1048,15 +812,16 @@ bool Memory::getSaveStatus() const
 /// exist.
 ///
 /// \param _i size_t
+/// \param sheet size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Memory::getHeadLineElement(size_t _i) const
+std::string Table::getHeadLineElement(size_t _i, size_t sheet) const
 {
-    if (_i >= memArray.size() || !memArray[_i])
+    if (sheet >= m_data.sheets() || !m_data.getSheet(sheet).isValidColumn(_i))
         return TableColumn::getDefaultColumnHead(_i+1);
-    else
-        return memArray[_i]->m_sHeadLine;
+
+    return m_data.getSheet(sheet).m_columns[_i]->m_sHeadLine;
 }
 
 
@@ -1066,19 +831,22 @@ std::string Memory::getHeadLineElement(size_t _i) const
 /// headlines for empty or non-existing columns.
 ///
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
+vector<string> Table::getHeadLineElement(const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
     vector<string> vHeadLines;
 
-    for (size_t i = 0; i < _vCol.size(); i++)
-    {
-        if (_vCol[i] < 0)
-            continue;
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
-        vHeadLines.push_back(getHeadLineElement(_vCol[i]));
+    for (size_t k = 0; k < _vSheet.size(); k++)
+    {
+        for (size_t i = 0; i < _vCol.size(); i++)
+        {
+            vHeadLines.push_back(getHeadLineElement(_vCol[i], _vSheet[k]));
+        }
     }
 
     return vHeadLines;
@@ -1090,15 +858,16 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 /// column.
 ///
 /// \param nCol int
+/// \param sheet size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Memory::getUnit(int nCol) const
+std::string Table::getUnit(int nCol, size_t sheet) const
 {
-    if (nCol < (int)memArray.size() && memArray[nCol])
-        return memArray[nCol]->m_sUnit;
+    if (sheet >= m_data.sheets() || !m_data.getSheet(sheet).isValidColumn(nCol))
+        return "";
 
-    return "";
+    return m_data.getSheet(sheet).m_columns[nCol]->m_sUnit;
 }
 
 
@@ -1107,16 +876,20 @@ std::string Memory::getUnit(int nCol) const
 /// conversion is known.
 ///
 /// \param nCol size_t
+/// \param nSheet size_t
 /// \param mode UnitConversionMode
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol, UnitConversionMode mode) const
+std::vector<std::complex<double>> Table::asSiUnits(size_t nCol, size_t nSheet, UnitConversionMode mode) const
 {
-    if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
+    if (nSheet < m_data.sheets()
+        && m_data.getSheet(nSheet).isValidColumn(nCol)
+        && TableColumn::isValueType(m_data.getSheet(nSheet).m_columns[nCol]->m_type))
     {
-        std::vector<std::complex<double>> vConverted = memArray[nCol]->getValue(VectorIndex(0, VectorIndex::OPEN_END));
-        UnitConversion convert = getUnitConversion(memArray[nCol]->m_sUnit, mode);
+        const TblColPtr& col = m_data.getSheet(nSheet).m_columns[nCol];
+        std::vector<std::complex<double>> vConverted = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+        UnitConversion convert = getUnitConversion(col->m_sUnit, mode);
 
         for (size_t i = 0; i < vConverted.size(); i++)
         {
@@ -1135,14 +908,17 @@ std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol, UnitConversionM
 /// column's unit to the corresponding SI units.
 ///
 /// \param nCol size_t
+/// \param nSheet size_t
 /// \param mode UnitConversionMode
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Memory::showUnitConversion(size_t nCol, UnitConversionMode mode) const
+std::string Table::showUnitConversion(size_t nCol, size_t nSheet, UnitConversionMode mode) const
 {
-    if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
-        return printUnitConversion(memArray[nCol]->m_sUnit, mode);
+    if (nSheet < m_data.sheets()
+        && m_data.getSheet(nSheet).isValidColumn(nCol)
+        && TableColumn::isValueType(m_data.getSheet(nSheet).m_columns[nCol]->m_type))
+        return printUnitConversion(m_data.getSheet(nSheet).m_columns[nCol]->m_sUnit, mode);
 
     return "";
 }
@@ -1153,22 +929,17 @@ std::string Memory::showUnitConversion(size_t nCol, UnitConversionMode mode) con
 /// the selected column.
 ///
 /// \param _i size_t
+/// \param sheet size_t
 /// \param _sHead const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::setHeadLineElement(size_t _i, const std::string& _sHead)
+bool Table::setHeadLineElement(size_t _i, size_t sheet, const std::string& _sHead)
 {
-    if (_i >= memArray.size())
-    {
-        if (!resizeMemory(1, _i + 1))
-            return false;
-    }
+    if (sheet >= m_data.sheets())
+        m_data.reserve(sheet+1);
 
-    if (!memArray[_i])
-        memArray[_i].reset(new DEFAULT_COL_TYPE);
-
-    memArray[_i]->m_sHeadLine = _sHead;
+    m_data.getSheet(sheet).writeHeading(_sHead, _i);
     m_meta.modify();
 
     return true;
@@ -1179,25 +950,26 @@ bool Memory::setHeadLineElement(size_t _i, const std::string& _sHead)
 /// \brief Set the unit of the selected column.
 ///
 /// \param nCol int
+/// \param sheet size_t
 /// \param sUnit const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-bool Memory::setUnit(int nCol, const std::string& sUnit)
+bool Table::setUnit(int nCol, size_t sheet, const std::string& sUnit)
 {
-    if (nCol >= (int)memArray.size())
+    if (sheet >= m_data.sheets())
+        m_data.reserve(sheet+1);
+
+    TableSheet& currSheet = m_data.getSheet(sheet);
+    currSheet.reserve(nCol+1);
+
+    if (!currSheet.m_columns[nCol])
     {
-        if (!resizeMemory(1, nCol + 1))
-            return false;
+        currSheet.m_columns[nCol].reset(new DEFAULT_COL_TYPE);
+        currSheet.m_columns[nCol]->m_sHeadLine = TableColumn::getDefaultColumnHead(nCol+1);
     }
 
-    if (!memArray[nCol])
-    {
-        memArray[nCol].reset(new DEFAULT_COL_TYPE);
-        memArray[nCol]->m_sHeadLine = TableColumn::getDefaultColumnHead(nCol+1);
-    }
-
-    memArray[nCol]->m_sUnit = sUnit;
+    currSheet.m_columns[nCol]->m_sUnit = sUnit;
     m_meta.modify();
 
     return true;
@@ -1211,26 +983,36 @@ bool Memory::setUnit(int nCol, const std::string& sUnit)
 /// the new units.
 ///
 /// \param _vCols const VectorIndex&
+/// \param _vSheets const VectorIndex&
 /// \param mode UnitConversionMode
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> Memory::toSiUnits(const VectorIndex& _vCols, UnitConversionMode mode)
+std::vector<std::string> Table::toSiUnits(const VectorIndex& _vCols, const VectorIndex& _vSheets, UnitConversionMode mode)
 {
     std::vector<std::string> vUnits;
-    _vCols.setOpenEndIndex(getCols()-1);
+    _vCols.setOpenEndIndex(m_data.cols()-1);
+    _vSheets.setOpenEndIndex(m_data.sheets()-1);
 
-    for (size_t i = 0; i < _vCols.size(); i++)
+    for (size_t k = 0; k < _vSheets.size(); k++)
     {
-        if (_vCols[i] < (int)memArray.size() && memArray[_vCols[i]] && TableColumn::isValueType(memArray[_vCols[i]]->m_type))
+        if (_vSheets[k] < 0 || (size_t)_vSheets[k] >= m_data.sheets())
+            continue;
+
+        TableSheet& sheet = m_data.getSheet(_vSheets[k]);
+
+        for (size_t i = 0; i < _vCols.size(); i++)
         {
-            memArray[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i], mode));
-            std::string sUnit = getUnitConversion(memArray[_vCols[i]]->m_sUnit, mode).formatUnit(mode);
-            memArray[_vCols[i]]->m_sUnit = sUnit;
-            vUnits.push_back(sUnit);
+            if (sheet.isValidColumn(_vCols[i]) && TableColumn::isValueType(sheet.m_columns[_vCols[i]]->m_type))
+            {
+                sheet.m_columns[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i], _vSheets[k], mode));
+                std::string sUnit = getUnitConversion(sheet.m_columns[_vCols[i]]->m_sUnit, mode).formatUnit(mode);
+                sheet.m_columns[_vCols[i]]->m_sUnit = sUnit;
+                vUnits.push_back(sUnit);
+            }
+            else
+                vUnits.push_back("");
         }
-        else
-            vUnits.push_back("");
     }
 
     return vUnits;
@@ -1245,7 +1027,7 @@ std::vector<std::string> Memory::toSiUnits(const VectorIndex& _vCols, UnitConver
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeComment(const std::string& comment)
+void Table::writeComment(const std::string& comment)
 {
     m_meta.comment = comment;
     m_meta.modify();
@@ -1260,7 +1042,7 @@ void Memory::writeComment(const std::string& comment)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::setMetaData(const NumeRe::TableMetaData& meta)
+void Table::setMetaData(const NumeRe::TableMetaData& meta)
 {
     m_meta = meta;
 }
@@ -1272,27 +1054,9 @@ void Memory::setMetaData(const NumeRe::TableMetaData& meta)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::markModified()
+void Table::markModified()
 {
     m_meta.modify();
-    nCalcLines = -1;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the number of empty cells at
-/// the end of the selected columns.
-///
-/// \param _i size_t
-/// \return size_t
-///
-/////////////////////////////////////////////////
-size_t Memory::getAppendedZeroes(size_t _i) const
-{
-    if (_i < memArray.size() && memArray[_i])
-        return getLines() - memArray[_i]->size();
-
-    return getLines();
 }
 
 
@@ -1301,15 +1065,19 @@ size_t Memory::getAppendedZeroes(size_t _i) const
 /// number of lines needed for the table column
 /// headline of the selected column.
 ///
+/// \param sheet size_t
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Memory::getHeadlineCount() const
+size_t Table::getHeadlineCount(size_t sheet) const
 {
+    if (sheet >= m_data.sheets())
+        return 0;
+
     size_t nHeadlineCount = 1;
 
     // Get the dimensions of the complete headline (i.e. including possible linebreaks)
-    for (const TblColPtr& col : memArray)
+    for (const TblColPtr& col : m_data.getSheet(sheet).m_columns)
     {
         // No linebreak? Continue
         if (!col || col->m_sHeadLine.find('\n') == std::string::npos)
@@ -1340,7 +1108,7 @@ size_t Memory::getHeadlineCount() const
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Memory::getComment() const
+std::string Table::getComment() const
 {
     return m_meta.comment;
 }
@@ -1353,7 +1121,7 @@ std::string Memory::getComment() const
 /// \return NumeRe::TableMetaData
 ///
 /////////////////////////////////////////////////
-NumeRe::TableMetaData Memory::getMetaData() const
+NumeRe::TableMetaData Table::getMetaData() const
 {
     return m_meta;
 }
@@ -1364,26 +1132,20 @@ NumeRe::TableMetaData Memory::getMetaData() const
 /// value to the selected position. The table is
 /// automatically enlarged, if necessary.
 ///
-/// \param _nLine int
+/// \param _nRow int
 /// \param _nCol int
-/// \param _dData const mu::Value&
-/// \param type TableColumn::ColumnType
+/// \param _nSheet int
+/// \param _value const mu::Value&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColumn::ColumnType type)
+void Table::write(int _nRow, int _nCol, int _nSheet, const mu::Value& _value)
 {
-    if (!memArray.size() && !_dData.isValid())
+    if (_nSheet < 0 || _nCol < 0 || (_nRow < 0 && _nRow != VectorIndex::STRING))
         return;
 
-    if ((int)memArray.size() <= _nCol)
-        resizeMemory(_nLine+1, _nCol+1);
-
-    promote_if_needed(memArray[_nCol], _nCol, type != TableColumn::TYPE_NONE ? type : to_column_type(_dData));
-    memArray[_nCol]->set(_nLine, _dData);
-
-    if (nCalcLines != -1 && (!_dData.isValid() || _nLine >= nCalcLines))
-        nCalcLines = -1;
+    m_data.reserve(_nSheet+1);
+    m_data.getSheet(_nSheet).write(_value, _nRow, _nCol);
 
     m_meta.modify();
 }
@@ -1395,16 +1157,18 @@ void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData, TableColu
 /// table. It will not check for the existence of
 /// the needed amount of columns.
 ///
-/// \param _nLine int
+/// \param _nRow int
 /// \param _nCol int
+/// \param _nSheet int
 /// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData)
+void Table::writeDirect(int _nRow, int _nCol, int _nSheet, const std::complex<double>& _dData)
 {
-    promote_if_needed(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE_CF64);
-    memArray[_nCol]->setValue(_nLine, _dData);
+    TblColPtr& col = m_data.m_sheets[_nSheet]->m_columns[_nCol];
+    promote_if_needed(col, _nCol, TableColumn::TYPE_VALUE_CF64);
+    col->setValue(_nRow, _dData);
 }
 
 
@@ -1417,15 +1181,16 @@ void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& 
 /// Use this only, if real pre-allocation is
 /// possible.
 ///
-/// \param _nLine int
+/// \param _nRow int
 /// \param _nCol int
+/// \param _nShet int
 /// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<double>& _dData)
+void Table::writeUnsafe(int _nRow, int _nCol, int _nSheet, const std::complex<double>& _dData)
 {
-    memArray[_nCol]->setValue(_nLine, _dData);
+    m_data.m_sheets[_nSheet]->m_columns[_nCol]->setValue(_nRow, _dData);
 }
 
 
@@ -1440,140 +1205,9 @@ void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<dou
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, const mu::Array& _values)
+void Table::write(Indices& _idx, const mu::Array& _values)
 {
-    if (_idx.row.isString())
-    {
-        _idx.col.setOpenEndIndex(_idx.col.front()+_values.size()-1);
-
-        for (size_t i = 0; i < _idx.col.size(); i++)
-        {
-            setHeadLineElement(_idx.col[i], _values.get(i).getStr());
-        }
-
-        return;
-    }
-
-    int nDirection = LINES;
-
-    if (_values.size() == 1)
-    {
-        if (_values.get(0).isArray())
-            writeData(_idx, _values.get(0).getArray());
-        else
-            writeSingletonData(_idx, _values.get(0));
-
-        return;
-    }
-
-    bool rewriteColumn = false;
-
-    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
-        rewriteColumn = true;
-
-    TableColumn::ColumnType t = to_column_type(_values);
-
-    if (_values.isMatrix() && !_values.isVector())
-    {
-        if (getCols() != (int)_values.cols()
-            && getLines() != (int)_values.rows()
-            && _idx.row.isFullRange(getLines()-1)
-            && _idx.col.isFullRange(getCols()-1))
-            clear();
-
-        _idx.row.setOpenEndIndex(_idx.row.front() + _values.rows() - 1);
-        _idx.col.setOpenEndIndex(_idx.col.front() + _values.cols() - 1);
-
-        // Prepare the target size
-        resizeMemory(_values.rows(), _idx.col.max()+1);
-
-        // Write the contents to the table
-        for (size_t j = 0; j < _values.cols(); j++)
-        {
-            if (_idx.col[j] == VectorIndex::INVALID)
-                continue;
-
-            for (size_t i = 0; i < _values.rows(); i++)
-            {
-                if (_idx.row[i] == VectorIndex::INVALID)
-                    break;
-
-                if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
-
-                writeData(_idx.row[i], _idx.col[j], _values.get(i, j), t);
-            }
-        }
-    }
-    else // vectors are accepted here for backwards compatibility
-    {
-        // Prefer writing columns
-        if (_idx.row.size() > 1)
-            _idx.col.setOpenEndIndex(VectorIndex::INVALID);
-        else
-            _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
-
-        _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
-
-        if (_idx.row.size() > 1)
-            nDirection = COLS;
-        else if (_idx.col.size() > 1)
-            nDirection = LINES;
-
-        for (size_t j = 0; j < _idx.col.size(); j++)
-        {
-            for (size_t i = 0; i < _idx.row.size(); i++)
-            {
-                if (nDirection == COLS)
-                {
-                    if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], t);
-
-                    if (_values.size() > i)
-                        writeData(_idx.row[i], _idx.col[j], _values.get(i), t);
-                }
-                else
-                {
-                    if (_values.size() > j)
-                        writeData(_idx.row[i], _idx.col[j], _values.get(j));
-                }
-            }
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function writes multiple
-/// copies of a single string to a range in the
-/// table. The table is automatically enlarged,
-/// if necessary.
-///
-/// \param _idx Indices&
-/// \param _value const mu::Value&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::writeSingletonData(Indices& _idx, const mu::Value& _value)
-{
-    bool rewriteColumn = false;
-
-    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
-        rewriteColumn = true;
-
-    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
-    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
-
-    for (size_t i = 0; i < _idx.row.size(); i++)
-    {
-        for (size_t j = 0; j < _idx.col.size(); j++)
-        {
-            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], to_column_type(_value));
-
-            writeData(_idx.row[i], _idx.col[j], _value);
-        }
-    }
+    m_data.write(_values, TableIndices(_idx.row, _idx.col, _idx.layer));
 }
 
 
@@ -1585,7 +1219,7 @@ void Memory::writeSingletonData(Indices& _idx, const mu::Value& _value)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::setSaveStatus(bool _bIsSaved)
+void Table::setSaveStatus(bool _bIsSaved)
 {
     if (_bIsSaved)
         m_meta.save();
@@ -1601,7 +1235,7 @@ void Memory::setSaveStatus(bool _bIsSaved)
 /// \return long long int
 ///
 /////////////////////////////////////////////////
-long long int Memory::getLastSaved() const
+long long int Table::getLastSaved() const
 {
     return m_meta.lastSavedTime;
 }
@@ -1614,187 +1248,47 @@ long long int Memory::getLastSaved() const
 /// the control to the corresponding sorting
 /// function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \param sSortingExpression const std::string&
 /// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& sSortingExpression)
+std::vector<int> Table::sortElements(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, const std::string& sSortingExpression)
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return vector<int>();
 
-    bool bError = false;
     bool bReturnIndex = false;
-    bool bInternalIndex = false;
-    bSortCaseInsensitive = findParameter(sSortingExpression, "ignorecase");
-    int nSign = 1;
 
-    _vLine.setOpenEndIndex(getLines()-1);
-    _vCol.setOpenEndIndex(getCols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<int> vIndex;
 
-    // Determine the sorting direction
-    if (findParameter(sSortingExpression, "desc"))
-        nSign = -1;
-
     // Prepare the sorting index
-    vIndex = _vLine.getVector();
+    vIndex = _vRow.getVector();
 
     // Evaluate, whether an index shall be returned
     // (instead of actual reordering the columns)
     if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
 
-    // Evaluate, whether an index shall be returned
-    // (instead of actual reordering the columns)
-    if (findParameter(sSortingExpression, "internal"))
-        bInternalIndex = true;
-
-    // Is a column group selected or do we actually
-    // sort everything?
-    if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        // Make a copy of the global index for the private threads
-        std::vector<int> vPrivateIndex = vIndex;
+        if (_vSheet[k] < 0 || (size_t)_vSheet[k] >= m_data.sheets())
+            continue;
 
-        // Sort everything independently (we use vIndex from
-        // the outside, we therefore must declare it as firstprivate)
-        #pragma omp parallel for firstprivate(vPrivateIndex)
-        for (size_t j = 0; j < _vCol.size(); j++)
-        {
-            // Change for OpenMP
-            if (j && bReturnIndex)
-                continue;
+        TableSheet& sheet = m_data.getSheet(_vSheet[k]);
+        vIndex = sheet.sortElements(_vRow, _vCol, sSortingExpression);
 
-            // Sort the current column
-            if (!qSort(&vPrivateIndex[0], vPrivateIndex.size(), _vCol[j], 0, vPrivateIndex.size()-1, nSign))
-                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
-
-            // Abort after the first column, if
-            // an index shall be returned
-            // Continue is a change for OpenMP
-            if (bReturnIndex)
-            {
-                vIndex = vPrivateIndex;
-                continue;
-            }
-
-            // Actually reorder the column
-            reorderColumn(vPrivateIndex, _vLine, _vCol[j]);
-
-            // Reset the sorting index
-            vPrivateIndex = _vLine.getVector();
-        }
-    }
-    else
-    {
-        // Sort groups of columns (including
-        // hierarchical sorting)
-        string sCols = "";
-
-        // Find the column group definition
-        if (findParameter(sSortingExpression, "cols", '='))
-            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=') + 4);
-        else
-            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=') + 1);
-
-        // As long as the column group definition
-        // has a length
-        if (sCols.length())
-        {
-            // Get a new column keys instance
-            ColumnKeys* keys = evaluateKeyList(sCols, _vCol.size());
-
-            // Ensure that we obtained an actual
-            // instance
-            if (!keys)
-                throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
-
-            // Go through the group definition
-            for (size_t j = 0; j < keys->cols.size(); j++)
-            {
-                if (keys->cols[j] >= (int)_vCol.size() || keys->cols[j] < 0)
-                {
-                    delete keys;
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
-                }
-
-                // Sort the current key list level
-                // independently
-                if (!qSort(&vIndex[0], vIndex.size(), _vCol[keys->cols[j]], 0, vIndex.size()-1, nSign))
-                {
-                    delete keys;
-                    throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
-                }
-
-                // Subkey list: sort the subordinate group
-                // depending on the higher-level key group
-                if (keys->subkeys && keys->subkeys->subkeys)
-                {
-                    if (!sortSubList(&vIndex[0], vIndex.size(), keys, 0, vIndex.size()-1, _vCol, nSign, getCols(false)))
-                    {
-                        delete keys;
-                        throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
-                    }
-                }
-
-                // Break, if the index shall be returned
-                if (bReturnIndex)
-                    break;
-
-                // Actually reorder the current column
-                reorderColumn(vIndex, _vLine, _vCol[keys->cols[j]]);
-
-                // Obtain the subkey list
-                ColumnKeys* subKeyList = keys->subkeys;
-
-                // As long as a subkey list is available
-                while (subKeyList)
-                {
-                    // Reorder the subordinate key list
-                    for (size_t _j = 0; _j < subKeyList->cols.size(); _j++)
-                    {
-                        if (subKeyList->cols[_j] >= (int)_vCol.size() || subKeyList->cols[_j] < 0)
-                            throw SyntaxError(SyntaxError::INVALID_INDEX, sSortingExpression, SyntaxError::invalid_position);
-
-                        reorderColumn(vIndex, _vLine, _vCol[subKeyList->cols[_j]]);
-                    }
-
-                    // Find the next subordinate list
-                    subKeyList = subKeyList->subkeys;
-                }
-
-                // Hierarchical sorting does not allow havin multiple columns in
-                // their parent hierarchy
-                if (keys->subkeys && keys->subkeys->subkeys)
-                    break;
-
-                // Reset the sorting index for the next column
-                vIndex = _vLine.getVector();
-            }
-
-            // Free the occupied memory
-            delete keys;
-        }
-    }
-
-    // Number of lines might have changed
-    nCalcLines = -1;
-
-    // Increment each index value, if the index
-    // vector shall be returned
-    if (bReturnIndex && !bInternalIndex)
-    {
-        for (size_t i = 0; i < vIndex.size(); i++)
-            vIndex[i]++;
+        if (bReturnIndex)
+            break;
     }
 
     m_meta.modify();
 
-    if (bError || !bReturnIndex)
+    if (!bReturnIndex)
         return std::vector<int>();
 
     return vIndex;
@@ -1802,91 +1296,26 @@ std::vector<int> Memory::sortElements(const VectorIndex& _vLine, const VectorInd
 
 
 /////////////////////////////////////////////////
-/// \brief This member function simply reorders
-/// the contents of the selected column using the
-/// passed index vector.
-///
-/// \param vIndex const VectorIndex&
-/// \param original const VectorIndex&
-/// \param col int
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::reorderColumn(const VectorIndex& vIndex, const VectorIndex& original, int col)
-{
-    if ((int)memArray.size() > col && memArray[col])
-    {
-        TblColPtr copied(memArray[col]->copy(vIndex));
-        memArray[col]->insert(original, copied.get());
-        memArray[col]->shrink();
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Override for the virtual Sorter class
-/// member function. Returns 0, if both elements
-/// are equal, -1 if element i is smaller than
-/// element j and 1 otherwise.
-///
-/// \param i int
-/// \param j int
-/// \param col int
-/// \return int
-///
-/////////////////////////////////////////////////
-int Memory::compare(int i, int j, int col)
-{
-    if (col < (int)memArray.size() && memArray[col])
-        return memArray[col]->compare(i, j, bSortCaseInsensitive);
-
-    return 0;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Override for the virtual Sorter class
-/// member function. Returns true, if the
-/// selected element is a valid value.
-///
-/// \param line int
-/// \param col int
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool Memory::isValue(int line, int col)
-{
-    if (col < (int)memArray.size() && memArray[col])
-        return memArray[col]->isValid(line);
-
-    return false;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Create a copy-efficient table object
 /// from the data contents.
 ///
-/// \param _sTable const string&
-/// \return NumeRe::Table
+/// \param _sTable const std::string&
+/// \param rows const VectorIndex&
+/// \param cols const VectorIndex&
+/// \param sheets const VectorIndex&
+/// \return NumeRe::TableView
 ///
 /////////////////////////////////////////////////
-NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lines, const VectorIndex& cols)
+NumeRe::TableView Table::extractView(const std::string& _sTable, const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& sheets)
 {
-    lines.setOpenEndIndex(getLines(false)-1);
-    cols.setOpenEndIndex(getCols(false)-1);
+    rows.setOpenEndIndex(m_data.rows()-1);
+    cols.setOpenEndIndex(m_data.cols()-1);
+    sheets.setOpenEndIndex(m_data.sheets()-1);
 
-    NumeRe::Table table(lines.size(), cols.size());
+    NumeRe::TableView table(m_data.extract(TableIndices(rows, cols, sheets)));
 
     table.setName(_sTable);
     table.setMetaData(m_meta);
-
-    #pragma omp parallel for
-    for (size_t j = 0; j < cols.size(); j++)
-    {
-        if (cols[j] < (int)memArray.size() && memArray[cols[j]])
-            table.setColumn(j, memArray[cols[j]]->copy(lines));
-    }
 
     return table;
 }
@@ -1899,15 +1328,18 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 /// before.
 ///
 /// \param _table NumeRe::Table
+/// \param rows const VectorIndex&
+/// \param cols const VectorIndex&
+/// \param sheets const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols)
+void Table::importView(NumeRe::TableView _table, const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& sheets)
 {
     m_meta = _table.getMetaData();
 
     // We construct separate objects because they might be overwritten
-    insertCopiedTable(_table, lines, cols, false);
+    insertCopiedView(_table, rows, cols, sheets, false);
 }
 
 
@@ -1920,99 +1352,109 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 /// considering the column headlines.
 ///
 /// \param _table NumeRe::Table
-/// \param lines const VectorIndex&
+/// \param rows const VectorIndex&
 /// \param cols const VectorIndex&
+/// \param sheets const VectorIndex&
 /// \param transpose bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose)
+void Table::insertCopiedView(NumeRe::TableView _table, const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& sheets, bool transpose)
 {
     // We construct separate objects because they might be overwritten
-    deleteBulk(VectorIndex(lines), VectorIndex(cols));
+    deleteBulk(VectorIndex(rows), VectorIndex(cols), VectorIndex(sheets));
 
-    lines.setOpenEndIndex(lines.front() + (transpose ? _table.getCols()-1 : _table.getLines()-1));
-    cols.setOpenEndIndex(cols.front() + (transpose ? _table.getLines()-1 : _table.getCols()-1));
+    rows.setOpenEndIndex(rows.front() + (transpose ? _table.getCols()-1 : _table.getRows()-1));
+    cols.setOpenEndIndex(cols.front() + (transpose ? _table.getRows()-1 : _table.getCols()-1));
+    sheets.setOpenEndIndex(sheets.front() + _table.getSheets()-1);
 
-    resizeMemory(lines.max()+1, cols.max()+1);
+    reserve(cols.max()+1, sheets.max()+1);
 
-    // Shall we transpose the table?
-    if (!transpose)
+    for (size_t k = 0; k < sheets.size(); k++)
     {
-        // Insert without transposition
-        #pragma omp parallel for
-        for (size_t j = 0; j < _table.getCols(); j++)
+        if (sheets[k] < 0 || (size_t)sheets[k] >= m_data.sheets())
+            continue;
+
+        TableSheet& sheet = m_data.getSheet(sheets[k]);
+
+        // Shall we transpose the table?
+        if (!transpose)
         {
-            if (j >= cols.size())
-                continue;
-
-            TableColumn* tabCol = _table.getColumn(j);
-
-            if (!tabCol)
-                continue;
-
-            // Do we have to create a new column?
-            if (!memArray[cols[j]])
+            // Insert without transposition
+            #pragma omp parallel for
+            for (size_t j = 0; j < _table.getCols(); j++)
             {
-                if (TableColumn::isValueType(tabCol->m_type))
-                    memArray[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
-                else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
-                    memArray[cols[j]].reset(new DateTimeColumn);
-                else if (tabCol->m_type == TableColumn::TYPE_DURATION)
-                    memArray[cols[j]].reset(new DurationColumn);
-                else if (tabCol->m_type == TableColumn::TYPE_STRING)
-                    memArray[cols[j]].reset(new StringColumn);
-                else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
-                    memArray[cols[j]].reset(new LogicalColumn);
-                else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
-                    memArray[cols[j]].reset(new CategoricalColumn);
-                else
+                if (j >= cols.size())
+                    continue;
+
+                TableColumn* tabCol = _table.getColumn(j, k);
+
+                if (!tabCol)
+                    continue;
+
+                // Do we have to create a new column?
+                if (!sheet.m_columns[cols[j]])
                 {
-                    NumeReKernel::issueWarning("In Memory::insertCopiedTable(): TableColumn::ColumnType not implemented.");
+                    if (TableColumn::isValueType(tabCol->m_type))
+                        sheet.m_columns[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
+                    else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
+                        sheet.m_columns[cols[j]].reset(new DateTimeColumn);
+                    else if (tabCol->m_type == TableColumn::TYPE_DURATION)
+                        sheet.m_columns[cols[j]].reset(new DurationColumn);
+                    else if (tabCol->m_type == TableColumn::TYPE_STRING)
+                        sheet.m_columns[cols[j]].reset(new StringColumn);
+                    else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
+                        sheet.m_columns[cols[j]].reset(new LogicalColumn);
+                    else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
+                        sheet.m_columns[cols[j]].reset(new CategoricalColumn);
+                    else
+                    {
+                        NumeReKernel::issueWarning("In Memory::insertCopiedTable(): TableColumn::ColumnType not implemented.");
+                        continue;
+                    }
+
+                    sheet.m_columns[cols[j]]->assignMetaData(tabCol);
+                }
+                else if (tabCol->m_type != sheet.m_columns[cols[j]]->m_type)
+                {
+                    // Convert the column if the type does not fit
+                    sheet.m_columns[cols[j]].reset(sheet.m_columns[cols[j]]->convert(TableColumn::TYPE_STRING));
+                    sheet.m_columns[cols[j]]->insert(rows, tabCol->convert(TableColumn::TYPE_STRING));
                     continue;
                 }
 
-                memArray[cols[j]]->assignMetaData(tabCol);
+                // Common type: simply insert the data
+                sheet.m_columns[cols[j]]->insert(rows, tabCol);
             }
-            else if (tabCol->m_type != memArray[cols[j]]->m_type)
-            {
-                // Convert the column if the type does not fit
-                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
-                memArray[cols[j]]->insert(lines, tabCol->convert(TableColumn::TYPE_STRING));
-                continue;
-            }
-
-            // Common type: simply insert the data
-            memArray[cols[j]]->insert(lines, tabCol);
         }
-    }
-    else
-    {
-        // Transpose the table
-        #pragma omp parallel for
-        for (size_t j = 0; j < _table.getLines(); j++)
+        else
         {
-            if (j >= cols.size())
-                continue;
-
-            // If we have to create a column, we'll create a string column,
-            // otherwise we'll convert the current one to a string column
-            if (!memArray[cols[j]])
+            // Transpose the table
+            #pragma omp parallel for
+            for (size_t j = 0; j < _table.getRows(); j++)
             {
-                memArray[cols[j]].reset(new StringColumn);
-                memArray[cols[j]]->m_sHeadLine = TableColumn::getDefaultColumnHead(cols[j]);
-            }
-            else
-                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
+                if (j >= cols.size())
+                    continue;
 
-            // There's no easier way to store the result because the
-            // table does not return rows as vectors
-            for (size_t i = 0; i < _table.getCols(); i++)
-            {
-                if (i >= lines.size())
-                    break;
+                // If we have to create a column, we'll create a string column,
+                // otherwise we'll convert the current one to a string column
+                if (!sheet.m_columns[cols[j]])
+                {
+                    sheet.m_columns[cols[j]].reset(new StringColumn);
+                    sheet.m_columns[cols[j]]->m_sHeadLine = TableColumn::getDefaultColumnHead(cols[j]);
+                }
+                else
+                    sheet.m_columns[cols[j]].reset(sheet.m_columns[cols[j]]->convert(TableColumn::TYPE_STRING));
 
-                memArray[cols[j]]->setValue(lines[i], _table.getValueAsInternalString(j, i));
+                // There's no easier way to store the result because the
+                // table does not return rows as vectors
+                for (size_t i = 0; i < _table.getCols(); i++)
+                {
+                    if (i >= rows.size())
+                        break;
+
+                    sheet.m_columns[cols[j]]->setValue(rows[i], _table.getValueAsInternalString(j, i, k));
+                }
             }
         }
     }
@@ -2030,30 +1472,36 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
 ///
 /// \param atRow size_t
 /// \param atCol size_t
+/// \param atSheet size_t
 /// \param rows size_t
 /// \param cols size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
+bool Table::insertBlock(size_t atRow, size_t atCol, size_t atSheet, size_t rows, size_t cols)
 {
-    if (atRow >= (size_t)getLines() || atCol >= memArray.size())
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (!sheet.isValidColumn(atCol))
         return false;
 
     // Catch whole rows and cols
-    if (atRow == 0 && rows >= (size_t)getLines())
-        return insertCols(atCol, cols);
-    else if (atCol == 0 && cols >= memArray.size())
-        return insertRows(atRow, rows);
+    if (atRow == 0 && rows >= sheet.rows())
+        return insertCols(atCol, atSheet, cols);
+    else if (atCol == 0 && cols >= sheet.cols())
+        return insertRows(atRow, atSheet, rows);
 
-    for (size_t c = atCol; c < std::min(atCol+cols, memArray.size()); c++)
+    for (size_t c = atCol; c < std::min(atCol+cols, sheet.cols()); c++)
     {
-        if (memArray[c])
-            memArray[c]->insertElements(atRow, rows);
+        if (sheet.m_columns[c])
+            sheet.m_columns[c]->insertElements(atRow, rows);
     }
 
     m_meta.modify();
-    nCalcLines = -1;
+    sheet.m_calculatedRows = 0;
     return true;
 }
 
@@ -2063,17 +1511,23 @@ bool Memory::insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
 /// the desired column.
 ///
 /// \param atCol size_t
+/// \param atSheet size_t
 /// \param num size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::insertCols(size_t atCol, size_t num)
+bool Table::insertCols(size_t atCol, size_t atSheet, size_t num)
 {
-    if (atCol >= memArray.size())
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (atCol >= sheet.cols())
         return false;
 
     TableColumnArray arr(num);
-    memArray.insert(memArray.begin()+atCol, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
+    sheet.m_columns.insert(sheet.m_columns.begin()+atCol, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
     m_meta.modify();
     return true;
 }
@@ -2084,23 +1538,52 @@ bool Memory::insertCols(size_t atCol, size_t num)
 /// desired row.
 ///
 /// \param atRow size_t
+/// \param atSheet size_t
 /// \param num size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::insertRows(size_t atRow, size_t num)
+bool Table::insertRows(size_t atRow, size_t atSheet, size_t num)
 {
-    if (atRow >= (size_t)getLines())
+    if (atSheet >= m_data.sheets())
         return false;
 
-    for (TblColPtr& col : memArray)
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (atRow >= sheet.rows())
+        return false;
+
+    for (TblColPtr& col : sheet.getCols())
     {
         if (col)
             col->insertElements(atRow, num);
     }
 
     m_meta.modify();
-    nCalcLines = -1;
+    sheet.m_calculatedRows = 0;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Insert a set of sheets in front of the
+/// desired sheet.
+///
+/// \param atSheet size_t
+/// \param num size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Table::insertSheets(size_t atSheet, size_t num)
+{
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    for (size_t s = atSheet; s < atSheet+num; s++)
+    {
+        m_data.m_sheets.insert(m_data.m_sheets.begin()+s, TblSheetPtr(new TableSheet("Sheet_" + toString(s+1))));
+    }
+
     return true;
 }
 
@@ -2112,30 +1595,36 @@ bool Memory::insertRows(size_t atRow, size_t num)
 ///
 /// \param atRow size_t
 /// \param atCol size_t
+/// \param atSheet size_t
 /// \param rows size_t
 /// \param cols size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
+bool Table::removeBlock(size_t atRow, size_t atCol, size_t atSheet, size_t rows, size_t cols)
 {
-    if (atRow >= (size_t)getLines() || atCol >= memArray.size())
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (atRow >= sheet.rows() || atCol >= sheet.cols())
         return false;
 
     // Catch whole rows and cols
-    if (atRow == 0 && rows >= (size_t)getLines())
-        return removeCols(VectorIndex(atCol, atCol+cols-1));
-    else if (atCol == 0 && cols >= memArray.size())
-        return removeRows(VectorIndex(atRow, atRow+rows-1));
+    if (atRow == 0 && rows >= sheet.rows())
+        return removeCols(VectorIndex(atCol, atCol+cols-1), atSheet);
+    else if (atCol == 0 && cols >= sheet.cols())
+        return removeRows(VectorIndex(atRow, atRow+rows-1), atSheet);
 
-    for (size_t c = atCol; c < std::min(atCol+cols, memArray.size()); c++)
+    for (size_t c = atCol; c < std::min(atCol+cols, sheet.cols()); c++)
     {
-        if (memArray[c])
-            memArray[c]->removeElements(atRow, rows);
+        if (sheet.m_columns[c])
+            sheet.m_columns[c]->removeElements(atRow, rows);
     }
 
     m_meta.modify();
-    nCalcLines = -1;
+    sheet.m_calculatedRows = 0;
     return true;
 }
 
@@ -2145,20 +1634,26 @@ bool Memory::removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
 /// moving everything behind to the left.
 ///
 /// \param _vCols const VectorIndex&
+/// \param atSheet size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::removeCols(const VectorIndex& _vCols)
+bool Table::removeCols(const VectorIndex& _vCols, size_t atSheet)
 {
-    if (_vCols.min() >= (int)memArray.size())
+    if (atSheet >= m_data.sheets())
         return false;
 
-    _vCols.setOpenEndIndex(memArray.size()-1);
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (_vCols.min() >= (int)sheet.cols())
+        return false;
+
+    _vCols.setOpenEndIndex(sheet.cols()-1);
 
     if (_vCols.isExpanded())
-        memArray.erase(memArray.begin()+_vCols.min(), memArray.begin()+_vCols.max()+1);
+        sheet.m_columns.erase(sheet.m_columns.begin()+_vCols.min(), sheet.m_columns.begin()+_vCols.max()+1);
     else if (_vCols.size() == 1)
-        memArray.erase(memArray.begin()+_vCols.front());
+        sheet.m_columns.erase(sheet.m_columns.begin()+_vCols.front());
     else
     {
         std::vector<int> vVals = _vCols.getVector();
@@ -2166,11 +1661,12 @@ bool Memory::removeCols(const VectorIndex& _vCols)
 
         for (int i = vVals.size()-1; i >= 0; i--)
         {
-            if (vVals[i] < (int)memArray.size())
-                memArray.erase(memArray.begin()+vVals[i]);
+            if (vVals[i] < (int)sheet.cols())
+                sheet.m_columns.erase(sheet.m_columns.begin()+vVals[i]);
         }
     }
 
+    sheet.m_calculatedRows = 0;
     m_meta.modify();
     return true;
 }
@@ -2181,19 +1677,25 @@ bool Memory::removeCols(const VectorIndex& _vCols)
 /// everything upwards.
 ///
 /// \param _vRows const VectorIndex&
+/// \param atSheet size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::removeRows(const VectorIndex& _vRows)
+bool Table::removeRows(const VectorIndex& _vRows, size_t atSheet)
 {
-    if (_vRows.min() >= getLines())
+    if (atSheet >= m_data.sheets())
         return false;
 
-    _vRows.setOpenEndIndex(getLines()-1);
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
+    if (_vRows.min() >= (int)sheet.rows())
+        return false;
+
+    _vRows.setOpenEndIndex(sheet.rows()-1);
 
     if (_vRows.isExpanded())
     {
-        for (TblColPtr& col : memArray)
+        for (TblColPtr& col : sheet.getCols())
         {
             if (col)
                 col->removeElements(_vRows.min(), _vRows.size());
@@ -2201,7 +1703,7 @@ bool Memory::removeRows(const VectorIndex& _vRows)
     }
     else if (_vRows.size() == 1)
     {
-        for (TblColPtr& col : memArray)
+        for (TblColPtr& col : sheet.getCols())
         {
             if (col)
                 col->removeElements(_vRows.front(), 1);
@@ -2214,7 +1716,7 @@ bool Memory::removeRows(const VectorIndex& _vRows)
 
         for (int i = vVals.size()-1; i >= 0; i--)
         {
-            for (TblColPtr& col : memArray)
+            for (TblColPtr& col : sheet.getCols())
             {
                 if (col)
                     col->removeElements(vVals[i], 1);
@@ -2223,7 +1725,43 @@ bool Memory::removeRows(const VectorIndex& _vRows)
     }
 
     m_meta.modify();
-    nCalcLines = -1;
+    sheet.m_calculatedRows = 0;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove a set of indicated sheets,
+/// moving everthing forwards.
+///
+/// \param _vSheets const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Table::removeSheets(const VectorIndex& _vSheets)
+{
+    if (_vSheets.min() >= (int)m_data.sheets())
+        return false;
+
+    _vSheets.setOpenEndIndex(m_data.sheets()-1);
+
+    if (_vSheets.isExpanded())
+        m_data.m_sheets.erase(m_data.m_sheets.begin()+_vSheets.min(), m_data.m_sheets.begin()+_vSheets.max()+1);
+    else if (_vSheets.size() == 1)
+        m_data.m_sheets.erase(m_data.m_sheets.begin()+_vSheets.front());
+    else
+    {
+        std::vector<int> vVals = _vSheets.getVector();
+        std::sort(vVals.begin(), vVals.end());
+
+        for (int i = vVals.size()-1; i >= 0; i--)
+        {
+            if (vVals[i] < (int)m_data.sheets())
+                m_data.m_sheets.erase(m_data.m_sheets.begin()+vVals[i]);
+        }
+    }
+
+    m_meta.modify();
     return true;
 }
 
@@ -2232,21 +1770,27 @@ bool Memory::removeRows(const VectorIndex& _vRows)
 /// \brief Reorder a set of columns.
 ///
 /// \param _vCols const VectorIndex&
+/// \param atSheet size_t
 /// \param _vNewOrder const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
+bool Table::reorderCols(const VectorIndex& _vCols, size_t atSheet, const VectorIndex& _vNewOrder)
 {
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
     // The new order must not be open ended
     if (_vNewOrder.isOpenEnd())
         return false;
 
-    _vCols.setOpenEndIndex(getCols()-1);
+    _vCols.setOpenEndIndex(sheet.cols()-1);
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vCols.size()
-        || _vCols.size() > (size_t)getCols()
+        || _vCols.size() > sheet.cols()
         || _vNewOrder.max() >= (int)_vNewOrder.size()
         || !_vCols.isUnique()
         || !_vNewOrder.isPermutation())
@@ -2258,15 +1802,15 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
     // Move the columns to the buffer
     for (size_t i = 0; i < _vCols.size(); i++)
     {
-        if (_vCols[i] != VectorIndex::INVALID && _vCols[i] < (int)memArray.size())
-            buffer[i].reset(memArray[_vCols[i]].release());
+        if (sheet.isValidColumn(_vCols[i]))
+            buffer[i].reset(sheet.m_columns[_vCols[i]].release());
     }
 
     // Move the columns back to the original array but in the new order
     for (size_t i = 0; i < _vNewOrder.size(); i++)
     {
         if (_vNewOrder[i] != VectorIndex::INVALID && _vCols[i] != VectorIndex::INVALID)
-            memArray[_vCols[i]].reset(buffer[_vNewOrder[i]].release());
+            sheet.m_columns[_vCols[i]].reset(buffer[_vNewOrder[i]].release());
     }
 
     m_meta.modify();
@@ -2278,21 +1822,27 @@ bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrde
 /// \brief Reorder a set of rows.
 ///
 /// \param _vCols const VectorIndex&
+/// \param atSheet size_t
 /// \param _vNewOrder const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
+bool Table::reorderRows(const VectorIndex& _vRows, size_t atSheet, const VectorIndex& _vNewOrder)
 {
+    if (atSheet >= m_data.sheets())
+        return false;
+
+    TableSheet& sheet = m_data.getSheet(atSheet);
+
     // The new order must not be open ended
     if (_vNewOrder.isOpenEnd())
         return false;
 
-    _vRows.setOpenEndIndex(getLines()-1);
+    _vRows.setOpenEndIndex(sheet.rows()-1);
 
     // Ensure that the indices reflect reasonable combinations
     if (_vNewOrder.size() != _vRows.size()
-        || _vRows.size() > (size_t)getLines()
+        || _vRows.size() > sheet.rows()
         || _vNewOrder.max() >= (long long int)_vNewOrder.size()
         || !_vRows.isUnique()
         || !_vNewOrder.isPermutation())
@@ -2301,7 +1851,7 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
     VectorIndex vPlain = _vRows.get(_vNewOrder);
 
     // Reorder the cells in each column
-    for (auto& col : memArray)
+    for (auto& col : sheet.getCols())
     {
         if (col)
         {
@@ -2317,6 +1867,53 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 
 
 /////////////////////////////////////////////////
+/// \brief Reorder a set of sheets.
+///
+/// \param _vSheets const VectorIndex&
+/// \param _vNewOrder const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Table::reorderSheets(const VectorIndex& _vSheets, const VectorIndex& _vNewOrder)
+{
+    // The new order must not be open ended
+    if (_vNewOrder.isOpenEnd())
+        return false;
+
+    _vSheets.setOpenEndIndex(m_data.sheets()-1);
+
+    // Ensure that the indices reflect reasonable combinations
+    if (_vNewOrder.size() != _vSheets.size()
+        || _vSheets.size() > m_data.sheets()
+        || _vNewOrder.max() >= (int)_vNewOrder.size()
+        || !_vSheets.isUnique()
+        || !_vNewOrder.isPermutation())
+        return false;
+
+    TableSheetArray buffer;
+    buffer.resize(_vSheets.size());
+
+    // Move the columns to the buffer
+    for (size_t i = 0; i < _vSheets.size(); i++)
+    {
+        if (_vSheets[i] >= 0 && (size_t)_vSheets[i] < m_data.sheets())
+            buffer[i].reset(m_data.m_sheets[_vSheets[i]].release());
+    }
+
+    // Move the columns back to the original array but in the new order
+    for (size_t i = 0; i < _vNewOrder.size(); i++)
+    {
+        if (_vNewOrder[i] != VectorIndex::INVALID && _vSheets[i] != VectorIndex::INVALID)
+            m_data.m_sheets[_vSheets[i]].reset(buffer[_vNewOrder[i]].release());
+    }
+
+    m_meta.modify();
+    return true;
+
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Replaces the old with the new values
 /// in the selected columns.
 ///
@@ -2327,24 +1924,26 @@ bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrde
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
+bool Table::replaceVals(const VectorIndex& _vCols, size_t atSheet, const mu::Array& _oldVals, const mu::Array& _newVals, bool enableRegEx)
 {
+    if (atSheet >= m_data.sheets())
+        return false;
+
     if ((_oldVals.size() != _newVals.size() && _newVals.size() > 1) || !_oldVals.size())
         return false;
 
-    _vCols.setOpenEndIndex(getCols()-1);
+    TableSheet& sheet = m_data.getSheet(atSheet);
+    _vCols.setOpenEndIndex(sheet.cols()-1);
     bool success = false;
     std::regex regEx;
 
     // Search in all columns
     for (size_t j = 0; j < _vCols.size(); j++)
     {
-        if (_vCols[j] != VectorIndex::INVALID
-            && _vCols[j] < (int)memArray.size()
-            && memArray[_vCols[j]])
+        if (sheet.isValidColumn(_vCols[j]))
         {
             // Get a reference to the current column
-            TblColPtr& col = memArray[_vCols[j]];
+            TblColPtr& col = sheet.m_columns[_vCols[j]];
 
             // Categorical columns only compare their category values
             if (col->m_type == TableColumn::TYPE_CATEGORICAL)
@@ -2444,7 +2043,7 @@ bool Memory::replaceVals(const VectorIndex& _vCols, const mu::Array& _oldVals, c
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision, std::string sExt)
+bool Table::save(string _sFileName, const string& sTableName, unsigned short nPrecision, std::string sExt)
 {
     // Get an instance of the desired file type
     NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName, sExt);
@@ -2453,13 +2052,14 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     if (!file)
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    int64_t rows = m_data.rows();
+    int64_t cols = m_data.cols();
+    int64_t sheets = m_data.sheets();
 
     // Set the dimensions and the generic information
     // in the file
-    file->setDimensions(lines, cols);
-    file->setData(&memArray, lines, cols);
+    file->setDimensions(rows, cols, sheets);
+    file->setData(&m_data, rows, cols, sheets);
     file->setTableName(Mangler::demangleName(sTableName));
     file->setTextfilePrecision(nPrecision);
 
@@ -2491,69 +2091,32 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
 
 
 /////////////////////////////////////////////////
-/// \brief This member function deletes a single
-/// entry from the memory table.
-///
-/// \param _nLine int
-/// \param _nCol int
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::deleteEntry(int _nLine, int _nCol)
-{
-    if ((int)memArray.size() > _nCol && memArray[_nCol])
-    {
-        if (memArray[_nCol]->isValid(_nLine))
-        {
-            // Delete the element
-            memArray[_nCol]->deleteElements(VectorIndex(_nLine));
-            m_meta.modify();
-
-            // Evaluate, whether we can remove
-            // the column from memory
-            if (!_nLine && !memArray[_nCol]->size())
-                memArray[_nCol].reset(nullptr);
-
-            nCalcLines = -1;
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function deletes a whole
 /// range of entries from the memory table.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
+void Table::deleteBulk(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet)
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return;
 
-    _vLine.setOpenEndIndex(getLines()-1);
-    _vCol.setOpenEndIndex(getCols()-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
-    bool bHasFirstLine = _vLine.min() == 0;
+    bool bHasFirstLine = _vRow.min() == 0;
 
-    // Delete the selected entries
-    #pragma omp parallel for
-    for (size_t j = 0; j < _vCol.size(); j++)
-    {
-        if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
-            memArray[_vCol[j]]->deleteElements(_vLine);
-    }
-
+    m_data.erase(TableIndices(_vRow, _vCol, _vSheet));
     m_meta.modify();
 
     // Remove all invalid elements and columns
     if (bHasFirstLine)
-        shrink(_vCol);
-
-    nCalcLines = -1;
+        shrink(_vCol, _vSheet);
 }
 
 
@@ -2562,40 +2125,46 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// calculation of various stats using OpenMP, if
 /// possible.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \param operation std::vector<StatsLogic>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol, std::vector<StatsLogic>& operation) const
+void Table::calculateStats(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, std::vector<StatsLogic>& operation) const
 {
     constexpr size_t MINTHREADCOUNT = 16;
     constexpr size_t MINELEMENTPERCOL = 1000;
 
     // Only apply multiprocessing, if there are really a lot of
     // elements to process
-    if (operation.size() >= MINTHREADCOUNT && _vLine.size() >= MINELEMENTPERCOL)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        #pragma omp parallel for
+        if (_vSheet[k] < 0 || (size_t)_vSheet[k] > m_data.sheets())
+            continue;
+
+        size_t s = _vSheet[k];
+
+        #pragma omp parallel for if (operation.size() >= MINTHREADCOUNT && _vRow.size() >= MINELEMENTPERCOL)
         for (size_t j = 0; j < _vCol.size(); j++)
         {
             if (_vCol[j] < 0)
                 continue;
 
-            int elems = getElemsInColumn(_vCol[j]);
+            int elems = getElemsInColumn(_vCol[j], s);
 
             if (!elems)
                 continue;
 
-            for (size_t i = 0; i < _vLine.size(); i++)
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (_vLine[i] < 0)
+                if (_vRow[i] < 0)
                     continue;
 
-                if (_vLine[i] >= elems)
+                if (_vRow[i] >= elems)
                 {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
                         break;
 
                     continue;
@@ -2603,43 +2172,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
 
                 try
                 {
-                    operation[j](readMem(_vLine[i], _vCol[j]));
-                }
-                catch (...)
-                {
-                    //
-                }
-            }
-        }
-    }
-    else
-    {
-        for (size_t j = 0; j < _vCol.size(); j++)
-        {
-            if (_vCol[j] < 0)
-                continue;
-
-            int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;
-
-            for (size_t i = 0; i < _vLine.size(); i++)
-            {
-                if (_vLine[i] < 0)
-                    continue;
-
-                if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }
-
-                try
-                {
-                    operation[j](readMem(_vLine[i], _vCol[j]));
+                    operation[j](read(_vRow[i], _vCol[j], s));
                 }
                 catch (...)
                 {
@@ -2659,12 +2192,16 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
 /// \return std::pair<double, double>
 ///
 /////////////////////////////////////////////////
-std::pair<double, double> Memory::minmax() const
+std::pair<double, double> Table::minmax() const
 {
     if (!m_meta.statsCurrent)
     {
-        m_meta.minVal = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
-        m_meta.maxVal = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
+        m_meta.minVal = min(VectorIndex(0, VectorIndex::OPEN_END),
+                            VectorIndex(0, VectorIndex::OPEN_END),
+                            VectorIndex(0, VectorIndex::OPEN_END)).real();
+        m_meta.maxVal = max(VectorIndex(0, VectorIndex::OPEN_END),
+                            VectorIndex(0, VectorIndex::OPEN_END),
+                            VectorIndex(0, VectorIndex::OPEN_END)).real();
         m_meta.statsCurrent = true;
     }
 
@@ -2676,32 +2213,31 @@ std::pair<double, double> Memory::minmax() const
 /// \brief Implementation for the STD multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::std(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dAvg = avg(_vRow, _vCol, _vSheet);
     std::complex<double> dStd = 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, dAvg));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
         dStd += val.m_val.as_cmplx();
 
-    return sqrt(dStd / (num(_vLine, _vCol) - 1.0));
+    return sqrt(dStd / (num(_vRow, _vCol, _vSheet) - 1.0));
 }
 
 
@@ -2709,17 +2245,18 @@ std::complex<double> Memory::std(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the AVG multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::avg(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    return sum(_vLine, _vCol) / num(_vLine, _vCol);
+    return sum(_vRow, _vCol, _vSheet) / num(_vRow, _vCol, _vSheet);
 }
 
 
@@ -2727,26 +2264,25 @@ std::complex<double> Memory::avg(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the MAX multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::max(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
     mu::Value dMax = NAN;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MAX, NAN));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
     {
@@ -2762,26 +2298,25 @@ std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the MIN multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::min(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
     mu::Value dMin = NAN;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MIN, NAN));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
     {
@@ -2797,26 +2332,25 @@ std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the PRD multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::prd(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
     std::complex<double> dPrd = 1.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MULT, 1.0));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
     {
@@ -2831,26 +2365,25 @@ std::complex<double> Memory::prd(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the SUM multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::sum(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
     std::complex<double> dSum = 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADD));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
     {
@@ -2865,45 +2398,52 @@ std::complex<double> Memory::sum(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the NUM multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::num(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return 0;
 
     int nInvalid = 0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
-
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        int s = _vSheet[k];
+
+        if (s < 0 || (size_t)s >= m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            nInvalid += _vLine.size();
-            continue;
-        }
+            if (_vCol[j] < 0)
+                continue;
 
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0 || _vLine[i] >= elems || !isValidElement(_vLine[i], _vCol[j]))
-                nInvalid++;
+            int elems = getElemsInColumn(_vCol[j], s);
+
+            if (!elems)
+            {
+                nInvalid += _vRow.size();
+                continue;
+            }
+
+            for (size_t i = 0; i < _vRow.size(); i++)
+            {
+                if (_vRow[i] < 0 || _vRow[i] >= elems || !isValidElement(_vRow[i], _vCol[j], s))
+                    nInvalid++;
+            }
         }
     }
 
-    return (_vLine.size() * _vCol.size()) - nInvalid;
+    return (_vRow.size() * _vCol.size() * _vSheet.size()) - nInvalid;
 }
 
 
@@ -2911,52 +2451,59 @@ std::complex<double> Memory::num(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the AND multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::and_func(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     double dRetVal = NAN;
 
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        if (_vSheet[k] < 0 || (size_t)_vSheet[k] > m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        const TableSheet& sheet = m_data.getSheet(_vSheet[k]);
 
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0)
+            if (_vCol[j] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            int elems = sheet.getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
+                if (_vRow[i] < 0)
+                    continue;
 
-                continue;
+                if (_vRow[i] >= elems)
+                {
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                if (isnan(dRetVal))
+                    dRetVal = 1.0;
+
+                if (!sheet.m_columns[j]->asBool(i))
+                    return 0.0;
             }
-
-            if (isnan(dRetVal))
-                dRetVal = 1.0;
-
-            if (!memArray[j] || !memArray[j]->asBool(i))
-                return 0.0;
         }
     }
 
@@ -2971,47 +2518,54 @@ std::complex<double> Memory::and_func(const VectorIndex& _vLine, const VectorInd
 /// \brief Implementation for the OR multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::or_func(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
-
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        if (_vSheet[k] < 0 || (size_t)_vSheet[k] > m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        const TableSheet& sheet = m_data.getSheet(_vSheet[k]);
 
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0)
+            if (_vCol[j] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            int elems = sheet.getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
+                if (_vRow[i] < 0)
+                    continue;
 
-                continue;
+                if (_vRow[i] >= elems)
+                {
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                if (sheet.m_columns[j]->asBool(i))
+                    return 1.0;
             }
-
-            if (memArray[j] && memArray[j]->asBool(i))
-                return 1.0;
         }
     }
 
@@ -3023,53 +2577,60 @@ std::complex<double> Memory::or_func(const VectorIndex& _vLine, const VectorInde
 /// \brief Implementation for the XOR multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::xor_func(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     bool isTrue = false;
 
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        if (_vSheet[k] < 0 || (size_t)_vSheet[k] > m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        const TableSheet& sheet = m_data.getSheet(_vSheet[k]);
 
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0)
+            if (_vCol[j] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
+            int elems = sheet.getElemsInColumn(_vCol[j]);
 
+            if (!elems)
                 continue;
-            }
 
-            if (memArray[j] && memArray[j]->asBool(i))
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (!isTrue)
-                    isTrue = true;
-                else
-                    return 0.0;
+                if (_vRow[i] < 0)
+                    continue;
+
+                if (_vRow[i] >= elems)
+                {
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                if (sheet.m_columns[j]->asBool(i))
+                {
+                    if (!isTrue)
+                        isTrue = true;
+                    else
+                        return 0.0;
+                }
             }
         }
     }
@@ -3085,65 +2646,72 @@ std::complex<double> Memory::xor_func(const VectorIndex& _vLine, const VectorInd
 /// \brief Implementation for the CNT multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::cnt(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return 0;
 
     int nInvalid = 0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
-
-    std::vector<std::complex<double>> vDimLen;
-
-    // Calculate the size in the corresponding direction first
-    if (_vCol.size() == 1 && _vLine.size() > 1)
-        vDimLen = size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), AppDir::COLS);
-    else if (_vCol.size() > 1 && _vLine.size() == 1)
-        vDimLen = size(_vLine, VectorIndex(0, VectorIndex::OPEN_END), AppDir::LINES);
-
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        int s = _vSheet[k];
+
+        if (s < 0 || (size_t)s >= m_data.sheets())
             continue;
 
-        if (_vCol.size() > 1
-            && _vLine.size() == 1
-            && vDimLen.front().real() <= _vCol[j])
+        std::vector<std::complex<double>> vDimLen;
+
+        // Calculate the size in the corresponding direction first
+        if (_vCol.size() == 1 && _vRow.size() > 1)
+            vDimLen = size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), s, AppDir::COLS);
+        else if (_vCol.size() > 1 && _vRow.size() == 1)
+            vDimLen = size(_vRow, VectorIndex(0, VectorIndex::OPEN_END), s, AppDir::ROWS);
+
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            nInvalid++;
-            continue;
-        }
+            if (_vCol[j] < 0)
+                continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-        {
-            // If this goes for columns individual, then count it as empty
-            // otherwise it counts for cnt()
-            if (_vCol.size() == 1 && _vLine.size() > 1)
-                nInvalid += _vLine.size();
-
-            continue;
-        }
-
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0 || _vLine[i] >= elems)
+            if (_vCol.size() > 1
+                && _vRow.size() == 1
+                && vDimLen.front().real() <= _vCol[j])
+            {
                 nInvalid++;
+                continue;
+            }
+
+            int elems = getElemsInColumn(_vCol[j], s);
+
+            if (!elems)
+            {
+                // If this goes for columns individual, then count it as empty
+                // otherwise it counts for cnt()
+                if (_vCol.size() == 1 && _vRow.size() > 1)
+                    nInvalid += _vRow.size();
+
+                continue;
+            }
+
+            for (size_t i = 0; i < _vRow.size(); i++)
+            {
+                if (_vRow[i] < 0 || _vRow[i] >= elems)
+                    nInvalid++;
+            }
         }
     }
 
-    return (_vLine.size() * _vCol.size()) - nInvalid;
+    return (_vRow.size() * _vCol.size() * _vSheet.size()) - nInvalid;
 }
 
 
@@ -3151,26 +2719,25 @@ std::complex<double> Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the NORM multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::norm(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
     std::complex<double> dNorm = 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQ));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
     {
@@ -3185,23 +2752,21 @@ std::complex<double> Memory::norm(const VectorIndex& _vLine, const VectorIndex& 
 /// \brief Implementation for the CMP multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param sheet size_t
 /// \param dRef std::complex<double>
 /// \param _nType int
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dRef, int _nType) const
+std::complex<double> Table::cmp(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t sheet, std::complex<double> dRef, int _nType) const
 {
-    if (!memArray.size())
+    if (m_data.empty() || sheet >= m_data.sheets())
         return NAN;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.getSheet(sheet).rows()-1);
+    _vCol.setOpenEndIndex(m_data.getSheet(sheet).cols()-1);
 
     enum
     {
@@ -3239,25 +2804,25 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
         if (_vCol[j] < 0)
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        int elems = getElemsInColumn(_vCol[j], sheet);
 
         if (!elems)
             continue;
 
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vRow.size(); i++)
         {
-            if (_vLine[i] < 0)
+            if (_vRow[i] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            if (_vRow[i] >= elems)
             {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
+                if (_vRow.isExpanded() && _vRow.isOrdered())
                     break;
 
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
+            std::complex<double> val = read(_vRow[i], _vCol[j], sheet).getNum().asCF64();
 
             if (mu::isnan(val))
                 continue;
@@ -3267,7 +2832,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                 if (nType & RETURN_VALUE)
                     return val;
 
-                if (_vLine[0] == _vLine[_vLine.size() - 1])
+                if (_vRow[0] == _vRow[_vRow.size() - 1])
                     return j+1;
 
                 return i+1;
@@ -3279,7 +2844,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                     if (nType & RETURN_VALUE)
                         return val.real();
 
-                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                    if (_vRow[0] == _vRow[_vRow.size() - 1])
                         return j+1;
 
                     return i+1;
@@ -3288,7 +2853,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                 if (nKeep == -1 || val.real() < dKeep)
                 {
                     dKeep = val.real();
-                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                    if (_vRow[0] == _vRow[_vRow.size() - 1])
                         nKeep = j;
                     else
                         nKeep = i;
@@ -3303,7 +2868,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                     if (nType & RETURN_VALUE)
                         return val.real();
 
-                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                    if (_vRow[0] == _vRow[_vRow.size() - 1])
                         return j+1;
 
                     return i+1;
@@ -3312,7 +2877,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                 if (nKeep == -1 || val.real() > dKeep)
                 {
                     dKeep = val.real();
-                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                    if (_vRow[0] == _vRow[_vRow.size() - 1])
                         nKeep = j;
                     else
                         nKeep = i;
@@ -3336,53 +2901,60 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the MED multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::med(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     vector<double> vData;
 
-    vData.reserve(_vLine.size()*_vCol.size());
+    vData.reserve(_vRow.size()*_vCol.size()*_vSheet.size());
 
-    for (size_t j = 0; j < _vCol.size(); j++)
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        int s = _vSheet[k];
+
+        if (s < 0 || (size_t)s >= m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0)
+            if (_vCol[j] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            int elems = getElemsInColumn(_vCol[j], s);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
+                if (_vRow[i] < 0)
+                    continue;
 
-                continue;
+                if (_vRow[i] >= elems)
+                {
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                std::complex<double> val = read(_vRow[i], _vCol[j], s).getNum().asCF64();
+
+                if (!mu::isnan(val))
+                    vData.push_back(val.real());
             }
-
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
-
-            if (!mu::isnan(val))
-                vData.push_back(val.real());
         }
     }
 
@@ -3402,63 +2974,69 @@ std::complex<double> Memory::med(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the PCT multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \param dPct std::complex<double>
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dPct) const
+std::complex<double> Table::pct(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, std::complex<double> dPct) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
-
-    vector<double> vData;
-
-    vData.reserve(_vLine.size()*_vCol.size());
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     if (dPct.real() >= 1 || dPct.real() <= 0)
         return NAN;
 
-    for (size_t j = 0; j < _vCol.size(); j++)
+    vector<double> vData;
+
+    vData.reserve(_vRow.size()*_vCol.size()*_vSheet.size());
+
+    for (size_t k = 0; k < _vSheet.size(); k++)
     {
-        if (_vCol[j] < 0)
+        int s = _vSheet[k];
+
+        if (s < 0 || (size_t)s >= m_data.sheets())
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0)
+            if (_vCol[j] < 0)
                 continue;
 
-            if (_vLine[i] >= elems)
+            int elems = getElemsInColumn(_vCol[j], s);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
+                if (_vRow[i] < 0)
+                    continue;
 
-                continue;
+                if (_vRow[i] >= elems)
+                {
+                    if (_vRow.isExpanded() && _vRow.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                std::complex<double> val = read(_vRow[i], _vCol[j], s).getNum().asCF64();
+
+                if (!mu::isnan(val))
+                    vData.push_back(val.real());
             }
-
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().asCF64();
-
-            if (!mu::isnan(val))
-                vData.push_back(val.real());
         }
     }
 
     if (!vData.size())
         return NAN;
-
 
     size_t nCount = qSortDouble(&vData[0], vData.size());
 
@@ -3473,32 +3051,31 @@ std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the EXC multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::exc(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::exc(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dAvg = avg(_vRow, _vCol, _vSheet);
     std::complex<double> dExc = 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQSQSUB, 0.0, dAvg));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
         dExc += val.m_val.as_cmplx();
 
-    return dExc / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 4)) - 3.0;
+    return dExc / (num(_vRow, _vCol, _vSheet) * intPower(std(_vRow, _vCol, _vSheet), 4)) - 3.0;
 }
 
 
@@ -3506,32 +3083,31 @@ std::complex<double> Memory::exc(const VectorIndex& _vLine, const VectorIndex& _
 /// \brief Implementation for the SKEW multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::skew(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::skew(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    if (!memArray.size())
+    if (m_data.empty())
         return NAN;
 
-    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dAvg = avg(_vRow, _vCol, _vSheet);
     std::complex<double> dSkew = 0.0;
 
-    int lines = getLines(false);
-    int cols = getCols(false);
-
-    _vLine.setOpenEndIndex(lines-1);
-    _vCol.setOpenEndIndex(cols-1);
+    _vRow.setOpenEndIndex(m_data.rows()-1);
+    _vCol.setOpenEndIndex(m_data.cols()-1);
+    _vSheet.setOpenEndIndex(m_data.sheets()-1);
 
     std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDCBSUB, 0.0, dAvg));
-    calculateStats(_vLine, _vCol, vLogic);
+    calculateStats(_vRow, _vCol, _vSheet, vLogic);
 
     for (const auto& val : vLogic)
         dSkew += val.m_val.as_cmplx();
 
-    return dSkew / (num(_vLine, _vCol) * intPower(std(_vLine, _vCol), 3));
+    return dSkew / (num(_vRow, _vCol, _vSheet) * intPower(std(_vRow, _vCol, _vSheet), 3));
 }
 
 
@@ -3539,14 +3115,15 @@ std::complex<double> Memory::skew(const VectorIndex& _vLine, const VectorIndex& 
 /// \brief Implementation for the STDERR multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::stderr_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::stderr_func(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    return std(_vLine, _vCol) / std::sqrt(num(_vLine, _vCol));
+    return std(_vRow, _vCol, _vSheet) / std::sqrt(num(_vRow, _vCol, _vSheet));
 }
 
 
@@ -3554,14 +3131,15 @@ std::complex<double> Memory::stderr_func(const VectorIndex& _vLine, const Vector
 /// \brief Implementation for the RMS multi
 /// argument function.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::rms(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Table::rms(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    return norm(_vLine, _vCol) / std::sqrt(num(_vLine, _vCol));
+    return norm(_vRow, _vCol, _vSheet) / std::sqrt(num(_vRow, _vCol, _vSheet));
 }
 
 
@@ -3570,41 +3148,44 @@ std::complex<double> Memory::rms(const VectorIndex& _vLine, const VectorIndex& _
 /// argument function.
 ///
 /// \param _everyIdx const VectorIndex&
-/// \param _cellsIdx const VectorIndex&
+/// \param _everyIdx const VectorIndex&
+/// \param sheet size_t
 /// \param dir int Bitcomposition of AppDir values
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const
 {
-    if (!memArray.size())
+    if (m_data.empty() || sheet >= m_data.sheets() || !m_data.getSheet(sheet).rows())
         return std::vector<std::complex<double>>(2, 0.0);
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    const TableSheet& currSheet = m_data.getSheet(sheet);
+
+    int rows = currSheet.rows();
+    int cols = currSheet.cols();
 
     int nGridOffset = 2*((dir & GRID) != 0);
-    _everyIdx.setOpenEndIndex(dir & LINES ? lines-1 : cols-1);
-    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
+    _everyIdx.setOpenEndIndex(dir & ROWS ? rows-1 : cols-1);
+    _cellsIdx.setOpenEndIndex(dir & ROWS ? cols-1-nGridOffset : rows-1);
 
     // Handle simple things first
     if (dir == ALL)
-        return std::vector<std::complex<double>>({lines, cols});
+        return std::vector<std::complex<double>>({rows, cols});
     else if (dir == GRID)
-        return std::vector<std::complex<double>>({getFilledElemsInColumn(0), getFilledElemsInColumn(1)});
-    else if (dir & LINES)
+        return std::vector<std::complex<double>>({currSheet.getFilledElemsInColumn(0), currSheet.getFilledElemsInColumn(1)});
+    else if (dir & ROWS)
     {
         // Compute the sizes of the table rows
         std::vector<std::complex<double>> vSizes;
 
         for (size_t i = 0; i < _everyIdx.size(); i++)
         {
-            if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
+            if (_everyIdx[i] < 0 || _everyIdx[i] >= rows)
                 continue;
 
             for (int j = _cellsIdx.size()-1; j >= 0; j--)
             {
-                if (memArray[_cellsIdx[j]+nGridOffset] && memArray[_cellsIdx[j]+nGridOffset]->isValid(_everyIdx[i]))
+                if (currSheet.m_columns[_cellsIdx[j]+nGridOffset] && currSheet.m_columns[_cellsIdx[j]+nGridOffset]->isValid(_everyIdx[i]))
                 {
                     vSizes.push_back(j+1 - nGridOffset);
                     break;
@@ -3627,7 +3208,7 @@ std::vector<std::complex<double>> Memory::size(const VectorIndex& _everyIdx, con
             if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            if (!memArray[_everyIdx[j]+nGridOffset])
+            if (!currSheet.m_columns[_everyIdx[j]+nGridOffset])
             {
                 vSizes.push_back(0);
                 continue;
@@ -3635,7 +3216,7 @@ std::vector<std::complex<double>> Memory::size(const VectorIndex& _everyIdx, con
 
             for (int i = _cellsIdx.size()-1; i >= 0; i--)
             {
-                if (memArray[_everyIdx[j]+nGridOffset]->isValid(_cellsIdx[i]))
+                if (currSheet.m_columns[_everyIdx[j]+nGridOffset]->isValid(_cellsIdx[i]))
                 {
                     vSizes.push_back(i+1);
                     break;
@@ -3659,28 +3240,29 @@ std::vector<std::complex<double>> Memory::size(const VectorIndex& _everyIdx, con
 ///
 /// \param _everyIdx const VectorIndex&
 /// \param _cellsIdx const VectorIndex&
+/// \param sheet size_t
 /// \param dir int
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Table::minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const
 {
-    if (!memArray.size())
+    if (m_data.empty() || sheet >= m_data.sheets() || !m_data.getSheet(sheet).rows())
         return std::vector<std::complex<double>>(1, NAN);
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    int rows = m_data.getSheet(sheet).rows();
+    int cols = m_data.getSheet(sheet).cols();
 
     int nGridOffset = 2*((dir & GRID) != 0);
-    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    _cellsIdx.setOpenEndIndex(dir & COLS ? lines-1 : cols-1-nGridOffset);
+    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : rows-1);
+    _cellsIdx.setOpenEndIndex(dir & COLS ? rows-1 : cols-1-nGridOffset);
 
     // If a grid is required, get the grid dimensions
     // of this table
     if (nGridOffset)
     {
-        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), GRID);
-        lines = vSize.front().real();
+        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), sheet, GRID);
+        rows = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
 
@@ -3695,8 +3277,8 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
             if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset),
-                               min(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset)), 0));
+            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset), sheet,
+                               min(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset), VectorIndex(sheet)), 0));
         }
 
         if (!vPos.size())
@@ -3716,15 +3298,15 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
     // for GRID and ALL
     for (size_t i = 0; i < _everyIdx.size(); i++)
     {
-        if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
+        if (_everyIdx[i] < 0 || _everyIdx[i] >= rows)
             continue;
 
-        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
-                           min(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
+        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp, sheet,
+                           min(VectorIndex(_everyIdx[i]), _cellsTemp, VectorIndex(sheet)), 0));
 
-        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64())
+        if (isnan(dMin) || dMin > read(_everyIdx[i], intCast(vPos.back())-1, sheet).getNum().asF64())
         {
-            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64();
+            dMin = read(_everyIdx[i], intCast(vPos.back())-1, sheet).getNum().asF64();
             pos = i;
         }
     }
@@ -3746,28 +3328,29 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
 ///
 /// \param _everyIdx const VectorIndex&
 /// \param _cellsIdx const VectorIndex&
+/// \param sheet size_t
 /// \param dir int
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Table::maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const
 {
-    if (!memArray.size())
+    if (m_data.empty() || sheet >= m_data.sheets() || !m_data.getSheet(sheet).rows())
         return std::vector<std::complex<double>>(1, NAN);
 
-    int lines = getLines(false);
-    int cols = getCols(false);
+    int rows = m_data.getSheet(sheet).rows();
+    int cols = m_data.getSheet(sheet).cols();
 
     int nGridOffset = 2*((dir & GRID) != 0);
-    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    _cellsIdx.setOpenEndIndex(dir & COLS ? lines-1 : cols-1-nGridOffset);
+    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : rows-1);
+    _cellsIdx.setOpenEndIndex(dir & COLS ? rows-1 : cols-1-nGridOffset);
 
     // If a grid is required, get the grid dimensions
     // of this table
     if (nGridOffset)
     {
-        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), GRID);
-        lines = vSize.front().real();
+        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), sheet, GRID);
+        rows = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
 
@@ -3782,8 +3365,8 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
             if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset),
-                               max(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset)), 0));
+            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset), sheet,
+                               max(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset), VectorIndex(sheet)), 0));
         }
 
         if (!vPos.size())
@@ -3803,15 +3386,15 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
     // for GRID and ALL
     for (size_t i = 0; i < _everyIdx.size(); i++)
     {
-        if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
+        if (_everyIdx[i] < 0 || _everyIdx[i] >= rows)
             continue;
 
-        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
-                           max(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
+        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp, sheet,
+                           max(VectorIndex(_everyIdx[i]), _cellsTemp, VectorIndex(sheet)), 0));
 
-        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64())
+        if (isnan(dMax) || dMax < read(_everyIdx[i], intCast(vPos.back())-1, sheet).getNum().asF64())
         {
-            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().asF64();
+            dMax = read(_everyIdx[i], intCast(vPos.back())-1, sheet).getNum().asF64();
             pos = i;
         }
     }
@@ -3865,33 +3448,39 @@ static bool closeEnough(const std::complex<double>& v1, const std::complex<doubl
 /// multiple column IDs per string.
 ///
 /// \param vColNames const std::vector<std::string>&
+/// \param inSheet size_t
 /// \param enableRegEx bool
 /// \param autoCreate bool
 /// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
+std::vector<size_t> Table::findCols(const std::vector<std::string>& vColNames, size_t inSheet, bool enableRegEx, bool autoCreate)
 {
     std::vector<size_t> vColIndices;
+
+    if (inSheet >= m_data.sheets() || !m_data.getSheet(inSheet).rows())
+        return vColIndices;
+
+    TableSheet& sheet = m_data.getSheet(inSheet);
 
     for (const auto& sName : vColNames)
     {
         bool found = false;
         std::regex regEx;
 
-        for (size_t i = 0; i < memArray.size(); i++)
+        for (size_t i = 0; i < sheet.cols(); i++)
         {
             if (enableRegEx)
             {
                 if (!i)
                     regEx = sName;
 
-                if (memArray[i] && std::regex_match(memArray[i]->m_sHeadLine, regEx))
+                if (sheet.m_columns[i] && std::regex_match(sheet.m_columns[i]->m_sHeadLine, regEx))
                     vColIndices.push_back(i+1);
             }
             else
             {
-                if (memArray[i] && memArray[i]->m_sHeadLine == sName)
+                if (sheet.m_columns[i] && sheet.m_columns[i]->m_sHeadLine == sName)
                 {
                     vColIndices.push_back(i+1);
                     found = true;
@@ -3901,10 +3490,10 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
 
         if (!found && !enableRegEx && autoCreate)
         {
-            int pos = getCols(false);
-            resizeMemory(-1, pos+1);
-            memArray[pos].reset(new LogicalColumn);
-            memArray[pos]->m_sHeadLine = sName;
+            int pos = sheet.cols();
+            sheet.reserve(pos+1);
+            sheet.m_columns[pos].reset(new LogicalColumn);
+            sheet.m_columns[pos]->m_sHeadLine = sName;
             g_logger.info("Created new column " + toString(pos+1) + " for '" + sName + "'");
             vColIndices.push_back(pos+1);
             m_meta.modify();
@@ -3916,24 +3505,87 @@ std::vector<size_t> Memory::findCols(const std::vector<std::string>& vColNames, 
 
 
 /////////////////////////////////////////////////
+/// \brief Finds the sheet IDs, whose names
+/// match to the passed strings. Can return
+/// multiple sheet IDs per string.
+///
+/// \param vSheetNames const std::vector<std::string>&
+/// \param enableRegEx bool
+/// \param autoCreate bool
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+std::vector<size_t> Table::findSheets(const std::vector<std::string>& vSheetNames, bool enableRegEx, bool autoCreate)
+{
+    std::vector<size_t> vSheetIndices;
+
+    if (m_data.empty())
+        return vSheetIndices;
+
+    for (const auto& sName : vSheetNames)
+    {
+        bool found = false;
+        std::regex regEx;
+
+        for (size_t i = 0; i < m_data.sheets(); i++)
+        {
+            if (enableRegEx)
+            {
+                if (!i)
+                    regEx = sName;
+
+                if (std::regex_match(m_data.m_sheets[i]->m_sheetName, regEx))
+                    vSheetIndices.push_back(i+1);
+            }
+            else
+            {
+                if (m_data.m_sheets[i]->m_sheetName == sName)
+                {
+                    vSheetIndices.push_back(i+1);
+                    found = true;
+                }
+            }
+        }
+
+        if (!found && !enableRegEx && autoCreate)
+        {
+            int pos = m_data.sheets();
+            m_data.addSheet(sName, 0);
+            g_logger.info("Created new sheet " + toString(pos+1) + " for '" + sName + "'");
+            vSheetIndices.push_back(pos+1);
+            m_meta.modify();
+        }
+    }
+
+    return vSheetIndices;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Counts all values in the selected
 /// columns, which match to the passed values
 /// (either numerically or string values) and
 /// returns the corresponding sums.
 ///
 /// \param _vCols const VectorIndex&
+/// \param inSheet size_t
 /// \param vValues const mu::Array&
 /// \param enableRegEx bool
 /// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues, bool enableRegEx) const
+std::vector<size_t> Table::countIfEqual(const VectorIndex& _vCols, size_t inSheet, const mu::Array& vValues, bool enableRegEx) const
 {
     std::vector<size_t> vCounted;
 
+    if (inSheet >= m_data.sheets())
+        return vCounted;
+
+    const TableSheet& sheet = m_data.getSheet(inSheet);
+
     for (size_t j = 0; j < _vCols.size(); j++)
     {
-        if (_vCols[j] >= (int)memArray.size() || !memArray[_vCols[j]])
+        if (!sheet.isValidColumn(_vCols[j]))
             continue;
 
         for (size_t n = 0; n < vValues.size(); n++)
@@ -3946,17 +3598,17 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
             if (!isNum && enableRegEx)
                 regEx = val.getStr();
 
-            for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
+            for (size_t i = 0; i < sheet.m_columns[_vCols[j]]->size(); i++)
             {
                 if (isNum)
                 {
-                    if (closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().asCF64()))
+                    if (closeEnough(sheet.m_columns[_vCols[j]]->getValue(i), val.getNum().asCF64()))
                         count++;
                 }
                 else
                 {
-                    if ((enableRegEx && std::regex_match(memArray[_vCols[j]]->getValueAsInternalString(i), regEx))
-                        || (!enableRegEx && memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr()))
+                    if ((enableRegEx && std::regex_match(sheet.m_columns[_vCols[j]]->getValueAsInternalString(i), regEx))
+                        || (!enableRegEx && sheet.m_columns[_vCols[j]]->getValueAsInternalString(i) == val.getStr()))
                         count++;
                 }
             }
@@ -3976,20 +3628,23 @@ std::vector<size_t> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Ar
 /// and returns them as an index.
 ///
 /// \param col size_t
+/// \param inSheet size_t
 /// \param vValues const mu::Array&
 /// \param enableRegEx bool
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array Memory::getIndex(size_t col, const mu::Array& vValues, bool enableRegEx) const
+mu::Array Table::getIndex(size_t col, size_t inSheet, const mu::Array& vValues, bool enableRegEx) const
 {
     mu::Array indices;
 
-    if (col >= memArray.size() || !memArray[col])
+    if (inSheet >= m_data.sheets() || !m_data.getSheet(inSheet).isValidColumn(col))
     {
         indices.push_back(NAN);
         return indices;
     }
+
+    const TableSheet& sheet = m_data.getSheet(inSheet);
 
     for (size_t n = 0; n < vValues.size(); n++)
     {
@@ -4001,17 +3656,17 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues, bool enableRegE
         if (!isNum && enableRegEx)
             regEx = val.getStr();
 
-        for (size_t i = 0; i < memArray[col]->size(); i++)
+        for (size_t i = 0; i < sheet.m_columns[col]->size(); i++)
         {
             if (isNum)
             {
-                if (closeEnough(memArray[col]->getValue(i), val.getNum().asCF64()))
+                if (closeEnough(sheet.m_columns[col]->getValue(i), val.getNum().asCF64()))
                     idxSet.push_back(i+1);
             }
             else
             {
-                if ((enableRegEx && std::regex_match(memArray[col]->getValueAsInternalString(i), regEx))
-                    || (!enableRegEx && memArray[col]->getValueAsInternalString(i) == val.getStr()))
+                if ((enableRegEx && std::regex_match(sheet.m_columns[col]->getValueAsInternalString(i), regEx))
+                    || (!enableRegEx && sheet.m_columns[col]->getValueAsInternalString(i) == val.getStr()))
                     idxSet.push_back(i+1);
             }
         }
@@ -4044,24 +3699,26 @@ mu::Array Memory::getIndex(size_t col, const mu::Array& vValues, bool enableRegE
 /// \return AnovaResult
 ///
 /////////////////////////////////////////////////
-std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+std::vector<AnovaResult> Table::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, size_t inSheet, double significance) const
 {
     if (significance >= 1.0
-        || significance <= 0.0 )
+        || significance <= 0.0
+        || inSheet >= m_data.sheets())
     {
         AnovaResult res;
         res.m_FRatio = NAN;
         return std::vector<AnovaResult> {res};
     }
 
-    size_t col_size = getElemsInColumn(colValues);
+    const TableSheet& sheet = m_data.getSheet(inSheet);
+
+    size_t col_size = sheet.getElemsInColumn(colValues);
 
     for (size_t i = 0; i < colCategories.size(); i++)
     {
-        if (colCategories[i] > (int)memArray.size()
-            || !memArray[colCategories[i]]
-            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
-            || (size_t)getElemsInColumn(colCategories[i]) != col_size)
+        if (!sheet.isValidColumn(colCategories[i])
+            || sheet.m_columns[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
+            || (size_t)sheet.getElemsInColumn(colCategories[i]) != col_size)
         {
             AnovaResult res;
             res.m_FRatio = NAN;
@@ -4069,7 +3726,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
         }
     }
 
-    colCategories.setOpenEndIndex(getCols()-1);
+    colCategories.setOpenEndIndex(sheet.cols()-1);
     _vIndex.setOpenEndIndex(col_size-1);
 
     // We need to eliminate invalid values from the index vector first
@@ -4079,7 +3736,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     while (iter != vExpanded.end())
     {
         // Any invalids in the numerical values colum n?
-        if (!memArray[colValues]->get(*iter).isValid())
+        if (!sheet.m_columns[colValues]->get(*iter).isValid())
         {
             iter = vExpanded.erase(iter);
             continue;
@@ -4090,7 +3747,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
         // Any invalids in the categorical columns?
         for (size_t i = 0; i < colCategories.size(); i++)
         {
-            if (!memArray[colCategories[i]]->get(*iter).isValid())
+            if (!sheet.m_columns[colCategories[i]]->get(*iter).isValid())
             {
                 iter = vExpanded.erase(iter);
                 erased = true;
@@ -4105,19 +3762,20 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     // Create a new index vector
     VectorIndex vPrepared(vExpanded);
 
-    Memory _mem(colCategories.size()+1);
-    _mem.memArray[0].reset(memArray[colValues]->copy(vPrepared));
+    Table _mem(colCategories.size()+1);
+    TableSheet& targetSheet = _mem.m_data.getSheet(0);
+    targetSheet.m_columns[0].reset(sheet.m_columns[colValues]->copy(vPrepared));
 
     for (size_t i = 0; i < colCategories.size(); i++)
     {
-        _mem.memArray[i+1].reset(memArray[colCategories[i]]->copy(vPrepared));
+        targetSheet.m_columns[i+1].reset(sheet.m_columns[colCategories[i]]->copy(vPrepared));
     }
 
     std::vector<std::vector<std::string>> factors;
 
     for (size_t i = 0; i < colCategories.size(); i++)
     {
-        factors.push_back(static_cast<CategoricalColumn*>(_mem.memArray[i+1].get())->getCategories());
+        factors.push_back(static_cast<CategoricalColumn*>(targetSheet.m_columns[i+1].get())->getCategories());
     }
 
     AnovaCalculationStructure ft = AnovaCalculationStructure();
@@ -4197,7 +3855,7 @@ static std::vector<int> findIndicesOfValue(const std::vector<std::complex<double
 /// \return Memory::KmeansInit
 ///
 /////////////////////////////////////////////////
-Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
+Table::KmeansInit Table::stringToKmeansInit(const std::string& init_type)
 {
     if (init_type == "random")
         return INIT_RANDOM;
@@ -4211,23 +3869,30 @@ Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
 /// \brief calculate kmeans
 ///
 /// \param columns const VectorIndex&
+/// \param inSheet size_t
 /// \param nClusters size_t
 /// \param maxIterations size_t
 /// \param init_method Memory::KmeansInit
 /// \return KMeansResult
 ///
 /////////////////////////////////////////////////
-KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
+KMeansResult Table::getKMeans(const VectorIndex& columns, size_t inSheet, size_t nClusters, size_t maxIterations, Table::KmeansInit init_method) const
 {
-    for(size_t i = 0; i < columns.size(); i++)
+    if (inSheet >= m_data.sheets())
+        return KMeansResult();
+
+    const TableSheet& sheet = m_data.getSheet(inSheet);
+
+    for (size_t i = 0; i < columns.size(); i++)
     {
-        if ((int)memArray.size() <= columns[0] || !memArray[columns[0]]                // check if column does have data
-            || getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
+        if (!sheet.isValidColumn(columns[i])                // check if column does have data
+            || sheet.getElemsInColumn(columns[0]) != sheet.getElemsInColumn(columns[i]))      // All columns should have same size
             return KMeansResult();
     }
 
-    size_t col_size = getElemsInColumn(columns[0]);
-    if (col_size < nClusters || !isValueLike(columns))
+    size_t col_size = sheet.getElemsInColumn(columns[0]);
+
+    if (col_size < nClusters || !isValueLike(columns, VectorIndex(inSheet)))
         return KMeansResult();
 
     std::vector<std::complex<double>> clusters(col_size, 0);
@@ -4235,6 +3900,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
     // Random generator
     std::mt19937& mt = getRandGenInstance();
+
     // Step 1 Initialization: Calculate starting centroids
     if (init_method == INIT_KMEANSPP)
     {
@@ -4243,48 +3909,52 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
         // K++ Step 1: randomly select first centroid
         size_t randinit = mt()%col_size;
-        std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns).as_cmplx_vector();
+        std::vector<std::complex<double>> new_value = read(VectorIndex(randinit), columns, VectorIndex(inSheet)).as_cmplx_vector();
         centroids.push_back(new_value);
 
-        for(size_t i = 1; i < nClusters; i++)
+        for (size_t i = 1; i < nClusters; i++)
         {
             // K++ Step 2: calculate distance to nearest centroid
             std::vector<double> distance_vec;
-            for(size_t i = 0; i < col_size; i++)
+
+            for (size_t i = 0; i < col_size; i++)
             {
-                std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns).as_cmplx_vector();
+                std::vector<std::complex<double>> value = read(VectorIndex(i), columns, VectorIndex(inSheet)).as_cmplx_vector();
                 double dis = calculateL2Norm(value, centroids[0]);
                 size_t idx = 0;
-                for(size_t j = 1; j < centroids.size(); j++)
+
+                for (size_t j = 1; j < centroids.size(); j++)
                 {
                     double dis2 = calculateL2Norm(value, centroids[j]);
-                    if(dis2 < dis)
+
+                    if (dis2 < dis)
                     {
                         dis = dis2;
                         idx = j;
                     }
                 }
+
                 distance_vec.push_back(dis);
-                if(clusters[i] != std::complex<double>(idx))
-                {
+
+                if (clusters[i] != std::complex<double>(idx))
                     clusters[i] = idx;
-                }
             }
 
             // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
             size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
-            std::vector<std::complex<double>> new_value = readMem(VectorIndex(max_elem_idx), columns).as_cmplx_vector();
+            std::vector<std::complex<double>> new_value = read(VectorIndex(max_elem_idx), columns, VectorIndex(inSheet)).as_cmplx_vector();
             centroids.push_back(new_value);
         }
     }
     else if (init_method == INIT_RANDOM || init_method == INVALID)
     {
         // Run standard Init: Random Seeds
-        for(size_t i = 0; i < nClusters; )
+        for (size_t i = 0; i < nClusters; )
         {
-            size_t randinit = mt()%col_size;
-            std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns).as_cmplx_vector();
-            if(isUnique(new_value, centroids))
+            size_t randinit = mt() % col_size;
+            std::vector<std::complex<double>> new_value = read(VectorIndex(randinit), columns, VectorIndex(inSheet)).as_cmplx_vector();
+
+            if (isUnique(new_value, centroids))
             {
                 centroids.push_back(new_value);
                 i++;
@@ -4293,20 +3963,24 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     }
 
     long double inertia = 0;
-    for(size_t iteration = 0; iteration < maxIterations; iteration++)
+
+    for (size_t iteration = 0; iteration < maxIterations; iteration++)
     {
         // Step 2 assign points to closest Cluster centroid
         size_t change = 0;
         inertia = 0;
-        for(size_t i = 0; i < col_size; i++)
+
+        for (size_t i = 0; i < col_size; i++)
         {
-            std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns).as_cmplx_vector();
+            std::vector<std::complex<double>> value = read(VectorIndex(i), columns, VectorIndex(inSheet)).as_cmplx_vector();
             double min_distance = calculateL2Norm(value, centroids[0]);
             size_t idx = 0;
-            for(size_t j = 1; j < nClusters; j++)
+
+            for (size_t j = 1; j < nClusters; j++)
             {
                 double curr_distance = calculateL2Norm(value, centroids[j]);
-                if(curr_distance < min_distance)
+
+                if (curr_distance < min_distance)
                 {
                     min_distance = curr_distance;
                     idx = j;
@@ -4314,7 +3988,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             }
 
             idx++;
-            if(clusters[i] != std::complex<double>(idx))
+
+            if (clusters[i] != std::complex<double>(idx))
             {
                 clusters[i] = idx;
                 change++;
@@ -4324,18 +3999,21 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         }
 
         // stop criteria: all points remain in same cluster
-        if(change == 0)
+        if (change == 0)
             break;
 
         // Step 3 calculate new clusters
         change = 0;
-        for(size_t i = 0; i < nClusters; i++)
+
+        for (size_t i = 0; i < nClusters; i++)
         {
             VectorIndex indices(findIndicesOfValue(clusters, std::complex<double>(i+1)));
-            for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
+
+            for (size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
-                std::complex<double> new_val = avg(indices, VectorIndex(elemIdx));
-                if(!closeEnough(centroids[i][elemIdx], new_val))
+                std::complex<double> new_val = avg(indices, VectorIndex(elemIdx), VectorIndex(inSheet));
+
+                if (!closeEnough(centroids[i][elemIdx], new_val))
                 {
                     centroids[i][elemIdx] = new_val;
                     change++;
@@ -4344,7 +4022,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         }
 
         // stop criteria: all centroids stay same
-        if(change == 0)
+        if (change == 0)
             break;
     }
 
@@ -4363,24 +4041,29 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
+/// \param inSheet size_t
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Table::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2, size_t inSheet) const
 {
-    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
-    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+    if (inSheet >= m_data.sheets())
+        return NAN;
+
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1, inSheet)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2, inSheet)-1);
 
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
-    std::complex<double> vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1));
-    std::complex<double> vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2));
+    std::complex<double> vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1), VectorIndex(inSheet));
+    std::complex<double> vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2), VectorIndex(inSheet));
 
     double vCov = 0.0;
 
     for (size_t i = 0; i < minSize; i++)
     {
-        vCov += std::real((readMem(_vIndex1[i], col1).getNum().asCF64() - vAvg1) * std::conj(readMem(_vIndex2[i], col2).getNum().asCF64() - vAvg2));
+        vCov += std::real((read(_vIndex1[i], col1, inSheet).getNum().asCF64() - vAvg1)
+                            * std::conj(read(_vIndex2[i], col2, inSheet).getNum().asCF64() - vAvg2));
     }
 
     return vCov / (minSize-1.0);
@@ -4396,18 +4079,23 @@ double Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t co
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
+/// \param inSheet size_t
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Table::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2, size_t inSheet) const
 {
-    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
-    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+    if (inSheet >= m_data.sheets())
+        return NAN;
+
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1, inSheet)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2, inSheet)-1);
 
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
-    return getCovariance(col1, _vIndex1, col2, _vIndex2)
-        / (std(_vIndex1.subidx(0, minSize), VectorIndex(col1)).real() * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)).real());
+    return getCovariance(col1, _vIndex1, col2, _vIndex2, inSheet)
+        / (std(_vIndex1.subidx(0, minSize), VectorIndex(col1), VectorIndex(inSheet)).real()
+            * std(_vIndex2.subidx(0, minSize), VectorIndex(col2), VectorIndex(inSheet)).real());
 }
 
 
@@ -4420,24 +4108,28 @@ double Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t c
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
+/// \param inSheet size_t
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+double Table::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2, size_t inSheet) const
 {
-    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
-    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+    if (inSheet >= m_data.sheets())
+        return NAN;
+
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1, inSheet)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2, inSheet)-1);
 
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
-    Memory _mem(2);
+    Table _mem(2);
 
-    _mem.memArray[0].reset(new F64ValueColumn(minSize));
-    _mem.memArray[0]->setValue(VectorIndex(0, minSize), getRank(col1, _vIndex1.subidx(0, minSize), RANK_FRACTIONAL));
-    _mem.memArray[1].reset(new F64ValueColumn(minSize));
-    _mem.memArray[1]->setValue(VectorIndex(0, minSize), getRank(col2, _vIndex2.subidx(0, minSize), RANK_FRACTIONAL));
+    _mem.m_data.m_sheets[0]->m_columns[0].reset(new F64ValueColumn(minSize));
+    _mem.m_data.m_sheets[0]->m_columns[0]->setValue(VectorIndex(0, minSize), getRank(col1, _vIndex1.subidx(0, minSize), inSheet, RANK_FRACTIONAL));
+    _mem.m_data.m_sheets[0]->m_columns[1].reset(new F64ValueColumn(minSize));
+    _mem.m_data.m_sheets[0]->m_columns[1]->setValue(VectorIndex(0, minSize), getRank(col2, _vIndex2.subidx(0, minSize), inSheet, RANK_FRACTIONAL));
 
-    return _mem.getPearsonCorr(0, VectorIndex(0, VectorIndex::OPEN_END), 1, VectorIndex(0, VectorIndex::OPEN_END));
+    return _mem.getPearsonCorr(0, VectorIndex(0, VectorIndex::OPEN_END), 1, VectorIndex(0, VectorIndex::OPEN_END), 0);
 }
 
 
@@ -4451,19 +4143,19 @@ double Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t 
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void evaluateRankingStrategy(std::vector<double>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
+static void evaluateRankingStrategy(std::vector<double>& vRank, size_t& nEqualRanks, Table::RankingStrategy _strat)
 {
     switch (_strat)
     {
-        case Memory::RANK_DENSE:
+        case Table::RANK_DENSE:
             vRank.insert(vRank.end(), nEqualRanks, vRank.back());
             vRank.push_back(vRank.back()+1.0);
             break;
-        case Memory::RANK_COMPETETIVE:
+        case Table::RANK_COMPETETIVE:
             vRank.insert(vRank.end(), nEqualRanks, vRank.back());
             vRank.push_back(vRank.back()+(nEqualRanks+1.0));
             break;
-        case Memory::RANK_FRACTIONAL:
+        case Table::RANK_FRACTIONAL:
         {
             double val = vRank.back();
             vRank.pop_back();
@@ -4483,30 +4175,31 @@ static void evaluateRankingStrategy(std::vector<double>& vRank, size_t& nEqualRa
 ///
 /// \param col size_t
 /// \param _vIndex const VectorIndex&
+/// \param inSheet size_t
 /// \param _strat Memory::RankingStrategy
 /// \return std::vector<double>
 ///
 /////////////////////////////////////////////////
-std::vector<double> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+std::vector<double> Table::getRank(size_t col, const VectorIndex& _vIndex, size_t inSheet, Table::RankingStrategy _strat) const
 {
-    if (col >= memArray.size() || !memArray[col])
+    if (inSheet >= m_data.sheets() || !m_data.getSheet(inSheet).isValidColumn(col))
         return {NAN};
 
-    _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
+    _vIndex.setOpenEndIndex(getElemsInColumn(col, inSheet)-1);
 
-    Memory _mem(1);
-    _mem.memArray.back().reset(memArray[col]->copy(_vIndex));
+    TableSheet sheet("", 1);
+    sheet.m_columns.back().reset(m_data.getSheet(inSheet).m_columns[col]->copy(_vIndex));
 
-    std::vector<int> vIndex = _mem.sortElements(VectorIndex(0, _mem.getLines(false)-1), VectorIndex(0), "-index");
+    std::vector<int> vIndex = sheet.sortElements(VectorIndex(0, sheet.rows()-1), VectorIndex(0), "-index");
     std::vector<double> vRank(1, 1.0);
     size_t nEqualRanks = 0;
 
     for (size_t i = 1; i < vIndex.size(); i++)
     {
         // Indices are already 1-based and NANs are always at the end
-        if (!_mem.readMem(vIndex[i]-1, 0).isValid())
+        if (!sheet.m_columns.front()->get(vIndex[i]-1).isValid())
             vRank.push_back(NAN);
-        else if (_mem.readMem(vIndex[i]-1, 0) != _mem.readMem(vIndex[i-1]-1, 0))
+        else if (sheet.m_columns.front()->get(vIndex[i]-1) != sheet.m_columns.front()->get(vIndex[i-1]-1))
         {
             if (nEqualRanks)
                 evaluateRankingStrategy(vRank, nEqualRanks, _strat);
@@ -4540,21 +4233,25 @@ std::vector<double> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memo
 ///
 /// \param col size_t
 /// \param _vIndex const VectorIndex&
+/// \param inSheet size_t
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorIndex& _vIndex) const
+std::vector<std::complex<double>> Table::getZScore(size_t col, const VectorIndex& _vIndex, size_t inSheet) const
 {
-    _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
-
     std::vector<std::complex<double>> vZScore;
 
-    std::complex<double> avgVal = avg(_vIndex, VectorIndex(col));
-    std::complex<double> stdVal = std(_vIndex, VectorIndex(col));
+    if (inSheet >= m_data.sheets())
+        return vZScore;
+
+    _vIndex.setOpenEndIndex(getElemsInColumn(col, inSheet)-1);
+
+    std::complex<double> avgVal = avg(_vIndex, VectorIndex(col), VectorIndex(inSheet));
+    std::complex<double> stdVal = std(_vIndex, VectorIndex(col), VectorIndex(inSheet));
 
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
-        vZScore.push_back((readMem(_vIndex[i], col).getNum().asCF64() - avgVal) / stdVal);
+        vZScore.push_back((read(_vIndex[i], col, inSheet).getNum().asCF64() - avgVal) / stdVal);
     }
 
     return vZScore;
@@ -4566,36 +4263,39 @@ std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorInde
 /// bin in the selected column.
 ///
 /// \param col size_t
+/// \param inSheet size_t
 /// \param nBins size_t
 /// \return std::vector<int64_t>
 ///
 /////////////////////////////////////////////////
-std::vector<int64_t> Memory::getBins(size_t col, size_t nBins) const
+std::vector<int64_t> Table::getBins(size_t col, size_t inSheet, size_t nBins) const
 {
     std::vector<int64_t> vBins;
 
     // Ensure that we have data
-    if (memArray.size() <= col || !memArray[col])
+    if (inSheet >= m_data.sheets() || !m_data.getSheet(inSheet).isValidColumn(col))
     {
-        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, -1);
+        vBins.resize(!nBins || nBins >= m_data.getSheet(inSheet).rows() ? 1 : nBins, -1);
         return vBins;
     }
 
+    const TableSheet& sheet = m_data.getSheet(inSheet);
+
     // Get the column type
-    TableColumn::ColumnType type = memArray[col]->m_type;
+    TableColumn::ColumnType type = sheet.m_columns[col]->m_type;
 
     // Handle different column types differently
     if (type == TableColumn::TYPE_CATEGORICAL)
     {
         // We use the categories as bins and ignore user settings
-        std::vector<std::string> vCategories = static_cast<CategoricalColumn*>(memArray[col].get())->getCategories();
+        std::vector<std::string> vCategories = static_cast<CategoricalColumn*>(sheet.m_columns[col].get())->getCategories();
         nBins = vCategories.size();
         vBins.resize(nBins, 0);
 
-        for (size_t i = 0; i < memArray[col]->size(); i++)
+        for (size_t i = 0; i < sheet.m_columns[col]->size(); i++)
         {
-            if (memArray[col]->getValue(i).real() > 0.0)
-                vBins[memArray[col]->getValue(i).real()-1]++;
+            if (sheet.m_columns[col]->getValue(i).real() > 0.0)
+                vBins[sheet.m_columns[col]->getValue(i).real()-1]++;
         }
     }
     else if (type == TableColumn::TYPE_LOGICAL)
@@ -4604,32 +4304,32 @@ std::vector<int64_t> Memory::getBins(size_t col, size_t nBins) const
         nBins = 2;
         vBins.resize(nBins, 0);
 
-        for (size_t i = 0; i < memArray[col]->size(); i++)
+        for (size_t i = 0; i < sheet.m_columns[col]->size(); i++)
         {
-            if (memArray[col]->getValue(i) == 1.0)
+            if (sheet.m_columns[col]->getValue(i) == 1.0)
                 vBins[0]++;
-            else if (memArray[col]->getValue(i) == 0.0)
+            else if (sheet.m_columns[col]->getValue(i) == 0.0)
                 vBins[1]++;
         }
     }
     else if (type == TableColumn::TYPE_STRING)
-        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, -1); // Strings are not binnable
+        vBins.resize(!nBins || nBins >= sheet.m_columns[col]->size() ? 1 : nBins, -1); // Strings are not binnable
     else
     {
         // Calculate the bins following the (simple) Sturges rule
-        if (!nBins || nBins >= memArray[col]->size() )
-            nBins = (int)std::rint(1.0 + 3.3 * std::log10(num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real()));
+        if (!nBins || nBins >= sheet.m_columns[col]->size() )
+            nBins = (int)std::rint(1.0 + 3.3 * std::log10(num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col), VectorIndex(inSheet)).real()));
 
         // Calculate min, max and range of the data. We'll only consider real values
         vBins.resize(nBins, 0);
-        double dMin = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
-        double dMax = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
+        double dMin = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col), VectorIndex(inSheet)).real();
+        double dMax = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col), VectorIndex(inSheet)).real();
         double dRange = dMax - dMin;
 
-        for (size_t i = 0; i < memArray[col]->size(); i++)
+        for (size_t i = 0; i < sheet.m_columns[col]->size(); i++)
         {
-            if (!mu::isnan(memArray[col]->getValue(i)))
-                vBins[std::min(nBins-1.0, nBins * (memArray[col]->getValue(i).real()-dMin) / dRange)]++;
+            if (!mu::isnan(sheet.m_columns[col]->getValue(i)))
+                vBins[std::min(nBins-1.0, nBins * (sheet.m_columns[col]->getValue(i).real()-dMin) / dRange)]++;
         }
     }
 
@@ -4642,31 +4342,32 @@ std::vector<int64_t> Memory::getBins(size_t col, size_t nBins) const
 /// method. It will redirect the control into the
 /// specialized member functions.
 ///
-/// \param _vLine VectorIndex
+/// \param _vRow VectorIndex
 /// \param _vCol VectorIndex
+/// \param inSheet size_t
 /// \param Direction AppDir
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
+bool Table::retouch(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
 
-    if (!memArray.size())
+    if (m_data.sheets() <= inSheet)
         return false;
 
-    if (!_vLine.isValid() || !_vCol.isValid())
+    if (!_vRow.isValid() || !_vCol.isValid())
         return false;
 
     // Evaluate the indices
-    if (_vLine.isOpenEnd())
+    if (_vRow.isOpenEnd())
         bUseAppendedZeroes = true;
 
-    _vLine.setRange(0, getLines()-1);
-    _vCol.setRange(0, getCols()-1);
+    _vRow.setRange(0, m_data.getSheet(inSheet).rows()-1);
+    _vCol.setRange(0, m_data.getSheet(inSheet).cols()-1);
 
-    if ((Direction == ALL || Direction == GRID) && _vLine.size() < 4)
-        Direction = LINES;
+    if ((Direction == ALL || Direction == GRID) && _vRow.size() < 4)
+        Direction = ROWS;
 
     if ((Direction == ALL || Direction == GRID) && _vCol.size() < 4)
         Direction = COLS;
@@ -4676,12 +4377,13 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
     {
         if (bUseAppendedZeroes)
         {
-            if (!retouch(_vLine, VectorIndex(_vCol[0]), COLS) || !retouch(_vLine, VectorIndex(_vCol[1]), COLS))
+            if (!retouch(_vRow, VectorIndex(_vCol[0]), inSheet, COLS)
+                || !retouch(_vRow, VectorIndex(_vCol[1]), inSheet, COLS))
                 return false;
         }
         else
         {
-            if (!retouch(_vLine, _vCol.subidx(0, 2), COLS))
+            if (!retouch(_vRow, _vCol.subidx(0, 2), inSheet, COLS))
                 return false;
         }
 
@@ -4692,13 +4394,13 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
     // functions
     if (Direction == ALL || Direction == GRID)
     {
-        _vLine.linearize();
+        _vRow.linearize();
         _vCol.linearize();
 
-        return retouch2D(_vLine, _vCol);
+        return retouch2D(_vRow, _vCol, inSheet);
     }
     else
-        return retouch1D(_vLine, _vCol, Direction);
+        return retouch1D(_vRow, _vCol, inSheet, Direction);
 }
 
 
@@ -4706,35 +4408,38 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
 /// \brief This member function retouches single
 /// dimension data (along columns or rows).
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param inSheet size_t
 /// \param Direction AppDir
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction)
+bool Table::retouch1D(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t inSheet, AppDir Direction)
 {
     bool markModified = false;
 
-    if (Direction == LINES)
+    if (Direction == ROWS)
     {
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vRow.size(); i++)
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
-                if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+                if (mu::isnan(read(_vRow[i], _vCol[j], inSheet)))
                 {
                     for (size_t _j = j; _j < _vCol.size(); _j++)
                     {
-                        if (!mu::isnan(readMem(_vLine[i], _vCol[_j])))
+                        if (!mu::isnan(read(_vRow[i], _vCol[_j], inSheet)))
                         {
                             if (j)
                             {
                                 for (size_t __j = j; __j < _j; __j++)
                                 {
-                                    writeData(_vLine[i],
-                                              _vCol[__j],
-                                              (readMem(_vLine[i], _vCol[_j]) - readMem(_vLine[i], _vCol[j-1])) / mu::Value(_j - j) * mu::Value(__j - j + 1) + readMem(_vLine[i], _vCol[j-1]));
+                                    write(_vRow[i],
+                                          _vCol[__j],
+                                          inSheet,
+                                          (read(_vRow[i], _vCol[_j], inSheet) - read(_vRow[i], _vCol[j-1], inSheet))
+                                            / mu::Value(_j - j) * mu::Value(__j - j + 1) + read(_vRow[i], _vCol[j-1], inSheet));
                                 }
 
                                 markModified = true;
@@ -4744,7 +4449,7 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                             {
                                 for (size_t __j = j; __j < _j; __j++)
                                 {
-                                    writeData(_vLine[i], _vCol[__j], readMem(_vLine[i], _vCol[_j]));
+                                    write(_vRow[i], _vCol[__j], inSheet, read(_vRow[i], _vCol[_j], inSheet));
                                 }
 
                                 markModified = true;
@@ -4752,11 +4457,11 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                             }
                         }
 
-                        if (j && _j+1 == _vCol.size() && mu::isnan(readMem(_vLine[i], _vCol[_j])))
+                        if (j && _j+1 == _vCol.size() && mu::isnan(read(_vRow[i], _vCol[_j], inSheet)))
                         {
                             for (size_t __j = j; __j < _vCol.size(); __j++)
                             {
-                                writeData(_vLine[i], _vCol[__j], readMem(_vLine[i], _vCol[j-1]));
+                                write(_vRow[i], _vCol[__j], inSheet, read(_vRow[i], _vCol[j-1], inSheet));
                             }
 
                             markModified = true;
@@ -4770,31 +4475,33 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
     {
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 0; i < _vLine.size(); i++)
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+                if (mu::isnan(read(_vRow[i], _vCol[j], inSheet)))
                 {
-                    for (size_t _i = i; _i < _vLine.size(); _i++)
+                    for (size_t _i = i; _i < _vRow.size(); _i++)
                     {
-                        if (!mu::isnan(readMem(_vLine[_i], _vCol[j])))
+                        if (!mu::isnan(read(_vRow[_i], _vCol[j], inSheet)))
                         {
                             if (i)
                             {
                                 for (size_t __i = i; __i < _i; __i++)
                                 {
-                                    writeData(_vLine[__i],
-                                              _vCol[j],
-                                              (readMem(_vLine[_i], _vCol[j]) - readMem(_vLine[i-1], _vCol[j])) / mu::Value(_i - i) * mu::Value(__i - i + 1) + readMem(_vLine[i-1], _vCol[j]));
+                                    write(_vRow[__i],
+                                          _vCol[j],
+                                          inSheet,
+                                          (read(_vRow[_i], _vCol[j], inSheet) - read(_vRow[i-1], _vCol[j], inSheet))
+                                            / mu::Value(_i - i) * mu::Value(__i - i + 1) + read(_vRow[i-1], _vCol[j], inSheet));
                                 }
 
                                 markModified = true;
                                 break;
                             }
-                            else if (_i+1 < _vLine.size())
+                            else if (_i+1 < _vRow.size())
                             {
                                 for (size_t __i = i; __i < _i; __i++)
                                 {
-                                    writeData(_vLine[__i], _vCol[j], readMem(_vLine[_i], _vCol[j]));
+                                    write(_vRow[__i], _vCol[j], inSheet, read(_vRow[_i], _vCol[j], inSheet));
                                 }
 
                                 markModified = true;
@@ -4802,11 +4509,11 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                             }
                         }
 
-                        if (i  && _i+1 == _vLine.size() && mu::isnan(readMem(_vLine[_i], _vCol[j])))
+                        if (i  && _i+1 == _vRow.size() && mu::isnan(read(_vRow[_i], _vCol[j], inSheet)))
                         {
-                            for (size_t __i = i; __i < _vLine.size(); __i++)
+                            for (size_t __i = i; __i < _vRow.size(); __i++)
                             {
-                                writeData(_vLine[__i], _vCol[j], readMem(_vLine[i-1], _vCol[j]));
+                                write(_vRow[__i], _vCol[j], inSheet, read(_vRow[i-1], _vCol[j], inSheet));
                             }
 
                             markModified = true;
@@ -4829,25 +4536,28 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
 /// dimensional data (using a specialized filter
 /// class instance).
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param inSheet size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
+bool Table::retouch2D(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t inSheet)
 {
     bool bMarkModified = false;
 
-    for (long long int i = _vLine.front(); i <= _vLine.last(); i++)
+    for (long long int i = _vRow.front(); i <= _vRow.last(); i++)
     {
         for (long long int j = _vCol.front(); j <= _vCol.last(); j++)
         {
-            if (mu::isnan(readMem(i, j)))
+            if (mu::isnan(read(i, j, inSheet)))
             {
-                Boundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
+                Boundary _boundary = findValidBoundary(_vRow, _vCol, inSheet, i, j);
                 NumeRe::RetouchRegion _region(_boundary.rows-1,
                                               _boundary.cols-1,
-                                              med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())));
+                                              med(VectorIndex(_boundary.rf(), _boundary.re()),
+                                                  VectorIndex(_boundary.cf(), _boundary.ce()),
+                                                  inSheet));
 
                 long long int l,r,t,b;
 
@@ -4856,23 +4566,23 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 // any of the four boundaries
                 l = _boundary.cf() < _vCol.front() ? _boundary.ce() : _boundary.cf();
                 r = _boundary.ce() > _vCol.last() ? _boundary.cf() : _boundary.ce();
-                t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
-                b = _boundary.re() > _vLine.last() ? _boundary.rf() : _boundary.re();
+                t = _boundary.rf() < _vRow.front() ? _boundary.re() : _boundary.rf();
+                b = _boundary.re() > _vRow.last() ? _boundary.rf() : _boundary.re();
 
-                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)).as_cmplx_vector(),
-                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)).as_cmplx_vector(),
-                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())).as_cmplx_vector(),
-                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())).as_cmplx_vector());
+                _region.setBoundaries(read(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l), inSheet).as_cmplx_vector(),
+                                      read(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r), inSheet).as_cmplx_vector(),
+                                      read(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce()), inSheet).as_cmplx_vector(),
+                                      read(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce()), inSheet).as_cmplx_vector());
 
                 for (long long int _n = _boundary.rf()+1; _n < _boundary.re(); _n++)
                 {
                     for (long long int _m = _boundary.cf()+1; _m < _boundary.ce(); _m++)
                     {
-                        writeData(_n, _m,
+                        write(_n, _m, inSheet,
                                   _region.retouch(_n - _boundary.rf() - 1,
                                                   _m - _boundary.cf() - 1,
-                                                  readMem(_n, _m).getNum().asCF64(),
-                                                  med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1))));
+                                                  read(_n, _m, inSheet).getNum().asCF64(),
+                                                  med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1), inSheet)));
                     }
                 }
 
@@ -4893,14 +4603,15 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// detecting, whether a row or column does only
 /// contain valid values (no NaNs).
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param _vSheet const VectorIndex&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+bool Table::onlyValidValues(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const
 {
-    return num(_vLine, _vCol) == cnt(_vLine, _vCol);
+    return num(_vRow, _vCol, _vSheet) == cnt(_vRow, _vCol, _vSheet);
 }
 
 
@@ -4910,14 +4621,15 @@ bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// invalid values to be used as boundary values
 /// for retouching the values.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param inSheet size_t
 /// \param i int
 /// \param j int
 /// \return RetouchBoundary
 ///
 /////////////////////////////////////////////////
-Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, int i, int j) const
+Boundary Table::findValidBoundary(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t inSheet, int i, int j) const
 {
     Boundary _boundary(i-1, j-1, 2, 2);
 
@@ -4927,27 +4639,31 @@ Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex&
     {
         reEvaluateBoundaries = false;
 
-        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf())) && _boundary.cf() > _vCol.front())
+        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf()), inSheet)
+            && _boundary.cf() > _vCol.front())
         {
             _boundary.m--;
             _boundary.cols++;
             reEvaluateBoundaries = true;
         }
 
-        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.ce())) && _boundary.ce() < _vCol.last())
+        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.ce()), inSheet)
+            && _boundary.ce() < _vCol.last())
         {
             _boundary.cols++;
             reEvaluateBoundaries = true;
         }
 
-        if (!onlyValidValues(VectorIndex(_boundary.rf()), VectorIndex(_boundary.cf(), _boundary.ce())) && _boundary.rf() > _vLine.front())
+        if (!onlyValidValues(VectorIndex(_boundary.rf()), VectorIndex(_boundary.cf(), _boundary.ce()), inSheet)
+            && _boundary.rf() > _vRow.front())
         {
             _boundary.n--;
             _boundary.rows++;
             reEvaluateBoundaries = true;
         }
 
-        if (!onlyValidValues(VectorIndex(_boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())) && _boundary.re() < _vLine.last())
+        if (!onlyValidValues(VectorIndex(_boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce()), inSheet)
+            && _boundary.re() < _vRow.last())
         {
             _boundary.rows++;
             reEvaluateBoundaries = true;
@@ -4963,8 +4679,9 @@ Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex&
 /// the application of a smoothing window to 1D
 /// data sets.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param inSheet size_t
 /// \param i size_t
 /// \param j size_t
 /// \param _filter NumeRe::Filter*
@@ -4972,7 +4689,7 @@ Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines)
+void Table::smoothingWindow1D(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t inSheet, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines)
 {
     auto sizes = _filter->getWindowSize();
 
@@ -4983,9 +4700,14 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     for (size_t n = 0; n < sizes.first; n++)
     {
         if (!_filter->isConvolution())
-            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().asCF64()));
+            write(_vRow[i+n*(!smoothLines)], _vCol[j+n*smoothLines], inSheet,
+                  _filter->apply(n, 0, read(_vRow[i+n*(!smoothLines)],
+                                            _vCol[j+n*smoothLines],
+                                            inSheet).getNum().asCF64()));
         else
-            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().asCF64());
+            sum += _filter->apply(n, 0, read(_vRow[i+n*(!smoothLines)],
+                                             _vCol[j+n*smoothLines],
+                                             inSheet).getNum().asCF64());
     }
 
     // If the filter is a convolution, store the new value here
@@ -4997,7 +4719,7 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     if (filterBuffer.size() > sizes.first/2)
     {
         // Writes the element to the first position of the window
-        writeData(_vLine[i], _vCol[j], filterBuffer.front());
+        write(_vRow[i], _vCol[j], inSheet, filterBuffer.front());
         filterBuffer.pop();
     }
 
@@ -5008,16 +4730,16 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
         while (!filterBuffer.empty())
         {
             j++;
-            writeData(_vLine[i], _vCol[j], filterBuffer.front());
+            write(_vRow[i], _vCol[j], inSheet, filterBuffer.front());
             filterBuffer.pop();
         }
     }
-    else if (!smoothLines && _vLine.size()-sizes.first-1 == i)
+    else if (!smoothLines && _vRow.size()-sizes.first-1 == i)
     {
         while (!filterBuffer.empty())
         {
             i++;
-            writeData(_vLine[i], _vCol[j], filterBuffer.front());
+            write(_vRow[i], _vCol[j], inSheet, filterBuffer.front());
             filterBuffer.pop();
         }
     }
@@ -5029,15 +4751,16 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 /// the application of a smoothing window to 2D
 /// data sets.
 ///
-/// \param _vLine const VectorIndex&
+/// \param _vRow const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param inSheet size_t
 /// \param i size_t
 /// \param j size_t
 /// \param _filter NumeRe::Filter*
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter)
+void Table::smoothingWindow2D(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t inSheet, size_t i, size_t j, NumeRe::Filter* _filter)
 {
     auto sizes = _filter->getWindowSize();
     NumeRe::FilterBuffer2D& filterBuffer = _filter->get2DBuffer();
@@ -5050,9 +4773,14 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
         for (size_t m = 0; m < sizes.second; m++)
         {
             if (!_filter->isConvolution())
-                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().asCF64()));
+                write(_vRow[i+n], _vCol[j+m], inSheet,
+                      _filter->apply(n, m, read(_vRow[i+n],
+                                                _vCol[j+m],
+                                                inSheet).getNum().asCF64()));
             else
-                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().asCF64());
+                sum += _filter->apply(n, m, read(_vRow[i+n],
+                                                 _vCol[j+m],
+                                                 inSheet).getNum().asCF64());
         }
     }
 
@@ -5071,20 +4799,22 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
     {
         // Write the finished row
         for (size_t k = 0; k < filterBuffer.front().size(); k++)
-            writeData(_vLine[i-1], _vCol[k+sizes.second/2+1], filterBuffer.front()[k]);
+            write(_vRow[i-1], _vCol[k+sizes.second/2+1], inSheet,
+                  filterBuffer.front()[k]);
 
         filterBuffer.pop();
     }
 
     // Is this the last point? Then extract all remaining points from the
     // buffer
-    if (_vLine.size()-sizes.first-1 == i && _vCol.size()-sizes.second-1 == j)
+    if (_vRow.size()-sizes.first-1 == i && _vCol.size()-sizes.second-1 == j)
     {
         while (!filterBuffer.empty())
         {
 
             for (size_t k = 0; k < filterBuffer.front().size(); k++)
-                writeData(_vLine[i], _vCol[k+sizes.second/2+1], filterBuffer.front()[k]);
+                write(_vRow[i], _vCol[k+sizes.second/2+1], inSheet,
+                      filterBuffer.front()[k]);
 
             i++;
             filterBuffer.pop();
@@ -5099,50 +4829,55 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
 /// using the passed FilterSettings to construct
 /// the corresponding filter.
 ///
-/// \param _vLine VectorIndex
+/// \param _vRow VectorIndex
 /// \param _vCol VectorIndex
+/// \param inSheet size_t
 /// \param _settings NumeRe::FilterSettings
 /// \param Direction AppDir
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction)
+bool Table::smooth(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, NumeRe::FilterSettings _settings, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
 
     // Avoid the border cases
-    if (!memArray.size())
+    if (m_data.empty())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, "smooth", SyntaxError::invalid_position);
 
-    if (!_vLine.isValid() || !_vCol.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position, _vLine.to_string() + ", " + _vCol.to_string());
+    if (!_vRow.isValid() || !_vCol.isValid() || inSheet >= m_data.sheets())
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position,
+                          _vRow.to_string() + ", " + _vCol.to_string() + ", " + toString(inSheet));
 
     // Evaluate the indices
-    if (_vLine.isOpenEnd())
+    if (_vRow.isOpenEnd())
         bUseAppendedZeroes = true;
 
-    // Force the index ranges
-    _vCol.setRange(0, getCols()-1);
+    size_t nColCount = m_data.getSheet(inSheet).cols();
+    size_t nRowCount = m_data.getSheet(inSheet).rows();
 
-    size_t nRowCount = getLines();
+    // Force the index ranges
+    _vCol.setRange(0, nColCount-1);
 
     if (bUseAppendedZeroes)
     {
-        std::vector<double> sizes = mu::real(size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), AppDir::COLS));
+        std::vector<double> sizes = mu::real(size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), inSheet, AppDir::COLS));
         nRowCount = *std::max_element(sizes.begin(), sizes.end());
     }
 
-    _vLine.setRange(0, nRowCount-1);
+    _vRow.setRange(0, nRowCount-1);
 
     // Change the predefined application directions, if it's needed
-    if ((Direction == ALL || Direction == GRID) && _vLine.size() < 4)
-        Direction = LINES;
+    if ((Direction == ALL || Direction == GRID) && _vRow.size() < 4)
+        Direction = ROWS;
 
     if ((Direction == ALL || Direction == GRID) && _vCol.size() < 4)
         Direction = COLS;
 
     // Check the order
-    if ((_settings.row >= (size_t)getLines() && Direction == COLS) || (_settings.col >= (size_t)getCols() && Direction == LINES) || ((_settings.row >= (size_t)getLines() || _settings.col >= (size_t)getCols()) && (Direction == ALL || Direction == GRID)))
+    if ((_settings.row >= nRowCount && Direction == COLS)
+        || (_settings.col >= nColCount && Direction == ROWS)
+        || ((_settings.row >= nRowCount || _settings.col >= nColCount) && (Direction == ALL || Direction == GRID)))
         throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, "smooth", SyntaxError::invalid_position);
 
 
@@ -5153,12 +4888,13 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         // Will never return false
         if (bUseAppendedZeroes)
         {
-            if (!smooth(_vLine, VectorIndex(_vCol[0]), _settings, COLS) || !smooth(_vLine, VectorIndex(_vCol[1]), _settings, COLS))
+            if (!smooth(_vRow, VectorIndex(_vCol[0]), inSheet, _settings, COLS)
+                || !smooth(_vRow, VectorIndex(_vCol[1]), inSheet, _settings, COLS))
                 return false;
         }
         else
         {
-            if (!smooth(_vLine, _vCol.subidx(0, 2), _settings, COLS))
+            if (!smooth(_vRow, _vCol.subidx(0, 2), inSheet, _settings, COLS))
                 return false;
         }
 
@@ -5170,12 +4906,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
     if (Direction == ALL || Direction == GRID)
     {
         // Retouch everything
-        Memory::retouch(_vLine, _vCol, ALL);
-
-        //Memory::smooth(_vLine, VectorIndex(_vCol.front()), _settings, COLS);
-        //Memory::smooth(_vLine, VectorIndex(_vCol.last()), _settings, COLS);
-        //Memory::smooth(VectorIndex(_vLine.front()), _vCol, _settings, LINES);
-        //Memory::smooth(VectorIndex(_vLine.last()), _vCol, _settings, LINES);
+        Table::retouch(_vRow, _vCol, inSheet, ALL);
 
         if (_settings.row == 1u && _settings.col != 1u)
             _settings.row = _settings.col;
@@ -5192,7 +4923,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         _settings.alpha = 1.0;
 
     // Apply the actual smoothing of the data
-    if (Direction == LINES)
+    if (Direction == ROWS)
     {
         // Create a filter from the filter settings
         std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
@@ -5207,11 +4938,11 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         _vCol.append(vector<int>(_settings.row/2+1, _vCol.last()));
 
         // Smooth the lines
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vRow.size(); i++)
         {
             for (size_t j = 1; j < _vCol.size() - _settings.row; j++)
             {
-                smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), true);
+                smoothingWindow1D(_vRow, _vCol, inSheet, i, j, _filterPtr.get(), true);
             }
         }
     }
@@ -5226,19 +4957,19 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         _settings.row = sizes.first;
 
         // Pad the beginning and end of the vector with multiple copies
-        _vLine.prepend(vector<int>(_settings.row/2+1, _vLine.front()));
-        _vLine.append(vector<int>(_settings.row/2+1, _vLine.last()));
+        _vRow.prepend(vector<int>(_settings.row/2+1, _vRow.front()));
+        _vRow.append(vector<int>(_settings.row/2+1, _vRow.last()));
 
         // Smooth the columns
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 1; i < _vLine.size() - _settings.row; i++)
+            for (size_t i = 1; i < _vRow.size() - _settings.row; i++)
             {
-                smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), false);
+                smoothingWindow1D(_vRow, _vCol, inSheet, i, j, _filterPtr.get(), false);
             }
         }
     }
-    else if ((Direction == ALL || Direction == GRID) && _vLine.size() > 2 && _vCol.size() > 2)
+    else if ((Direction == ALL || Direction == GRID) && _vRow.size() > 2 && _vCol.size() > 2)
     {
         // Create a filter from the settings
         std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
@@ -5251,11 +4982,11 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
         // Pad the beginning and end of both vectors
         // with a mirrored copy of themselves
-        std::vector<int> vMirror = _vLine.subidx(1, _settings.row/2+1).getVector();
-        _vLine.prepend(vector<int>(vMirror.rbegin(), vMirror.rend()));
+        std::vector<int> vMirror = _vRow.subidx(1, _settings.row/2+1).getVector();
+        _vRow.prepend(vector<int>(vMirror.rbegin(), vMirror.rend()));
 
-        vMirror = _vLine.subidx(_vLine.size() - _settings.row/2-2, _settings.row/2+1).getVector();
-        _vLine.append(vector<int>(vMirror.rbegin(), vMirror.rend()));
+        vMirror = _vRow.subidx(_vRow.size() - _settings.row/2-2, _settings.row/2+1).getVector();
+        _vRow.append(vector<int>(vMirror.rbegin(), vMirror.rend()));
 
         vMirror = _vCol.subidx(1, _settings.col/2+1).getVector();
         _vCol.prepend(vector<int>(vMirror.rbegin(), vMirror.rend()));
@@ -5265,11 +4996,11 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
         // Smooth the data in two dimensions, if that is reasonable
         // Go through every point
-        for (size_t i = 1; i < _vLine.size() - _settings.row; i++)
+        for (size_t i = 1; i < _vRow.size() - _settings.row; i++)
         {
             for (size_t j = 1; j < _vCol.size() - _settings.col; j++)
             {
-                smoothingWindow2D(_vLine, _vCol, i, j, _filterPtr.get());
+                smoothingWindow2D(_vRow, _vCol, inSheet, i, j, _filterPtr.get());
             }
         }
     }
@@ -5279,7 +5010,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 }
 
 
-static void extractResampled(Memory* _this, Resampler* _resampler, int start_line, int start_col, int _primary_dim, int& _secondary_dim, bool linewise)
+static void extractResampled(Table* _this, Resampler* _resampler, int start_line, int start_col, size_t inSheet, int _primary_dim, int& _secondary_dim, bool linewise)
 {
     while (true)
     {
@@ -5294,14 +5025,16 @@ static void extractResampled(Memory* _this, Resampler* _resampler, int start_lin
         {
             for (int _fin = 0; _fin < _primary_dim; _fin++)
             {
-                _this->writeData(start_line+_secondary_dim, start_col+_fin, dOutputSamples[_fin]);
+                _this->write(start_line+_secondary_dim, start_col+_fin, inSheet,
+                             dOutputSamples[_fin]);
             }
         }
         else
         {
             for (int _fin = 0; _fin < _primary_dim; _fin++)
             {
-                _this->writeData(start_line+_fin, start_col+_secondary_dim, dOutputSamples[_fin]);
+                _this->write(start_line+_fin, start_col+_secondary_dim, inSheet,
+                             dOutputSamples[_fin]);
             }
         }
 
@@ -5315,15 +5048,16 @@ static void extractResampled(Memory* _this, Resampler* _resampler, int start_lin
 /// data described by the passed coordinates
 /// using the new samples nSamples.
 ///
-/// \param _vLine VectorIndex
+/// \param _vRow VectorIndex
 /// \param _vCol VectorIndex
+/// \param inSheet size_t
 /// \param samples std::pair<size_t,size_t>
 /// \param Direction AppDir
 /// \param sFilter std::string sFilter
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction, std::string sFilter)
+bool Table::resample(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, std::pair<size_t,size_t> samples, AppDir Direction, std::string sFilter)
 {
     bool bUseAppendedZeroes = false;
 
@@ -5338,26 +5072,29 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         sFilter = "lanczos3";
 
     // Avoid border cases
-    if (!memArray.size())
+    if (m_data.empty())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, "resample", SyntaxError::invalid_position);
 
     if (!samples.first || !samples.second)
         throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
 
-    if (!_vLine.isValid() || !_vCol.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position, _vLine.to_string() + ", " + _vCol.to_string());
+    if (!_vRow.isValid() || !_vCol.isValid() || m_data.sheets() <= inSheet)
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position,
+                          _vRow.to_string() + ", " + _vCol.to_string() + ", " + toString(inSheet));
 
     // Evaluate the indices
     if (_vCol.isOpenEnd())
         bUseAppendedZeroes = true;
 
-    _vLine.setRange(0, getLines()-1);
-    _vLine.linearize();
-    _vCol.setRange(0, getCols()-1);
+    TableSheet& sheet = m_data.getSheet(inSheet);
+
+    _vRow.setRange(0, sheet.rows()-1);
+    _vRow.linearize();
+    _vCol.setRange(0, sheet.cols()-1);
 
     // Change the predefined application directions, if it's needed
-    if ((Direction == ALL || Direction == GRID) && _vLine.size() < 4)
-        Direction = LINES;
+    if ((Direction == ALL || Direction == GRID) && _vRow.size() < 4)
+        Direction = ROWS;
 
     if ((Direction == ALL || Direction == GRID) && _vCol.size() < 4)
         Direction = COLS;
@@ -5366,9 +5103,10 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
     // match a sufficiently enough large data array
     if (Direction == GRID)
     {
-        if (_vCol.size() - 2 != _vLine.size() && !bUseAppendedZeroes)
+        if (_vCol.size() - 2 != _vRow.size() && !bUseAppendedZeroes)
             throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
-        else if ((!memArray[1] || _vCol.size() - 2 != memArray[1]->size() - _vLine.front()) && bUseAppendedZeroes)
+        else if ((!sheet.isValidColumn(_vCol[1]) || _vCol.size() - 2 != sheet.m_columns[_vCol[1]]->size() - _vRow.front())
+                 && bUseAppendedZeroes)
             throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
     }
 
@@ -5384,23 +5122,23 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         {
             // Apply the resampling to the first two columns first:
             // These contain the axis values
-            resample(_vLine, VectorIndex(_vCol[0]), samples, COLS);
-            resample(_vLine, VectorIndex(_vCol[1]), std::make_pair(samples.second, samples.first), COLS);
+            resample(_vRow, VectorIndex(_vCol[0]), inSheet, samples, COLS);
+            resample(_vRow, VectorIndex(_vCol[1]), inSheet, std::make_pair(samples.second, samples.first), COLS);
 
             // Increment the first column
             _vCol = _vCol.subidx(2);
             _vCol.linearize();
 
             // Determine the size of the buffer
-            if (samples.first > _vLine.size())
-                nLinesToInsert = samples.first - _vLine.size();
+            if (samples.first > _vRow.size())
+                nLinesToInsert = samples.first - _vRow.size();
 
             if (samples.second > _vCol.size())
                 nColsToInsert = samples.second - _vCol.size();
         }
 
         // Create the resample object and prepare the needed memory
-        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
+        _resampler.reset(new Resampler(_vCol.size(), _vRow.size(),
                                        samples.second, samples.first,
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
     }
@@ -5411,19 +5149,19 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         // Create the resample object and prepare the needed memory
         // NOTE: It is intentional, that the line dimension is changing
         // here, because that is way faster in the end
-        _resampler.reset(new Resampler(_vLine.size(), _vCol.size(),
+        _resampler.reset(new Resampler(_vRow.size(), _vCol.size(),
                                        samples.first, _vCol.size(),
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
-        if (samples.first > _vLine.size())
-            nLinesToInsert = samples.first - _vLine.size();
+        if (samples.first > _vRow.size())
+            nLinesToInsert = samples.first - _vRow.size();
     }
-    else if (Direction == LINES)// lines
+    else if (Direction == ROWS)// lines
     {
         // Create the resample object and prepare the needed memory
-        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       samples.second, _vLine.size(),
+        _resampler.reset(new Resampler(_vCol.size(), _vRow.size(),
+                                       samples.second, _vRow.size(),
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
@@ -5440,18 +5178,19 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
     {
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if ((int)memArray.size() < _vCol[j] && memArray[_vCol[j]])
-                memArray[_vCol[j]]->insertElements(_vLine.last()+1, nLinesToInsert);
+            if (sheet.isValidColumn(_vCol[j]))
+                sheet.m_columns[_vCol[j]]->insertElements(_vRow.last()+1, nLinesToInsert);
         }
     }
 
     if (nColsToInsert)
     {
         TableColumnArray arr(nColsToInsert);
-        memArray.insert(memArray.begin()+_vCol.last()+1, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
+        sheet.m_columns.insert(sheet.m_columns.begin()+_vCol.last()+1,
+                               std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
     }
 
-    std::vector<double> dInputSamples(Direction == COLS ? _vLine.size() : _vCol.size());
+    std::vector<double> dInputSamples(Direction == COLS ? _vRow.size() : _vCol.size());
     int _seconday_dim = 0;
     int _primary_dim = 0;
 
@@ -5465,9 +5204,9 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         // Apply the resampling colwise
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 0; i < _vLine.size(); i++)
+            for (size_t i = 0; i < _vRow.size(); i++)
             {
-                dInputSamples[i] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
+                dInputSamples[i] = read(_vRow[i], _vCol[j], inSheet).getNum().asF64();
             }
 
             // If the resampler doesn't accept a further line
@@ -5479,7 +5218,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
                 else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
                 {
                     // Free the scan buffer of the resampler by extracting the already resampled lines
-                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, false);
+                    extractResampled(this, _resampler.get(), _vRow.front(), _vCol.front(), inSheet, _primary_dim, _seconday_dim, false);
 
                     // Try again to put the current line
                     _resampler->put_line(&dInputSamples[0]);
@@ -5494,11 +5233,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         _primary_dim = samples.second;
 
         // Apply the resampling linewise
-        for (size_t i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vRow.size(); i++)
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
-                dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().asF64();
+                dInputSamples[j] = read(_vRow[i], _vCol[j], inSheet).getNum().asF64();
             }
 
             // If the resampler doesn't accept a further line
@@ -5510,7 +5249,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
                 else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
                 {
                     // Free the scan buffer of the resampler by extracting the already resampled lines
-                    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, true);
+                    extractResampled(this, _resampler.get(), _vRow.front(), _vCol.front(), inSheet, _primary_dim, _seconday_dim, true);
 
                     // Try again to put the current line
                     _resampler->put_line(&dInputSamples[0]);
@@ -5520,18 +5259,18 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
     }
 
     // Extract the remaining resampled lines from the resampler's memory
-    extractResampled(this, _resampler.get(), _vLine.front(), _vCol.front(), _primary_dim, _seconday_dim, Direction != COLS);
+    extractResampled(this, _resampler.get(), _vRow.front(), _vCol.front(), inSheet, _primary_dim, _seconday_dim, Direction != COLS);
 
     // Delete empty lines
-    if (Direction != LINES && samples.first < _vLine.size())
-        deleteBulk(VectorIndex(_vLine.front() + samples.first, _vLine.last()), _vCol);
+    if (Direction != ROWS && samples.first < _vRow.size())
+        deleteBulk(VectorIndex(_vRow.front() + samples.first, _vRow.last()), _vCol, inSheet);
 
     // Delete empty cols
     if (Direction != COLS && samples.second < _vCol.size())
-        deleteBulk(_vLine, VectorIndex(_vCol.front() + samples.second, _vCol.last()));
+        deleteBulk(_vRow, VectorIndex(_vCol.front() + samples.second, _vCol.last()), inSheet);
 
     // Reset the calculated lines and columns
-    nCalcLines = -1;
+    sheet.m_calculatedRows = 0;
     m_meta.modify();
 
     return true;

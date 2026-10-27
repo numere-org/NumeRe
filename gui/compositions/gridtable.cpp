@@ -42,10 +42,12 @@ int GridNumeReTable::getRow(int row) const
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
+GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END), m_currentSheet(0)
 {
-    _table = NumeRe::Table();
-    m_numHeadLines = _table.getHeadCount();
+#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+    // m_currentSheet
+    _table = NumeRe::TableView();
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 }
 
 
@@ -57,10 +59,10 @@ GridNumeReTable::GridNumeReTable() : m_showQMarks(true), m_sortIndex(0, VectorIn
 /// \param numCols int
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END)
+GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true), m_sortIndex(0, VectorIndex::OPEN_END), m_currentSheet(0)
 {
-    _table = NumeRe::Table(numRows-2, numCols-1);
-    m_numHeadLines = _table.getHeadCount();
+    _table = NumeRe::TableView(numRows-2, numCols-1, 1);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 }
 
 
@@ -72,10 +74,10 @@ GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true),
 /// \param showQMarks bool
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks), m_sortIndex(0, VectorIndex::OPEN_END)
+GridNumeReTable::GridNumeReTable(NumeRe::TableView&& _extTable, bool showQMarks) : m_showQMarks(showQMarks), m_sortIndex(0, VectorIndex::OPEN_END), m_currentSheet(0)
 {
     _table = std::move(_extTable);
-    m_numHeadLines = _table.getHeadCount();
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 }
 
 
@@ -86,9 +88,9 @@ GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table GridNumeReTable::getTableCopy()
+NumeRe::TableView GridNumeReTable::getTableCopy()
 {
-    NumeRe::Table tableCopy(_table);
+    NumeRe::TableView tableCopy(_table);
     return tableCopy;
 }
 
@@ -100,7 +102,7 @@ NumeRe::Table GridNumeReTable::getTableCopy()
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table& GridNumeReTable::getTableRef()
+NumeRe::TableView& GridNumeReTable::getTableRef()
 {
     return _table;
 }
@@ -116,7 +118,7 @@ NumeRe::Table& GridNumeReTable::getTableRef()
 /////////////////////////////////////////////////
 int GridNumeReTable::GetNumberRows()
 {
-    return std::max(_table.getLines(), (size_t)1u) + m_numHeadLines + 1;
+    return std::max(_table.getRows(), (size_t)1u) + m_numHeadLines + 1;
 }
 
 
@@ -157,29 +159,29 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     if (sTypeName == "mu::Value")
         return true;
 
-    if (sTypeName == "complex" && TableColumn::isValueType(_table.getColumnType(col)))// == TableColumn::TYPE_VALUE)
+    if (sTypeName == "complex" && TableColumn::isValueType(_table.getColumnType(col, m_currentSheet)))// == TableColumn::TYPE_VALUE)
         return true;
 
-    if (sTypeName == "datetime" && _table.getColumnType(col) == TableColumn::TYPE_DATETIME)
+    if (sTypeName == "datetime" && _table.getColumnType(col, m_currentSheet) == TableColumn::TYPE_DATETIME)
         return true;
 
-    if (sTypeName == "duration" && _table.getColumnType(col) == TableColumn::TYPE_DURATION)
+    if (sTypeName == "duration" && _table.getColumnType(col, m_currentSheet) == TableColumn::TYPE_DURATION)
         return true;
 
     if (sTypeName == wxGRID_VALUE_FLOAT
-        && TableColumn::isValueType(_table.getColumnType(col))
-        && (_table.getValue(getRow(row), col).imag() == 0 || mu::isnan(_table.getValue(getRow(row), col))))
+        && TableColumn::isValueType(_table.getColumnType(col, m_currentSheet))
+        && (_table.getValue(getRow(row), col, m_currentSheet).imag() == 0 || mu::isnan(_table.getValue(getRow(row), col, m_currentSheet))))
         return true;
 
     if (sTypeName == wxGRID_VALUE_BOOL
-        && _table.getColumnType(col) == TableColumn::TYPE_LOGICAL
-        && _table.getColumn(col)->isValid(getRow(row)))
+        && _table.getColumnType(col, m_currentSheet) == TableColumn::TYPE_LOGICAL
+        && _table.getColumn(col, m_currentSheet)->isValid(getRow(row)))
         return true;
 
-    if (sTypeName == "plain" && _table.getColumnType(col) == TableColumn::TYPE_STRING)
+    if (sTypeName == "plain" && _table.getColumnType(col, m_currentSheet) == TableColumn::TYPE_STRING)
         return true;
 
-    if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col) != TableColumn::TYPE_NONE)
+    if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col, m_currentSheet) != TableColumn::TYPE_NONE)
         return true;
 
     return false;
@@ -201,10 +203,10 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
     if (row < m_numHeadLines)
         return NAN;
 
-    if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
+    if (row - m_numHeadLines >= (int)_table.getRows() || col >= (int)_table.getCols())
         return NAN;
 
-    return _table.getValue(getRow(row), col).real();
+    return _table.getValue(getRow(row), col, m_currentSheet).real();
 }
 
 
@@ -223,10 +225,10 @@ bool GridNumeReTable::GetValueAsBool(int row, int col)
     if (row < m_numHeadLines)
         return false;
 
-    if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
+    if (row - m_numHeadLines >= (int)_table.getRows() || col >= (int)_table.getCols())
         return false;
 
-    return _table.getValue(getRow(row), col).real() != 0.0;
+    return _table.getValue(getRow(row), col, m_currentSheet).real() != 0.0;
 }
 
 
@@ -245,11 +247,11 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 {
     if (sTypeName == "mu::Value")
     {
-        value = _table.get(getRow(row), col);
+        value = _table.get(getRow(row), col, m_currentSheet);
         return static_cast<void*>(&value);
     }
 
-    cmplx = _table.getValue(getRow(row), col);
+    cmplx = _table.getValue(getRow(row), col, m_currentSheet);
     return static_cast<void*>(&cmplx);
 }
 
@@ -266,17 +268,17 @@ void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeN
 wxString GridNumeReTable::GetValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
-    else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, m_currentSheet, row)));
+    else if (row - m_numHeadLines >= (int)_table.getRows() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
     {
-        std::string sValue = toInternalString(_table.getValueAsString(getRow(row), col));
+        std::string sValue = toInternalString(_table.getValueAsString(getRow(row), col, m_currentSheet));
         replaceAll(sValue, "\t", "    ");
         return wxFromUtf8(ensureValidUtf8(sValue));
     }
     else
-        return wxFromUtf8(ensureValidUtf8(_table.getValueAsString(getRow(row), col)));
+        return wxFromUtf8(ensureValidUtf8(_table.getValueAsString(getRow(row), col, m_currentSheet)));
 }
 
 
@@ -293,11 +295,11 @@ wxString GridNumeReTable::GetValue(int row, int col)
 wxString GridNumeReTable::GetEditableValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols())
-        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, row)));
-    else if (row - m_numHeadLines >= (int)_table.getLines() || col >= (int)_table.getCols())
+        return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, m_currentSheet, row)));
+    else if (row - m_numHeadLines >= (int)_table.getRows() || col >= (int)_table.getCols())
         return "";
     else
-        return wxFromUtf8(ensureValidUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col))));
+        return wxFromUtf8(ensureValidUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col, m_currentSheet))));
 }
 
 
@@ -320,11 +322,11 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 
     // Set the value
     if (row < m_numHeadLines)
-        _table.setHeadPart(col, row, wxToUtf8(value));
+        _table.setHeadPart(col, row, m_currentSheet, wxToUtf8(value));
     else
-        _table.setValueAsString(getRow(row), col, wxToUtf8(value));
+        _table.setValueAsString(getRow(row), col, m_currentSheet, wxToUtf8(value));
 
-    m_numHeadLines = _table.getHeadCount();
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // If the number of headlines changed, notify the
     // grid to draw the newly added cells
@@ -355,7 +357,9 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 void GridNumeReTable::Clear()
 {
     _table.Clear();
-    m_numHeadLines = _table.getHeadCount();
+    _table.setSize(0, 0, 1);
+    m_currentSheet = 0;
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
     m_sortIndex = VectorIndex(0, VectorIndex::OPEN_END);
 }
 
@@ -376,8 +380,8 @@ bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
         || pos < (size_t)m_numHeadLines)
         return false;
 
-    _table.insertLines(getRow(pos), numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.insertRows(m_currentSheet, getRow(pos), numRows);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Update the index, if necessary
     if (isSorted())
@@ -430,8 +434,8 @@ bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 /////////////////////////////////////////////////
 bool GridNumeReTable::AppendRows(size_t numRows)
 {
-    _table.appendLines(numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.appendRows(m_currentSheet, numRows);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
@@ -461,8 +465,8 @@ bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
         || pos < (size_t)m_numHeadLines)
         return false;
 
-    _table.deleteLines(getRow(pos), numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.deleteRows(m_currentSheet, getRow(pos), numRows);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Update the index, if necessary
     if (isSorted())
@@ -509,20 +513,20 @@ bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 /// inserts columns.
 ///
 /// \param pos size_t
-/// \param numRows size_t
+/// \param numCols size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
+bool GridNumeReTable::InsertCols(size_t pos, size_t numCols)
 {
-    _table.insertCols(pos, numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.insertCols(m_currentSheet, pos, numCols);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
     if (GetView())
     {
-        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_INSERTED, pos, numRows);
+        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_INSERTED, pos, numCols);
         GetView()->ProcessTableMessage(msg);
     }
 
@@ -535,20 +539,20 @@ bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
 /// control directly to the internal buffer and
 /// appends columns.
 ///
-/// \param numRows size_t
+/// \param numCols size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool GridNumeReTable::AppendCols(size_t numRows)
+bool GridNumeReTable::AppendCols(size_t numCols)
 {
-    _table.appendCols(numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.appendCols(m_currentSheet, numCols);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
     if (GetView())
     {
-        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_APPENDED, numRows);
+        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_APPENDED, numCols);
         GetView()->ProcessTableMessage(msg);
     }
 
@@ -562,20 +566,20 @@ bool GridNumeReTable::AppendCols(size_t numRows)
 /// deletes columns.
 ///
 /// \param pos size_t
-/// \param numRows size_t
+/// \param numCols size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool GridNumeReTable::DeleteCols(size_t pos, size_t numRows)
+bool GridNumeReTable::DeleteCols(size_t pos, size_t numCols)
 {
-    _table.deleteCols(pos, numRows);
-    m_numHeadLines = _table.getHeadCount();
+    _table.deleteCols(m_currentSheet, pos, numCols);
+    m_numHeadLines = _table.getHeadCount(m_currentSheet);
 
     // Notify the grid that the number of elements have
     // changed and that the grid has to be redrawn
     if (GetView())
     {
-        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_DELETED, pos, numRows);
+        wxGridTableMessage msg(this, wxGRIDTABLE_NOTIFY_COLS_DELETED, pos, numCols);
         GetView()->ProcessTableMessage(msg);
     }
 
@@ -656,7 +660,7 @@ double GridNumeReTable::min(const wxGridCellCoordsContainer& coords) const
             if (!coords.contains(i, j))
                 continue;
 
-            double val = _table.getValue(getRow(i), j).real();
+            double val = _table.getValue(getRow(i), j, m_currentSheet).real();
 
             if (isnan(dMin) || val < dMin)
                 dMin = val;
@@ -687,7 +691,7 @@ double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
             if (!coords.contains(i, j))
                 continue;
 
-            double val = _table.getValue(getRow(i), j).real();
+            double val = _table.getValue(getRow(i), j, m_currentSheet).real();
 
             if (isnan(dMax) || val > dMax)
                 dMax = val;
@@ -719,7 +723,7 @@ std::complex<double> GridNumeReTable::avg(const wxGridCellCoordsContainer& coord
             if (!coords.contains(i, j))
                 continue;
 
-            std::complex<double> val = _table.getValue(getRow(i), j);
+            std::complex<double> val = _table.getValue(getRow(i), j, m_currentSheet);
 
             if (!mu::isnan(val))
             {
@@ -756,7 +760,7 @@ std::complex<double> GridNumeReTable::sum(const wxGridCellCoordsContainer& coord
             if (!coords.contains(i, j))
                 continue;
 
-            std::complex<double> val = _table.getValue(getRow(i), j);
+            std::complex<double> val = _table.getValue(getRow(i), j, m_currentSheet);
 
             if (!mu::isnan(val))
                 dSum += val;
@@ -788,7 +792,7 @@ std::string GridNumeReTable::serialize(const wxGridCellCoordsContainer& coords) 
             for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
             {
                 if (coords.contains(i, j))
-                    sSerialized += _table.getCleanHeadPart(j, i);
+                    sSerialized += _table.getCleanHeadPart(j, m_currentSheet, i);
 
                 sSerialized += "\t";
             }
@@ -804,7 +808,7 @@ std::string GridNumeReTable::serialize(const wxGridCellCoordsContainer& coords) 
             for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
             {
                 if (coords.contains(i, j))
-                    sSerialized += _table.getValueAsInternalString(getRow(i), j);
+                    sSerialized += _table.getValueAsInternalString(getRow(i), j, m_currentSheet);
 
                 sSerialized += "\t";
             }
@@ -828,7 +832,7 @@ std::vector<int> GridNumeReTable::getColumnTypes() const
     std::vector<int> vTypes;
 
     for (size_t i = 0; i < _table.getCols(); i++)
-        vTypes.push_back(_table.getColumnType(i));
+        vTypes.push_back(_table.getColumnType(i, m_currentSheet));
 
     return vTypes;
 }
@@ -844,8 +848,8 @@ std::vector<int> GridNumeReTable::getColumnTypes() const
 /////////////////////////////////////////////////
 std::vector<std::string> GridNumeReTable::getCategories(int col) const
 {
-    if (_table.getColumnType(col) == TableColumn::TYPE_CATEGORICAL)
-        return static_cast<CategoricalColumn*>(_table.getColumn(col))->getCategories();
+    if (_table.getColumnType(col, m_currentSheet) == TableColumn::TYPE_CATEGORICAL)
+        return static_cast<CategoricalColumn*>(_table.getColumn(col, m_currentSheet))->getCategories();
 
     return std::vector<std::string>();
 }
@@ -879,7 +883,7 @@ void GridNumeReTable::sortCol(int col, bool ascending)
     if (col >= (int)_table.getCols())
         return;
 
-    m_sortIndex = VectorIndex(_table.getColumn(col)->get(VectorIndex(0, VectorIndex::OPEN_END)).call("order"));
+    m_sortIndex = VectorIndex(_table.getColumn(col, m_currentSheet)->get(VectorIndex(0, VectorIndex::OPEN_END)).call("order"));
 
     // Just reverse it
     if (!ascending)

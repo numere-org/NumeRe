@@ -168,7 +168,7 @@ void append_data(CommandLineParser& cmdParser)
 
         // Inform the user and return
         if (!_data.isEmpty("data") && _option.systemPrints())
-            NumeReKernel::print(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+            NumeReKernel::print(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getTable("data").getRows()), toString(_data.getTable("data").getCols())));
 
         return;
     }
@@ -275,6 +275,8 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
     {
         if (sCache.substr(0, sCache.find('(')) == iter->first)
         {
+            Table& table = _data.getTable(iter->first);
+
             // Cache was found
             // Get the indices from the cache expression
             Indices _iDeleteIndex = getIndices(sCache, _parser, _data, false);
@@ -283,25 +285,18 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
             if (!isValidIndexSet(_iDeleteIndex))
                 return false;
 
-            // Evaluate the indices
-            if (_iDeleteIndex.row.isOpenEnd())
-                _iDeleteIndex.row.setRange(0, _data.getLines(iter->first, false) - 1);
-
-            if (_iDeleteIndex.col.isOpenEnd())
-                _iDeleteIndex.col.setRange(0, _data.getCols(iter->first) - 1);
-
             // Delete the section identified by the cache expression
             // The indices are vectors
-            _data.deleteBulk(iter->first, _iDeleteIndex.row, _iDeleteIndex.col);
+            table.deleteBulk(_iDeleteIndex.row, _iDeleteIndex.col, _iDeleteIndex.layer);
 
             // If everything is deleted, reset the meta data as well
             if (_data.isEmpty(iter->first))
             {
-                NumeRe::TableMetaData meta = _data.getMetaData(iter->first);
+                NumeRe::TableMetaData meta = table.getMetaData();
                 meta.comment.clear();
                 meta.source.clear();
                 meta.modify();
-                _data.setMetaData(iter->first, meta);
+                table.setMetaData(meta);
             }
 
             // Return true
@@ -488,18 +483,20 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 {
     if (!isValidIndexSet(_iTargetIndex))
     {
+        int cols = _data.getTable(sTarget).getCols();
+
         // This section is for cases, in which the target was not defined
         // Get the dimensions of the target to calculate the indices correspondingly
         // Depending on the transpose flag, the rows and columns are exchanged
         if (!bTranspose)
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size() - 1);
-            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.col.size() - 1);
+            _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.col.size() - 1);
         }
         else
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size() - 1);
-            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.row.size() - 1);
+            _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.row.size() - 1);
         }
     }
     else if (_iTargetIndex.row.size())
@@ -546,14 +543,23 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose)
 {
     // Get the extract as a table
-    NumeRe::Table extract = _data.extractTable(sSource, _iSourceIndex.row, _iSourceIndex.col);
+    NumeRe::TableView extract = _data.getTable(sSource).extractView(sSource,
+                                                                    _iSourceIndex.row,
+                                                                    _iSourceIndex.col,
+                                                                    _iSourceIndex.layer);
 
     // If we move then we need to delete the old data
     if (bMove)
-        _data.deleteBulk(sSource, _iSourceIndex.row, _iSourceIndex.col);
+        _data.getTable(sSource).deleteBulk(_iSourceIndex.row,
+                                           _iSourceIndex.col,
+                                           _iSourceIndex.layer);
 
     // Insert the copied table at the new location
-    _data.insertCopiedTable(extract, sTarget, _iTargetIndex.row, _iTargetIndex.col, bTranspose);
+    _data.getTable(sTarget).insertCopiedView(extract,
+                                             _iTargetIndex.row,
+                                             _iTargetIndex.col,
+                                             _iTargetIndex.layer,
+                                             bTranspose);
 }
 
 
@@ -631,7 +637,7 @@ bool sortData(CommandLineParser& cmdParser)
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
     vSortIndex = _data.sortElements(_dataView.getDataName().substr(0, _dataView.getDataName().length()-1),
-                                    _idx.row, _idx.col,
+                                    _idx.row, _idx.col, _idx.layer,
                                     cmdParser.getParameterList());
 
     // If the sorting index contains elements, the user had requested them
@@ -911,9 +917,7 @@ bool readImage(CommandLineParser& cmdParser)
     // Load the file to the image object (wxWidgets will try to autodetect the image file format)
     // and throw an error, if it doesn't succeed
     if (!image.LoadFile(sFileName, wxBITMAP_TYPE_ANY))
-    {
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
-    }
 
     // Get the dimensions of the data and the pointer to the data itself
     int nWidth = image.GetWidth();
@@ -924,50 +928,70 @@ bool readImage(CommandLineParser& cmdParser)
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, _idx.row.front() + std::max(nWidth, nHeight) - 1);
 
-    if (_idx.col.isOpenEnd() && sChannels == "grey")
+    if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + 2 + nHeight - 1);
-    else if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + 2 + sChannels.length()*nHeight - 1);
+
+    if (_idx.layer.isOpenEnd() && sChannels == "grey")
+        _idx.layer = VectorIndex(_idx.layer.min());
+    else if (_idx.layer.isOpenEnd())
+        _idx.layer.setRange(0, _idx.layer.front() + nHeight - 1);
+
+    if (!isValidIndexSet(_idx))
+        throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "",
+                          _idx.row.to_string() + ", " + _idx.col.to_string() + ", " + _idx.layer.to_string());
 
     vIndices.push_back(_idx.row.min() + 1);
     vIndices.push_back(_idx.row.max() + 1);
     vIndices.push_back(_idx.col.min() + 1);
     vIndices.push_back(_idx.col.max() + 1);
+    vIndices.push_back(_idx.layer.min() + 1);
+    vIndices.push_back(_idx.layer.max() + 1);
 
     int rowmax = _idx.row.subidx(0, nWidth).max();
-    Memory* _table = _data.getTable(sTargetCache);
+    Table& _table = _data.getTable(sTargetCache);
 
     // Write the axes to the target cache
-    for (int i = 0; i < nWidth; i++)
+    for (size_t k = 0; k < _idx.layer.size(); k++)
     {
-        if (_idx.row[i] == VectorIndex::INVALID)
-            break;
+        int s = _idx.layer[k];
 
-        _table->writeData(_idx.row[i], _idx.col.front(), i + 1);
-    }
+        if (s < 0)
+            continue;
 
-    for (int i = 0; i < nHeight; i++)
-    {
-        if (_idx.row[i] == VectorIndex::INVALID)
-            break;
-
-        _table->writeData(_idx.row[i], _idx.col[1], i + 1);
-
-        if (sChannels == "grey")
-            _table->writeData(rowmax, _idx.col[2 + i], (uint8_t)0);
-        else
+        for (int i = 0; i < nWidth; i++)
         {
-            for (size_t n = 0; n < sChannels.length(); n++)
-                _table->writeData(rowmax, _idx.col[2 + i + n * nHeight], (uint8_t)0);
+            if (_idx.row[i] == VectorIndex::INVALID)
+                break;
+
+            _table.write(_idx.row[i], _idx.col.front(), s, i + 1);
+        }
+
+        for (int i = 0; i < nHeight; i++)
+        {
+            if (_idx.row[i] == VectorIndex::INVALID)
+                break;
+
+            _table.write(_idx.row[i], _idx.col[1], s, i + 1);
+
+            // Perform some pre-allocation
+            _table.write(rowmax, _idx.col[2 + i], s, (uint8_t)0);
         }
     }
 
-    _table->convertColumns(_idx.col.subidx(0, 2), "value.ui32");
-    _table->convertColumns(_idx.col.subidx(2, sChannels == "grey" ? nHeight : sChannels.length()*nHeight), "value.ui8");
+    _table.convertColumns(_idx.col.subidx(0, 2), _idx.layer, "value.ui32");
+    _table.convertColumns(_idx.col.subidx(2, nHeight), _idx.layer, "value.ui8");
 
     // Write headlines
-    _data.setHeadLineElement(_idx.col[0], sTargetCache, "x");
-    _data.setHeadLineElement(_idx.col[1], sTargetCache, "y");
+    for (size_t k = 0; k < _idx.layer.size(); k++)
+    {
+        int s = _idx.layer[k];
+
+        if (s < 0)
+            continue;
+
+        _table.setHeadLineElement(_idx.col[0], s, "x");
+        _table.setHeadLineElement(_idx.col[1], s, "y");
+    }
 
     g_logger.debug("Writing image data to table.");
 
@@ -981,11 +1005,20 @@ bool readImage(CommandLineParser& cmdParser)
             continue;
 
         if (sChannels == "grey")
-            _table->setHeadLineElement(_idx.col[2 + j], "z(x(:),y(" + toString(j + 1) + "))");
+            _table.setHeadLineElement(_idx.col[2 + j],
+                                      _idx.layer.front(),
+                                      "z(x(:),y(" + toString(j + 1) + "))");
         else
         {
             for (size_t n = 0; n < sChannels.length(); n++)
-                _table->setHeadLineElement(_idx.col[2 + j + n * nHeight], "z(x(:),y(" + toString(j) + "))_" + sChannels[n]);
+            {
+                if (_idx.layer[n] < 0)
+                    continue;
+
+                _table.setHeadLineElement(_idx.col[2 + j],
+                                          _idx.layer[n],
+                                          "z(x(:),y(" + toString(j) + "))");
+            }
         }
 
         for (int i = 0; i < nWidth; i++)
@@ -997,33 +1030,40 @@ bool readImage(CommandLineParser& cmdParser)
             if (sChannels == "grey")
             {
                 // Calculate the luminosity of the three channels and write it to the table
-                _table->writeDataDirectUnsafe(_idx.row[i],
-                                              _idx.col[2 + (nHeight - j - 1)],
-                                              imageData[j * 3 * nWidth + iData] * 0.299
-                                              + imageData[j * 3 * nWidth + iData + 1] * 0.587
-                                              + imageData[j * 3 * nWidth + iData + 2] * 0.114);
+                _table.writeUnsafe(_idx.row[i],
+                                   _idx.col[2 + (nHeight - j - 1)],
+                                   _idx.layer.front(),
+                                   imageData[j * 3 * nWidth + iData] * 0.299
+                                   + imageData[j * 3 * nWidth + iData + 1] * 0.587
+                                   + imageData[j * 3 * nWidth + iData + 2] * 0.114);
             }
             else
             {
                 for (size_t n = 0; n < sChannels.length(); n++)
                 {
+                    if (_idx.layer[n] < 0)
+                        continue;
+
                     // Store the selected channel
                     switch (sChannels[n])
                     {
                         case 'r':
-                            _table->writeDataDirectUnsafe(_idx.row[i],
-                                                          _idx.col[2 + (nHeight - j - 1) + n * nHeight],
-                                                          imageData[j * 3 * nWidth + iData]);
+                            _table.writeUnsafe(_idx.row[i],
+                                               _idx.col[2 + (nHeight - j - 1)],
+                                               _idx.layer[n],
+                                               imageData[j * 3 * nWidth + iData]);
                             break;
                         case 'g':
-                            _table->writeDataDirectUnsafe(_idx.row[i],
-                                                          _idx.col[2 + (nHeight - j - 1) + n * nHeight],
-                                                          imageData[j * 3 * nWidth + iData + 1]);
+                            _table.writeUnsafe(_idx.row[i],
+                                               _idx.col[2 + (nHeight - j - 1)],
+                                               _idx.layer[n],
+                                               imageData[j * 3 * nWidth + iData + 1]);
                             break;
                         case 'b':
-                            _table->writeDataDirectUnsafe(_idx.row[i],
-                                                          _idx.col[2 + (nHeight - j - 1) + n * nHeight],
-                                                          imageData[j * 3 * nWidth + iData + 2]);
+                            _table.writeUnsafe(_idx.row[i],
+                                               _idx.col[2 + (nHeight - j - 1)],
+                                               _idx.layer[n],
+                                               imageData[j * 3 * nWidth + iData + 2]);
                             break;
                     }
                 }
@@ -1034,7 +1074,7 @@ bool readImage(CommandLineParser& cmdParser)
         }
     }
 
-    _table->markModified();
+    _table.markModified();
     g_logger.debug("Image file loaded.");
 
     cmdParser.setReturnValue(vIndices);

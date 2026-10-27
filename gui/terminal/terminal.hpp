@@ -183,7 +183,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 
 		// Kernel communication functions
 		void pass_command(const wxString& command, bool isEvent);
-		NumeRe::Table getTable(const std::string& sTableName);
+		NumeRe::TableView getTable(const std::string& sTableName);
 		NumeRe::Container<std::string> getStringTable(const std::string& sStringTableName);
 		Settings getKernelSettings();
 		NumeReKernel& getKernel()
@@ -201,7 +201,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		std::map<std::string, std::string> getMenuMap();
 		void updateEnvironment();
 		void updatePackage(const std::string& package);
-		void passEditedTable(NumeRe::Table _table);
+		void passEditedTable(NumeRe::TableView _table);
 		void cancelTableEdit()
 		{
 			wxCriticalSectionLocker lock(m_kernelCS);

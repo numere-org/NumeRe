@@ -25,7 +25,7 @@
 
 #include <string>
 
-class Memory;
+class Table;
 
 namespace NumeRe
 {
@@ -46,7 +46,7 @@ namespace NumeRe
             bool bLoadEmptyColsInNextFile;
 
             std::string getDate();
-            void condenseDataSet(Memory* _mem);
+            void condenseDataSet(Table* _mem);
             virtual bool saveLayer(std::string _sFileName, const std::string& _sCache, unsigned short nPrecision, std::string sExt = "") = 0;
 
         public:
@@ -63,7 +63,7 @@ namespace NumeRe
             void setbLoadEmptyCols(bool _bLoadEmptyCols);
             void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols);
             std::string generateFileName(const std::string& sExtension = ".ndat");
-            virtual void melt(Memory* _mem, const std::string& sTable, bool overrideTarget = false) = 0;
+            virtual void melt(Table* _mem, const std::string& sTable, bool overrideTarget = false) = 0;
     };
 }
 

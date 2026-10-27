@@ -1587,7 +1587,7 @@ mu::Array matfnc_movmed(const mu::Array& A, const mu::Array& n, const mu::Array&
         {
             if (!mu::isnan(A.get(i, j)))
             {
-                Memory _mem;
+                Table _mem;
 
                 for (int n = 0; n < 2*rowStep+1; n++)
                 {
@@ -1599,11 +1599,13 @@ mu::Array matfnc_movmed(const mu::Array& A, const mu::Array& n, const mu::Array&
                         if (j+m-colStep < 0 || j+m-colStep >= (int)A.cols())
                             continue;
 
-                        _mem.writeData(m + n*(2*colStep+1), 0, A.get(i+n-rowStep, j+m-colStep));
+                        _mem.write(m + n*(2*colStep+1), 0, 0, A.get(i+n-rowStep, j+m-colStep));
                     }
                 }
 
-                _mResult.get(i, j) = _mem.med(VectorIndex(0, (2*rowStep+1)*(2*colStep+1)), VectorIndex(0));
+                _mResult.get(i, j) = _mem.med(VectorIndex(0, (2*rowStep+1)*(2*colStep+1)),
+                                              VectorIndex(0),
+                                              VectorIndex(0));
             }
         }
     }

@@ -34,29 +34,30 @@
 class GridNumeReTable : public wxGridTableBase
 {
     private:
-        NumeRe::Table _table;
+        NumeRe::TableView _table;
         std::complex<double> cmplx;
         mu::Value value;
         bool m_showQMarks;
         std::map<int,wxString> m_customColLabels;
         VectorIndex m_sortIndex;
         int m_numHeadLines;
+        size_t m_currentSheet;
 
         int getRow(int row) const;
 
     public:
         GridNumeReTable();
         GridNumeReTable(int numRows, int numCols);
-        GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks);
+        GridNumeReTable(NumeRe::TableView&& _extTable, bool showQMarks);
         virtual ~GridNumeReTable() {}
 
-        NumeRe::Table getTable()
+        NumeRe::TableView getTable()
         {
             return _table;
         }
 
-        NumeRe::Table getTableCopy();
-        NumeRe::Table& getTableRef();
+        NumeRe::TableView getTableCopy();
+        NumeRe::TableView& getTableRef();
 
         virtual int GetNumberRows() override;
         virtual int GetNumberCols() override;

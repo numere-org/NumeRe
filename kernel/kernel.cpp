@@ -64,7 +64,7 @@ int NumeReKernel::nLastStatusVal = -1;
 size_t NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-NumeRe::Table NumeReKernel::table;
+NumeRe::TableView NumeReKernel::table;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
@@ -1436,7 +1436,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             createCalculationAnswer(nNum, v);
 
             if (bWriteToCache)
-                _memoryManager.writeToTable(_idx, sCache, v[0].get());
+                _memoryManager.getTable(sCache).write(_idx, v[0].get());
         }
         // This section starts the error handling
         catch (mu::Parser::exception_type& e)
@@ -2291,8 +2291,8 @@ bool NumeReKernel::executePlugins(std::string& sLine)
                     else
                         _memoryManager.copyTable(_rTemp.sReturnedTable, sTargetTable);
 
-                    sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getLines(sTargetTable),
-                                                                                     _memoryManager.getCols(sTargetTable)}))
+                    sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getTable(sTargetTable).getRows(),
+                                                                                     _memoryManager.getTable(sTargetTable).getCols()}))
                             + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                 }
                 else
@@ -2800,7 +2800,7 @@ NumeReVariables NumeReKernel::getVariableList()
     constexpr size_t MAXSTRINGLENGTH = 512;
 
     mu::varmap_type varmap = _parser.GetVar();
-    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    std::map<std::string, TableReference> tablemap = _memoryManager.getTableMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2842,14 +2842,15 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).starts_with("_~"))
             continue;
 
-        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
-            + toString(_memoryManager.getCols(iter->first, false));
+        const Table& currTable = _memoryManager.getTable(iter->first);
+        sCurrentLine = iter->first + "()\t" + toString(currTable.getRows()) + " x "
+            + toString(currTable.getCols());
 
-        std::pair<double,double> stats = _memoryManager.getTable(iter->first)->minmax();
+        std::pair<double,double> stats = currTable.minmax();
 
         sCurrentLine += "\ttable\t{" + toString(stats.first, DEFAULT_MINMAX_PRECISION) + ", ..., "
             + toString(stats.second, DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
-            + formatByteSize(_memoryManager.getBytes(iter->first));
+            + formatByteSize(currTable.getSize());
 
         vars.vTables.push_back(sCurrentLine);
     }
@@ -2906,7 +2907,7 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    std::map<std::string, TableReference> tablemap = _memoryManager.getTableMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2944,8 +2945,10 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
         if ((iter->first).starts_with("_~"))
             continue;
 
-        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
-            + toString(_memoryManager.getCols(iter->first, false)) + "\ttable";
+        const Table& currTable = _memoryManager.getTable(iter->first);
+
+        sCurrentLine = iter->first + "()\t" + toString(currTable.getRows()) + " x "
+            + toString(currTable.getCols()) + "\ttable";
 
         vars.vTables.push_back(sCurrentLine);
     }
@@ -3796,7 +3799,7 @@ void NumeReKernel::installationDone()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::showTable(NumeRe::Table _table, std::string __name, bool openeditable)
+void NumeReKernel::showTable(NumeRe::TableView _table, std::string __name, bool openeditable)
 {
     if (!m_parent)
         return;
@@ -3904,10 +3907,10 @@ void NumeReKernel::showWindow(const NumeRe::Window& window)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReKernel::getTable()
+NumeRe::TableView NumeReKernel::getTable()
 {
     if (!m_parent)
-        return NumeRe::Table();
+        return NumeRe::TableView();
 
     bool bHasTable = false;
     bool bWasCanceled = false;
@@ -3926,7 +3929,7 @@ NumeRe::Table NumeReKernel::getTable()
     while (!bHasTable && !bWasCanceled);
 
     if (bWasCanceled)
-        return NumeRe::Table();
+        return NumeRe::TableView();
 
     return table;
 }
@@ -3940,7 +3943,7 @@ NumeRe::Table NumeReKernel::getTable()
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
+NumeRe::TableView NumeReKernel::getTable(const std::string& sTableName)
 {
     g_logger.info("Requested table: " + sTableName);
 
@@ -3949,10 +3952,13 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
     if (sSelectedTable.find("()") != std::string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getCols(sSelectedTable))
-        return NumeRe::Table();
+    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getTable(sSelectedTable).getCols())
+        return NumeRe::TableView();
 
-    return _memoryManager.extractTable(sSelectedTable);
+    return _memoryManager.getTable(sSelectedTable).extractView(sSelectedTable,
+                                                               VectorIndex(0, VectorIndex::OPEN_END),
+                                                               VectorIndex(0, VectorIndex::OPEN_END),
+                                                               VectorIndex(0, VectorIndex::OPEN_END));
 }
 
 
@@ -4239,7 +4245,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     }
 
     // Get the table variable map
-    std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
+    std::map<std::string, TableReference> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     for (const auto& iter : tableMap)
     {

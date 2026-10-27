@@ -113,9 +113,9 @@ class TableViewer : public wxGrid
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, NumeReWindow* window, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(NumeRe::Container<std::string>& _stringTable, const std::string& sName, const std::string& sIntName);
-        void SetData(NumeRe::Table& _table, const std::string& sName, const std::string& sIntName);
-        NumeRe::Table GetData();
-        NumeRe::Table GetDataCopy();
+        void SetData(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName);
+        NumeRe::TableView GetData();
+        NumeRe::TableView GetDataCopy();
 
         mu::Value get(int row, int col);
 

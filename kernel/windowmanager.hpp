@@ -117,7 +117,7 @@ namespace NumeRe
     {
         std::string type;
         mu::Array val;
-        Table tableValue;
+        TableView tableValue;
     };
 
     // Forward declaration of the window manager class

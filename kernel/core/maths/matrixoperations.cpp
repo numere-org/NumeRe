@@ -193,13 +193,16 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
     // Target in Zielmatrix speichern
     if (!isCluster)
     {
+        Table& _table = _data.getTable(sTargetName);
+
         // This target is a table
         if (bAllowMatrixClearing)
-            _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
+            _table.deleteBulk(VectorIndex(0, _table.getRows()-1),
+                              VectorIndex(0, _table.getCols()-1),
+                              VectorIndex(0, _table.getSheets()-1));
 
         // Prepare the target size
-        _data.resizeTable(_idx.col.front()+_mResult.cols(), sTargetName);
-        Memory* _table = _data.getTable(sTargetName);
+        _table.reserve(_idx.col.front()+_mResult.cols(), _idx.layer.front()+1);
 
         int maxrow = _idx.row.subidx(0, _mResult.rows()).max();
 
@@ -208,7 +211,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
             if (_idx.col[j] == VectorIndex::INVALID)
                 break;
 
-            _table->writeData(maxrow, _idx.col[j], mu::Value(0.0, false));
+            _table.write(maxrow, _idx.col[j], _idx.layer.front(), mu::Value(0.0, false));
         }
 
         // Write the contents to the table
@@ -223,11 +226,11 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                _table->writeDataDirectUnsafe(_idx.row[i], _idx.col[j], _mResult(i, j));
+                _table.writeUnsafe(_idx.row[i], _idx.col[j], _idx.layer.front(), _mResult(i, j));
             }
         }
 
-        _table->markModified();
+        _table.markModified();
     }
     else
     {
@@ -851,8 +854,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     if (mDataMatrices.size() == 1 && isEqualStripped(sCmd, mDataMatrices.begin()->second))
     {
         auto iter = mDataMatrices.begin();
-        return _data.getTable(_cache.vDataAccesses[iter->first].sName)->readMemAsMatrix(_cache.vDataAccesses[iter->first].idx.row,
-                                                                                        _cache.vDataAccesses[iter->first].idx.col);
+        return _data.getTable(_cache.vDataAccesses[iter->first].sName).readMemAsMatrix(_cache.vDataAccesses[iter->first].idx.row,
+                                                                                       _cache.vDataAccesses[iter->first].idx.col);
     }
 
     if (mReturnedMatrices.size() == 1 && isEqualStripped(sCmd, mReturnedMatrices.begin()->second))
@@ -873,7 +876,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
     {
         // Get the values using the incdices
         const MatOpCache::MatOpDataAccess& _access = _cache.vDataAccesses[iter.first];
-        Matrix mat(_data.getTable(_access.sName)->readMemAsMatrix(_access.idx.row, _access.idx.col));
+        Matrix mat(_data.getTable(_access.sName).readMemAsMatrix(_access.idx.row, _access.idx.col));
 
         // Extend this matrix to have enough elements
         mat.extend(nRowCount, nColCount);
@@ -1600,12 +1603,13 @@ static void parser_declareDataMatrixValuesForIndices(StringView _sCmd, const Mat
     {
         mu::Array v;
         const MatOpCache::MatOpDataAccess& _access = _cache.vDataAccesses[j];
+        Table& table = _data.getTable(_access.sName);
 
         // Get the values using the indices
         if (_access.idx.row.size() > _access.idx.col.size())
-            v = _data.getElement(_access.idx.row, VectorIndex(_access.idx.col[0]), _access.sName);
+            v = table.read(_access.idx.row, VectorIndex(_access.idx.col[0]), _access.idx.layer.front());
         else
-            v = _data.getElement(VectorIndex(_access.idx.row[0]), _access.idx.col, _access.sName);
+            v = table.read(VectorIndex(_access.idx.row[0]), _access.idx.col, _access.idx.layer.front());
 
         // Declare the corresponding vector variable
         if (_sCmd.find("_~matrix`"+toString(j)+"`") != std::string::npos)

@@ -63,7 +63,7 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void FileAdapter::condenseDataSet(Memory* _mem)
+    void FileAdapter::condenseDataSet(Table* _mem)
     {
         if (!_mem || !_mem->isValid())
             return;
@@ -78,16 +78,31 @@ namespace NumeRe
         // Remove all obsolete cells and columns
         _mem->shrink();
 
-        // Get an iterator to the beginning
-        auto iter = _mem->memArray.begin();
-
-        // Remove all empty columns
-        while (iter != _mem->memArray.end())
+        for (size_t i = 0; i < _mem->m_data.sheets(); i++)
         {
-            if (!iter->get() || !iter->get()->size())
-                iter = _mem->memArray.erase(iter);
+            // Get an iterator to the beginning
+            auto column = _mem->m_data.getSheet(i).m_columns.begin();
+
+            // Remove all empty columns
+            while (column != _mem->m_data.getSheet(i).m_columns.end())
+            {
+                if (!column->get() || !column->get()->size())
+                    column = _mem->m_data.getSheet(i).m_columns.erase(column);
+                else
+                    ++column;
+            }
+        }
+
+        // Get a sheet iterator
+        auto sheet = _mem->m_data.m_sheets.begin();
+
+        // Remove all empty sheets
+        while (sheet != _mem->m_data.m_sheets.end())
+        {
+            if (!sheet->get() || sheet->get()->empty())
+                sheet = _mem->m_data.m_sheets.erase(sheet);
             else
-                ++iter;
+                ++sheet;
         }
     }
 
@@ -162,17 +177,17 @@ namespace NumeRe
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFile, SyntaxError::invalid_position, sFile);
         }
 
-        Memory* _mem = new Memory();
-        _mem->resizeMemory(info.nRows, info.nCols);
+        Table* _mem = new Table();
+        _mem->reserve(info.nCols, info.nLayers);
 
         // If the dimensions were valid and the internal
         // memory was created, copy the data to this
         // memory
-        if (_mem->memArray.size())
+        if (_mem->m_data.sheets())
         {
             // Copy them and delete the file instance
             // afterwards
-            file->getData(&_mem->memArray);
+            file->getData(&_mem->m_data);
             delete file;
             g_logger.debug("Data copied.");
 
