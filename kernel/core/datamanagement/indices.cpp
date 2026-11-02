@@ -507,63 +507,63 @@ static void handleCasualIndices(Parser& _parser, IndexData& idx_data, INDEX_TYPE
         handleSingleCasualIndex(idx_data.idx.layer, idx_data.layers, sIndexExpressions, vIndex, INDEX_LAYER);
 
     // If the index expression list has a length, evaluate it
-    if (!sIndexExpressions.length())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
-
-    _parser.SetExpr(sIndexExpressions);
-    int nResults;
-    const mu::StackItem* v = _parser.Eval(nResults);
-
-    // check whether the number of the results is matching
-    if ((size_t)nResults != vIndex.size())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
-
-    // map the results to their assignments
-    for (int i = 0; i < nResults; i++)
+    if (sIndexExpressions.length())
     {
-        if (!v[i].get().size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
-                              SyntaxError::invalid_position, v[i].get().print());
+        _parser.SetExpr(sIndexExpressions);
+        int nResults;
+        const mu::StackItem* v = _parser.Eval(nResults);
 
-        mu::Array idx = stringToNumIndex(v[i].get(), idx_data, index_type);
+        // check whether the number of the results is matching
+        if ((size_t)nResults != vIndex.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
 
-        if (isinf(idx.front().getNum().asF64())) // infinity => last possible index
-            idx.front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
-        else if (!idx.front().isValid() || idx.getAsScalarInt() <= 0LL)
+        // map the results to their assignments
+        for (int i = 0; i < nResults; i++)
         {
-            std::string sToken;
+            if (!v[i].get().size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
+                                  SyntaxError::invalid_position, v[i].get().print());
 
-            if (index_type == INDEX_ROW)
+            mu::Array idx = stringToNumIndex(v[i].get(), idx_data, index_type);
+
+            if (isinf(idx.front().getNum().asF64())) // infinity => last possible index
+                idx.front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
+            else if (!idx.front().isValid() || idx.getAsScalarInt() <= 0LL)
             {
-                sToken = convertToString(v, vIndex);
-                sToken += ", " + idx_data.idx.col.to_string();
-            }
-            else if (index_type == INDEX_LAYER)
-            {
-                sToken = idx_data.idx.row.to_string() + ", " + idx_data.idx.col.to_string() + ", ";
-                sToken += convertToString(v, vIndex);
-            }
-            else
-            {
-                sToken = idx_data.idx.row.to_string() + ", ";
-                sToken += convertToString(v, vIndex);
+                std::string sToken;
+
+                if (index_type == INDEX_ROW)
+                {
+                    sToken = convertToString(v, vIndex);
+                    sToken += ", " + idx_data.idx.col.to_string();
+                }
+                else if (index_type == INDEX_LAYER)
+                {
+                    sToken = idx_data.idx.row.to_string() + ", " + idx_data.idx.col.to_string() + ", ";
+                    sToken += convertToString(v, vIndex);
+                }
+                else
+                {
+                    sToken = idx_data.idx.row.to_string() + ", ";
+                    sToken += convertToString(v, vIndex);
+                }
+
+                throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
+                                  SyntaxError::invalid_position, sToken);
             }
 
-            throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
-                              SyntaxError::invalid_position, sToken);
-        }
-
-        switch (index_type)
-        {
-            case INDEX_ROW:
-                idx_data.idx.row.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
-                break;
-            case INDEX_COL:
-                idx_data.idx.col.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
-                break;
-            case INDEX_LAYER:
-                idx_data.idx.layer.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
-                break;
+            switch (index_type)
+            {
+                case INDEX_ROW:
+                    idx_data.idx.row.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+                case INDEX_COL:
+                    idx_data.idx.col.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+                case INDEX_LAYER:
+                    idx_data.idx.layer.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+            }
         }
     }
 }

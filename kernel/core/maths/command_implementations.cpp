@@ -4261,6 +4261,7 @@ void rotateTable(CommandLineParser& cmdParser)
     srcIdx.row.setOpenEndIndex(table.getRows()-1);
     srcIdx.col.setOpenEndIndex(table.getCols()-1);
 
+#warning TODO (numere#1#11/02/26): Fix the sheets for image data.
     if (!_data.isValueLike(srcIdx.col, srcIdx.layer.front(), _accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
                           _accessParser.getDataObject()+"(", _accessParser.getDataObject());

@@ -26,7 +26,7 @@
 #include "../settings.hpp"
 #include "../../versioninformation.hpp"
 #include "../utils/tools.hpp"
-#include "../datamanagement/table.hpp"
+#include "../datamanagement/tableview.hpp"
 
 #ifndef OUTPUT_HPP
 #define OUTPUT_HPP

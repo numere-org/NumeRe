@@ -24,7 +24,7 @@
 #include "../ui/error.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
-#include "table.hpp"
+#include "tableview.hpp"
 #include "memory.hpp"
 #include "cluster.hpp"
 #include "fileadapter.hpp"
@@ -63,7 +63,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
         void reorderColumn(size_t _nLayer, const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
         bool loadFromNewCacheFile();
         bool loadFromLegacyCacheFile();
-        VectorIndex parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const;
+        VectorIndex parseMafSelectors(std::string& sDir, const std::string& sType, const std::string& sTableName, size_t refSheet) const;
         std::vector<std::complex<double>> resolveMAF(const std::string& sTableName, std::string sDir,
                                                      std::complex<double> (MemoryManager::*MAF)(const std::string&,
                                                                                                 const VectorIndex&,
@@ -118,8 +118,9 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
         enum AppDir {ROWS = Table::ROWS, COLS = Table::COLS, GRID = Table::GRID, ALL = Table::ALL};
 
         // Variables for the parser
-        mutable mu::Variable tableLinesCount;
+        mutable mu::Variable tableRowsCount;
         mutable mu::Variable tableColumnsCount;
+        mutable mu::Variable tableSheetsCount;
         bool updateDimensionVariables(StringView sTableName) const;
 
 
@@ -195,6 +196,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
 
         // TABLE INFORMATION AND SAVING METHODS
         VectorIndex arrayToIndex(const mu::Array& arr, const std::string& sTable, size_t sheet) const;
+        VectorIndex arrayToSheetIndex(const mu::Array& arr, const std::string& sTable) const;
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;
@@ -293,33 +295,6 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
         void copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx);
 
 
-        // TABLE EXTRACTOR AND IMPORTER METHODS
-        /*inline NumeRe::TableView extractView(const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-        {
-            return m_tables[findTable(_sTable)]->extractView(_sTable, lines, cols);
-        }
-
-        inline NumeRe::TableView extractView(int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-        {
-            return m_tables[_nLayer]->extractView(_sTable, lines, cols);
-        }
-
-        inline void importView(NumeRe::TableView _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-        {
-            return m_tables[findTable(_sTable)]->importView(_table, lines, cols);
-        }
-
-        inline void importView(NumeRe::TableView _table, int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
-        {
-            return m_tables[_nLayer]->importView(_table, lines, cols);
-        }
-
-        inline void insertCopiedView(NumeRe::TableView _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END), bool transpose = false)
-        {
-            return m_tables[findTable(_sTable)]->insertCopiedView(_table, lines, cols, transpose);
-        }*/
-
-
         // TABLE INPLACE MODIFICATION METHODS
         std::vector<int> sortElements(const std::string& sLine);
         std::vector<int> sortElements(const std::string& sCache,
@@ -359,7 +334,8 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return sHeadLineElement.substr(0, sHeadLineElement.find('\n'));
         }
 
-        int getColElements(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const;
+        int getCols(const VectorIndex& sheets, const std::string& _sTable) const;
+        int getRows(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const;
 
 
         // MAF METHODS
@@ -449,211 +425,11 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return resolveMAF(sTable, sDir, MemoryManager::rms);
         }
 
-        std::vector<std::complex<double>> cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef = 0.0, int nType = 0) const
-        {
-            std::vector<std::complex<double>> vResults;
-            const Table& table = getTable(sTable);
-            long long int nlines = table.getRows();
-            long long int ncols = table.getCols();
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-            size_t sheet = 0;
-
-            long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
-
-            // If a grid is required, get the grid dimensions
-            // of this table
-            if (nGridOffset)
-            {
-                std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), sheet, GRID);
-                nlines = vSize.front().real();
-                ncols = vSize.back().real() + nGridOffset; // compensate the offset
-            }
-
-            VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
-
-            if (sDir.find("cols") != std::string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
-                        continue;
-
-                    vResults.push_back(cmp(sTable,
-                                           VectorIndex(0, nlines - 1),
-                                           VectorIndex(_idx[i] + nGridOffset),
-                                           sheet,
-                                           dRef.real(),
-                                           nType));
-                }
-            }
-            else if (sDir.find("lines") != std::string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
-                        continue;
-
-                    vResults.push_back(cmp(sTable,
-                                           VectorIndex(_idx[i] + nGridOffset),
-                                           VectorIndex(0, ncols - 1),
-                                           sheet,
-                                           dRef.real(),
-                                           nType));
-                }
-            }
-            else
-                vResults.push_back(cmp(sTable,
-                                       VectorIndex(0, nlines - 1),
-                                       VectorIndex(nGridOffset, ncols - 1),
-                                       sheet,
-                                       dRef.real(),
-                                       nType));
-
-            if (!vResults.size())
-                vResults.push_back(NAN);
-
-            return vResults;
-        }
-
-        std::vector<std::complex<double>> pct(const std::string& sTable, std::string sDir, std::complex<double> dPct = 0.5) const
-        {
-            std::vector<std::complex<double>> vResults;
-            const Table& table = getTable(sTable);
-            long long int nlines = table.getRows();
-            long long int ncols = table.getCols();
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-            size_t sheet = 0;
-
-            long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
-
-            // If a grid is required, get the grid dimensions
-            // of this table
-            if (nGridOffset)
-            {
-                std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), sheet, GRID);
-                nlines = vSize.front().real();
-                ncols = vSize.back().real() + nGridOffset; // compensate the offset
-            }
-
-            VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
-
-            if (sDir.find("cols") != std::string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
-                        continue;
-
-                    vResults.push_back(pct(sTable,
-                                           VectorIndex(0, nlines - 1),
-                                           VectorIndex(_idx[i] + nGridOffset),
-                                           sheet,
-                                           dPct.real()));
-                }
-            }
-            else if (sDir.find("lines") != std::string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
-                        continue;
-
-                    vResults.push_back(pct(sTable,
-                                           VectorIndex(_idx[i] + nGridOffset),
-                                           VectorIndex(0, ncols - 1),
-                                           sheet,
-                                           dPct.real()));
-                }
-            }
-            else
-                vResults.push_back(pct(sTable,
-                                       VectorIndex(0, nlines - 1),
-                                       VectorIndex(nGridOffset, ncols - 1),
-                                       sheet,
-                                       dPct.real()));
-
-            if (!vResults.size())
-                vResults.push_back(NAN);
-
-            return vResults;
-        }
-
-        std::vector<std::complex<double>> size(const std::string& sTable, std::string sDir) const
-        {
-            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
-            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-            size_t sheet = 0;
-
-            if (sDir.find("cols") != std::string::npos)
-                return m_tables[findTable(sTable)]->size(_everyIdx,
-                                                         _cellsIdx,
-                                                         sheet,
-                                                         COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else if (sDir.find("lines") != std::string::npos)
-                return m_tables[findTable(sTable)]->size(_everyIdx,
-                                                         _cellsIdx,
-                                                         sheet,
-                                                         ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else
-                return m_tables[findTable(sTable)]->size(VectorIndex(),
-                                                         VectorIndex(),
-                                                         sheet,
-                                                         sDir.find("grid") != std::string::npos ? GRID : ALL);
-        }
-
-        std::vector<std::complex<double>> minpos(const std::string& sTable, std::string sDir) const
-        {
-            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
-            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-            size_t sheet = 0;
-
-            if (sDir.find("cols") != std::string::npos)
-                return m_tables[findTable(sTable)]->minpos(_everyIdx,
-                                                           _cellsIdx,
-                                                           sheet,
-                                                           COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else if (sDir.find("lines") != std::string::npos)
-                return m_tables[findTable(sTable)]->minpos(_everyIdx,
-                                                           _cellsIdx,
-                                                           sheet,
-                                                           ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else
-                return m_tables[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END),
-                                                           VectorIndex(0, VectorIndex::OPEN_END),
-                                                           sheet,
-                                                           sDir.find("grid") != std::string::npos ? GRID : ALL);
-        }
-
-        std::vector<std::complex<double>> maxpos(const std::string& sTable, std::string sDir) const
-        {
-            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
-            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-            size_t sheet = 0;
-
-            if (sDir.find("cols") != std::string::npos)
-                return m_tables[findTable(sTable)]->maxpos(_everyIdx,
-                                                           _cellsIdx,
-                                                           sheet,
-                                                           COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else if (sDir.find("lines") != std::string::npos)
-                return m_tables[findTable(sTable)]->maxpos(_everyIdx,
-                                                           _cellsIdx,
-                                                           sheet,
-                                                           ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else
-                return m_tables[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END),
-                                                           VectorIndex(0, VectorIndex::OPEN_END),
-                                                           sheet,
-                                                           sDir.find("grid") != std::string::npos ? GRID : ALL);
-        }
+        std::vector<std::complex<double>> cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef = 0.0, int nType = 0) const;
+        std::vector<std::complex<double>> pct(const std::string& sTable, std::string sDir, std::complex<double> dPct = 0.5) const;
+        std::vector<std::complex<double>> size(const std::string& sTable, std::string sDir) const;
+        std::vector<std::complex<double>> minpos(const std::string& sTable, std::string sDir) const;
+        std::vector<std::complex<double>> maxpos(const std::string& sTable, std::string sDir) const;
 
 
 

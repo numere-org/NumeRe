@@ -193,12 +193,16 @@ bool Table::reserve(size_t _nCols, size_t _nSheets)
 /// number of columns, which are currently
 /// available in this table.
 ///
+/// \param sheet size_t
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Table::getCols() const
+int Table::getCols(size_t sheet) const
 {
-    return m_data.cols();
+    if (sheet >= m_data.sheets())
+        return m_data.cols();
+
+    return m_data.getSheet(sheet).cols();
 }
 
 
@@ -207,12 +211,16 @@ int Table::getCols() const
 /// number of rows, which are currently
 /// available in this table.
 ///
+/// \param sheet size_t
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Table::getRows() const
+int Table::getRows(size_t sheet) const
 {
-    return m_data.rows();
+    if (sheet >= m_data.sheets())
+        return m_data.rows();
+
+    return m_data.getSheet(sheet).rows();
 }
 
 
@@ -278,6 +286,22 @@ int Table::getFilledElemsInColumn(size_t col, size_t sheet) const
 size_t Table::getSize() const
 {
     return m_data.getSize() + m_meta.comment.length();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Formats the dimensions of this table
+/// to be printed on screen.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Table::printDims() const
+{
+    if (m_data.sheets() > 1)
+        return toString(m_data.rows()) + " x " + toString(m_data.cols()) + " x " + toString(m_data.sheets());
+
+    return toString(m_data.rows()) + " x " + toString(m_data.cols());
 }
 
 
@@ -619,7 +643,7 @@ bool Table::isValid() const
 /////////////////////////////////////////////////
 bool Table::shrink(const VectorIndex& _vCol, const VectorIndex& _vSheets)
 {
-    if (m_data.empty())
+    if (!m_data.sheets())
         return true;
 
     _vCol.setOpenEndIndex(getCols()-1);
@@ -1208,6 +1232,7 @@ void Table::writeUnsafe(int _nRow, int _nCol, int _nSheet, const std::complex<do
 void Table::write(Indices& _idx, const mu::Array& _values)
 {
     m_data.write(_values, TableIndices(_idx.row, _idx.col, _idx.layer));
+    m_meta.modify();
 }
 
 
@@ -3143,41 +3168,25 @@ std::complex<double> Table::rms(const VectorIndex& _vRow, const VectorIndex& _vC
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Implementation of the SIZE multi
-/// argument function.
-///
-/// \param _everyIdx const VectorIndex&
-/// \param _everyIdx const VectorIndex&
-/// \param sheet size_t
-/// \param dir int Bitcomposition of AppDir values
-/// \return std::vector<std::complex<double>>
-///
-/////////////////////////////////////////////////
-std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const
+static std::vector<size_t> size_impl(const TableSheet& currSheet, VectorIndex _everyIdx, VectorIndex _cellsIdx, int dir)
 {
-    if (m_data.empty() || sheet >= m_data.sheets() || !m_data.getSheet(sheet).rows())
-        return std::vector<std::complex<double>>(2, 0.0);
-
-    const TableSheet& currSheet = m_data.getSheet(sheet);
+    std::vector<size_t> vSizes;
 
     int rows = currSheet.rows();
     int cols = currSheet.cols();
 
-    int nGridOffset = 2*((dir & GRID) != 0);
-    _everyIdx.setOpenEndIndex(dir & ROWS ? rows-1 : cols-1);
-    _cellsIdx.setOpenEndIndex(dir & ROWS ? cols-1-nGridOffset : rows-1);
+    int nGridOffset = 2*((dir & Table::GRID) != 0);
+    _everyIdx.setOpenEndIndex(dir & Table::ROWS ? rows-1 : cols-1);
+    _cellsIdx.setOpenEndIndex(dir & Table::ROWS ? cols-1-nGridOffset : rows-1);
 
     // Handle simple things first
-    if (dir == ALL)
-        return std::vector<std::complex<double>>({rows, cols});
-    else if (dir == GRID)
-        return std::vector<std::complex<double>>({currSheet.getFilledElemsInColumn(0), currSheet.getFilledElemsInColumn(1)});
-    else if (dir & ROWS)
+    if (dir == Table::ALL)
+        return std::vector<size_t>({rows, cols});
+    else if (dir == Table::GRID)
+        return std::vector<size_t>({currSheet.getFilledElemsInColumn(0), currSheet.getFilledElemsInColumn(1)});
+    else if (dir & Table::ROWS)
     {
         // Compute the sizes of the table rows
-        std::vector<std::complex<double>> vSizes;
-
         for (size_t i = 0; i < _everyIdx.size(); i++)
         {
             if (_everyIdx[i] < 0 || _everyIdx[i] >= rows)
@@ -3194,15 +3203,11 @@ std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, cons
         }
 
         if (!vSizes.size())
-            vSizes.push_back(NAN);
-
-        return vSizes;
+            vSizes.push_back(0);
     }
-    else if (dir & COLS)
+    else if (dir & Table::COLS)
     {
         // Compute the sizes of the table columns
-        std::vector<std::complex<double>> vSizes;
-
         for (size_t j = 0; j < _everyIdx.size(); j++)
         {
             if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
@@ -3225,12 +3230,65 @@ std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, cons
         }
 
         if (!vSizes.size())
-            vSizes.push_back(NAN);
-
-        return vSizes;
+            vSizes.push_back(0);
     }
 
-    return std::vector<std::complex<double>>(2, 0.0);
+    return vSizes;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the SIZE multi
+/// argument function.
+///
+/// \param _everyIdx const VectorIndex&
+/// \param _everyIdx const VectorIndex&
+/// \param _slicesIdx const VectorIndex&
+/// \param dir int Bitcomposition of AppDir values
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, const VectorIndex& _slicesIdx, int dir) const
+{
+    if (m_data.empty())
+        return std::vector<std::complex<double>>(3, 0.0);
+
+    std::vector<size_t> vSizes;
+
+    for (size_t k = 0; k < _slicesIdx.size(); k++)
+    {
+        int s = _slicesIdx[k];
+
+        if (s < 0 || s >= m_data.sheets())
+            continue;
+
+        const TableSheet& currSheet = m_data.getSheet(s);
+
+        std::vector<size_t> sheetSizes = size_impl(currSheet, _everyIdx, _cellsIdx, dir);
+
+        for (size_t i = 0; i < sheetSizes.size(); i++)
+        {
+            if (i >= vSizes.size())
+                vSizes.push_back(sheetSizes[i]);
+            else
+                vSizes[i] = std::max(vSizes[i], sheetSizes[i]);
+        }
+    }
+
+    if (!vSizes.size())
+        return std::vector<std::complex<double>>(3, 0.0);
+
+    std::vector<std::complex<double>> sizeResult(vSizes.size());
+
+    for (size_t i = 0; i < vSizes.size(); i++)
+    {
+        sizeResult[i] = vSizes[i];
+    }
+
+    if ((dir == ALL || dir == GRID) && _slicesIdx.size() == m_data.sheets())
+        sizeResult.push_back(m_data.sheets());
+
+    return sizeResult;
 }
 
 

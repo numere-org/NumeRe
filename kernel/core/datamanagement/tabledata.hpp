@@ -25,6 +25,12 @@
 #include "sorter.hpp"
 #include "tablecolumn.hpp"
 
+/////////////////////////////////////////////////
+/// \brief This structure is a simple container
+/// to bundle the three VectorIndices as
+/// references together and make managing them
+/// doable.
+/////////////////////////////////////////////////
 struct TableIndices
 {
     const VectorIndex& m_rows;
@@ -44,6 +50,15 @@ struct TableIndices
 };
 
 
+/////////////////////////////////////////////////
+/// \brief This structure represents a single
+/// sheet in the complete table data structure.
+/// Sheets are multiple columns of data bundled
+/// together into a two-dimensional data array.
+/// Via the Sorter mixin, they do support
+/// efficient sorting of the data on their
+/// columns, especially hierarchical sorting.
+/////////////////////////////////////////////////
 struct TableSheet : public Sorter
 {
     mutable size_t m_calculatedRows = 0;
@@ -63,6 +78,7 @@ struct TableSheet : public Sorter
     size_t rows() const;
     size_t cols() const;
 
+    size_t reserved_cols() const;
     int getElemsInColumn(size_t col) const;
     int getFilledElemsInColumn(size_t col) const;
     bool isValidColumn(size_t col) const;
@@ -70,6 +86,31 @@ struct TableSheet : public Sorter
     TableColumnArray& getCols();
 
     TableSheet& operator=(const TableSheet& other);
+
+    /////////////////////////////////////////////////
+    /// \brief Get a reference to the i-th column.
+    ///
+    /// \param i size_t
+    /// \return TblColPtr&
+    ///
+    /////////////////////////////////////////////////
+    TblColPtr& operator[](size_t i)
+    {
+        return m_columns.at(i);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Get a const reference to the i-th
+    /// column.
+    ///
+    /// \param i size_t
+    /// \return const TblColPtr&
+    ///
+    /////////////////////////////////////////////////
+    const TblColPtr& operator[](size_t i) const
+    {
+        return m_columns.at(i);
+    }
 
     void resize(const size_t nCols);
     void reserve(const size_t nCols);
@@ -90,6 +131,14 @@ typedef std::unique_ptr<TableSheet> TblSheetPtr;
 typedef std::vector<TblSheetPtr> TableSheetArray;
 
 
+/////////////////////////////////////////////////
+/// \brief This structure bundles all sheets of a
+/// table together. It provides the major
+/// interfaces for reading and writing in a
+/// three-dimensional manner and is therefore
+/// similar to the functionality of a three-
+/// dimensional array.
+/////////////////////////////////////////////////
 struct TableData
 {
     TableSheetArray m_sheets;
@@ -100,11 +149,12 @@ struct TableData
     TableData& operator=(const TableData& other);
     TableData& operator=(TableData&& other);
 
-    void resize(size_t sSheets);
-    void reserve(size_t sSheets);
+    void resize(size_t nSheets);
+    void reserve(size_t nSheets, size_t _nCols = 0);
 
     size_t rows() const;
     size_t cols() const;
+    size_t reserved_cols() const;
     size_t sheets() const;
     bool empty() const;
 
@@ -120,6 +170,31 @@ struct TableData
     TableData* extract(const TableIndices& idx) const;
     TableSheet& getSheet(size_t sheet);
     const TableSheet& getSheet(size_t sheet) const;
+
+    /////////////////////////////////////////////////
+    /// \brief Get a reference to the i-th sheet.
+    ///
+    /// \param sheet size_t
+    /// \return TableSheet&
+    ///
+    /////////////////////////////////////////////////
+    TableSheet& operator[](size_t sheet)
+    {
+        return getSheet(sheet);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Get a const reference to the i-th
+    /// sheet.
+    ///
+    /// \param sheet size_t
+    /// \return const TableSheet&
+    ///
+    /////////////////////////////////////////////////
+    const TableSheet& operator[](size_t sheet) const
+    {
+        return getSheet(sheet);
+    }
 
     void write(const mu::Value& _value,
                const TableIndices& idx);

@@ -4424,7 +4424,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     }
                 }
                 else if (_idx.col[q] == VectorIndex::INVALID
-                         || !_data.getColElements(_idx.col.subidx(q, 1), _idx.layer.front(), _accessParser.getDataObject()))
+                         || !_data.getRows(_idx.col.subidx(q, 1), _idx.layer.front(), _accessParser.getDataObject()))
                 {
                     for (size_t t = 0; t < rows; t++)
                         m_manager.assets[typeCounter].writeData(0.0, q, t);

@@ -31,7 +31,7 @@
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
-#include "../kernel/core/datamanagement/table.hpp"
+#include "../kernel/core/datamanagement/tableview.hpp"
 #include "dialogs/tipdialog.hpp"
 #include "compositions/treepanel.hpp"
 #include "compositions/viewerframe.hpp"

@@ -104,8 +104,9 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), NumeRe::ClusterManager()
 	m_tables.push_back(new Table());
 	m_tables.push_back(new Table());
 
+	tableRowsCount = mu::Value(0.0);
 	tableColumnsCount = mu::Value(0.0);
-	tableLinesCount = mu::Value(0.0);
+	tableSheetsCount = mu::Value(0.0);
 }
 
 
@@ -204,6 +205,46 @@ VectorIndex MemoryManager::arrayToIndex(const mu::Array& arr, const std::string&
         else if (arr.get(i).getType() == mu::TYPE_STRING)
         {
             std::vector<size_t> cols = m_tables[findTable(sTable)]->findCols({arr.get(i).getStr()}, sheet, false, false);
+
+            for (size_t c : cols)
+            {
+                idx.push_back(c-1);
+            }
+        }
+    }
+
+    if (!idx.isValid())
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR", SyntaxError::invalid_position, idx.to_string());
+
+    return idx;
+}
+
+
+////////////////////////////////////////////////
+/// \brief Converts an arbitrary mu::Array into a
+/// VectorIndex instance.
+///
+/// \param arr const mu::Array&
+/// \param sTable const std::string&
+/// \return VectorIndex
+///
+/////////////////////////////////////////////////
+VectorIndex MemoryManager::arrayToSheetIndex(const mu::Array& arr, const std::string& sTable) const
+{
+    if (arr.getCommonType() == mu::TYPE_STRING)
+        return VectorIndex(m_tables[findTable(sTable)]->findSheets(arr.as_str_vector(), false, false));
+    else if (arr.getCommonType() == mu::TYPE_NUMERICAL)
+        return VectorIndex(arr);
+
+    VectorIndex idx;
+
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        if (arr.get(i).getType() == mu::TYPE_NUMERICAL)
+            idx.push_back(arr.get(i).getNum().asI64()-1);
+        else if (arr.get(i).getType() == mu::TYPE_STRING)
+        {
+            std::vector<size_t> cols = m_tables[findTable(sTable)]->findSheets({arr.get(i).getStr()}, false, false);
 
             for (size_t c : cols)
             {
@@ -716,8 +757,43 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the maximal number of elements
-/// in the selected column range.
+/// \brief Returns the maximal number of columns
+/// in the selected sheet range.
+///
+/// \param sheets const VectorIndex&
+/// \param _sTable const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int MemoryManager::getCols(const VectorIndex& sheets, const std::string& _sTable) const
+{
+    if (!exists(_sTable))
+        return 0;
+
+    Table* _mem = m_tables[findTable(_sTable)];
+
+    int nCols = 0;
+
+    if (sheets.isOpenEnd())
+        sheets.setOpenEndIndex(_mem->getSheets()-1);
+
+    for (size_t k = 0; k < sheets.size(); k++)
+    {
+        int s = sheets[k];
+
+        if (s < 0 || s >= _mem->getSheets())
+            continue;
+
+        nCols = std::max(nCols, _mem->getCols(s));
+    }
+
+    return nCols;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the maximal row
+/// in the selected column and sheet range.
 ///
 /// \param cols const VectorIndex&
 /// \param sheets const VectorIndex&
@@ -725,7 +801,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
 /// \return int
 ///
 /////////////////////////////////////////////////
-int MemoryManager::getColElements(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const
+int MemoryManager::getRows(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const
 {
     if (!exists(_sTable))
         return 0;
@@ -765,26 +841,81 @@ int MemoryManager::getColElements(const VectorIndex& cols, const VectorIndex& sh
 /// \param sDir std::string&
 /// \param sType const std::string&
 /// \param sTableName const std::string&
+/// \param refSheet size_t
 /// \return VectorIndex
 ///
 /////////////////////////////////////////////////
-VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const
+VectorIndex MemoryManager::parseMafSelectors(std::string& sDir, const std::string& sType, const std::string& sTableName, size_t refSheet) const
 {
     int iterationDimension;
-
-#warning TODO (numere#1#10/25/26): Fix the sheets in this function
-    size_t sheet = 0;
-
     const Table& table = getTable(sTableName);
 
     if (sType == "every")
         iterationDimension = sDir.find("cols") != std::string::npos ? table.getCols() : table.getRows();
-    else
+    else if (sType == "cells")
         iterationDimension = sDir.find("cols") != std::string::npos ? table.getRows() : table.getCols();
+    else
+    {
+        iterationDimension = table.getSheets();
+
+        if (sDir.find(sType + "=(") != std::string::npos)
+        {
+            std::string sSheets = sDir.substr(sDir.find(sType + "=(") + sType.length()+1);
+            sSheets.erase(getMatchingParenthesis(sSheets)+1);
+            StripSpaces(sSheets);
+            Parser& _parser = NumeReKernel::getInstance()->getParser();
+            _parser.DisableAccessCaching();
+            updateDimensionVariables(sTableName);
+
+            if (sSheets.front() == '(' && sSheets.back() == ')')
+                sSheets = sSheets.substr(1, sSheets.length()-2);
+
+            if (sSheets.front() == '{' && sSheets.back() == '}')
+            {
+                // Definition contains a vector expression
+                _parser.SetExpr(sSheets);
+                int nResults;
+                const mu::StackItem* v = _parser.Eval(nResults);
+                return arrayToSheetIndex(v[0].get(), sTableName);
+            }
+            else
+            {
+                // Usual expression
+                _parser.SetExpr(sSheets);
+                int nResults;
+                const mu::StackItem* v = _parser.Eval(nResults);
+
+                if (nResults == 1 && v[0].get().size() == 1)
+                    return VectorIndex(v[0].get());
+                else if (nResults == 2)
+                {
+                    if (!mu::all(v[1].get()))
+                        return VectorIndex(v[0].get());
+
+                    // Two results: usual every=a,b representation
+                    std::vector<int> idx;
+
+                    for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[1].get().getAsScalarInt())
+                    {
+                        idx.push_back(i);
+                    }
+
+                    return VectorIndex(idx);
+                }
+                else //arbitrary results: use it as if it was a vector
+                    return arrayToSheetIndex(v[0].get(), sTableName);
+            }
+        }
+
+        return VectorIndex(0);
+    }
 
     if (sDir.find(sType + "=(") != std::string::npos
         && (sDir.find("cols") != std::string::npos || sDir.find("lines") != std::string::npos))
     {
+        if (refSheet >= (size_t)table.getSheets())
+            refSheet = 0;
+
         std::string sEveryCell = sDir.substr(sDir.find(sType + "=(") + sType.length()+1);
         sEveryCell.erase(getMatchingParenthesis(sEveryCell)+1);
         StripSpaces(sEveryCell);
@@ -801,7 +932,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             _parser.SetExpr(sEveryCell);
             int nResults;
             const mu::StackItem* v = _parser.Eval(nResults);
-            return arrayToIndex(v[0].get(), sTableName, sheet);
+            return arrayToIndex(v[0].get(), sTableName, refSheet);
         }
         else
         {
@@ -811,19 +942,12 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             const mu::StackItem* v = _parser.Eval(nResults);
 
             if (nResults == 1 && v[0].get().size() == 1)
-            {
-                // Single result: usual every=a,a representation
-                std::vector<int> idx;
-
-                for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[0].get().getAsScalarInt())
-                {
-                    idx.push_back(i);
-                }
-
-                return VectorIndex(idx);
-            }
+                return VectorIndex(v[0].get());
             else if (nResults == 2)
             {
+                if (!mu::all(v[1].get()))
+                    return VectorIndex(v[0].get());
+
                 // Two results: usual every=a,b representation
                 std::vector<int> idx;
 
@@ -835,7 +959,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return arrayToIndex(v[0].get(), sTableName, sheet);
+                return arrayToIndex(v[0].get(), sTableName, refSheet);
         }
     }
 
@@ -866,16 +990,16 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
     const Table& table = getTable(sTableName);
     int nlines = table.getRows();
     int ncols = table.getCols();
-    int nsheets = table.getSheets();
+    //int nsheets = table.getSheets();
 
     // Find the "grid" parameter and use it as an offset
     int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
 
     // Get the vector index corresponding to a possible
     // every or cell definition
-    VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTableName);
-    VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTableName);
-    VectorIndex _sheetIdx(0, nsheets-1);
+    VectorIndex _sheetIdx = parseMafSelectors(sDir, "slices", sTableName, 0);
+    VectorIndex _everyIdx = parseMafSelectors(sDir, "every", sTableName, _sheetIdx.front());
+    VectorIndex _cellsIdx = parseMafSelectors(sDir, "cells", sTableName, _sheetIdx.front());
 
     // If a grid is required, get the grid dimensions
     // of this table
@@ -964,6 +1088,255 @@ std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& s
         vResults.push_back(NAN);
 
     return vResults;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the CMP MAF.
+///
+/// \param sTable const std::string&
+/// \param sDir std::string
+/// \param dRef std::complex<double>
+/// \param nType int
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> MemoryManager::cmp(const std::string& sTable, std::string sDir, std::complex<double> dRef, int nType) const
+{
+    std::vector<std::complex<double>> vResults;
+    const Table& table = getTable(sTable);
+    int nlines = table.getRows();
+    int ncols = table.getCols();
+
+    long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
+
+    VectorIndex _sheetsIdx = parseMafSelectors(sDir, "slices", sTable, 0);
+    VectorIndex _idx = parseMafSelectors(sDir, "every", sTable, _sheetsIdx.front());
+
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), _sheetsIdx.front(), GRID);
+        nlines = vSize.front().real();
+        ncols = vSize.back().real() + nGridOffset; // compensate the offset
+    }
+
+    if (sDir.find("cols") != std::string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
+                continue;
+
+            vResults.push_back(cmp(sTable,
+                                   VectorIndex(0, nlines - 1),
+                                   VectorIndex(_idx[i] + nGridOffset),
+                                   _sheetsIdx.front(),
+                                   dRef.real(),
+                                   nType));
+        }
+    }
+    else if (sDir.find("lines") != std::string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
+                continue;
+
+            vResults.push_back(cmp(sTable,
+                                   VectorIndex(_idx[i] + nGridOffset),
+                                   VectorIndex(0, ncols - 1),
+                                   _sheetsIdx.front(),
+                                   dRef.real(),
+                                   nType));
+        }
+    }
+    else
+        vResults.push_back(cmp(sTable,
+                               VectorIndex(0, nlines - 1),
+                               VectorIndex(nGridOffset, ncols - 1),
+                               _sheetsIdx.front(),
+                               dRef.real(),
+                               nType));
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    return vResults;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the PCT MAF.
+///
+/// \param sTable const std::string&
+/// \param sDir std::string
+/// \param dPct std::complex<double>
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> MemoryManager::pct(const std::string& sTable, std::string sDir, std::complex<double> dPct) const
+{
+    std::vector<std::complex<double>> vResults;
+    const Table& table = getTable(sTable);
+    int nlines = table.getRows();
+    int ncols = table.getCols();
+
+    long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
+
+    VectorIndex _sheetsIdx = parseMafSelectors(sDir, "slices", sTable, 0);
+    VectorIndex _idx = parseMafSelectors(sDir, "every", sTable, _sheetsIdx.front());
+
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<std::complex<double>> vSize = table.size(VectorIndex(), VectorIndex(), _sheetsIdx.front(), GRID);
+        nlines = vSize.front().real();
+        ncols = vSize.back().real() + nGridOffset; // compensate the offset
+    }
+
+    if (sDir.find("cols") != std::string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= ncols)
+                continue;
+
+            vResults.push_back(pct(sTable,
+                                   VectorIndex(0, nlines - 1),
+                                   VectorIndex(_idx[i] + nGridOffset),
+                                   _sheetsIdx.front(),
+                                   dPct.real()));
+        }
+    }
+    else if (sDir.find("lines") != std::string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i] + nGridOffset < 0 || _idx[i] + nGridOffset >= nlines)
+                continue;
+
+            vResults.push_back(pct(sTable,
+                                   VectorIndex(_idx[i] + nGridOffset),
+                                   VectorIndex(0, ncols - 1),
+                                   _sheetsIdx.front(),
+                                   dPct.real()));
+        }
+    }
+    else
+        vResults.push_back(pct(sTable,
+                               VectorIndex(0, nlines - 1),
+                               VectorIndex(nGridOffset, ncols - 1),
+                               _sheetsIdx.front(),
+                               dPct.real()));
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    return vResults;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the SIZE MAF.
+///
+/// \param sTable const std::string&
+/// \param sDir std::string
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> MemoryManager::size(const std::string& sTable, std::string sDir) const
+{
+    const Table& table = getTable(sTable);
+    VectorIndex _slicesIdx(0, table.getSheets()-1);
+
+    if (sDir.find("slices") != std::string::npos)
+        _slicesIdx = parseMafSelectors(sDir, "slices", sTable, 0);
+
+    VectorIndex _everyIdx = parseMafSelectors(sDir, "every", sTable, _slicesIdx.front());
+    VectorIndex _cellsIdx = parseMafSelectors(sDir, "cells", sTable, _slicesIdx.front());
+
+    if (sDir.find("cols") != std::string::npos)
+        return table.size(_everyIdx,
+                          _cellsIdx,
+                          _slicesIdx,
+                          COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else if (sDir.find("lines") != std::string::npos)
+        return table.size(_everyIdx,
+                          _cellsIdx,
+                          _slicesIdx,
+                          ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else
+        return table.size(VectorIndex(),
+                          VectorIndex(),
+                          _slicesIdx,
+                          sDir.find("grid") != std::string::npos ? GRID : ALL);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the MINPOS MAF.
+///
+/// \param sTable const std::string&
+/// \param sDir std::string
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> MemoryManager::minpos(const std::string& sTable, std::string sDir) const
+{
+    VectorIndex _sheetsIdx = parseMafSelectors(sDir, "slices", sTable, 0);
+    VectorIndex _everyIdx = parseMafSelectors(sDir, "every", sTable, _sheetsIdx.front());
+    VectorIndex _cellsIdx = parseMafSelectors(sDir, "cells", sTable, _sheetsIdx.front());
+
+    if (sDir.find("cols") != std::string::npos)
+        return m_tables[findTable(sTable)]->minpos(_everyIdx,
+                                                   _cellsIdx,
+                                                   _sheetsIdx.front(),
+                                                   COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else if (sDir.find("lines") != std::string::npos)
+        return m_tables[findTable(sTable)]->minpos(_everyIdx,
+                                                   _cellsIdx,
+                                                   _sheetsIdx.front(),
+                                                   ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else
+        return m_tables[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                   VectorIndex(0, VectorIndex::OPEN_END),
+                                                   _sheetsIdx.front(),
+                                                   sDir.find("grid") != std::string::npos ? GRID : ALL);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the MAXPOS MAF.
+///
+/// \param sTable const std::string&
+/// \param sDir std::string
+/// \return std::vector<std::complex<double>>
+///
+/////////////////////////////////////////////////
+std::vector<std::complex<double>> MemoryManager::maxpos(const std::string& sTable, std::string sDir) const
+{
+    VectorIndex _sheetsIdx = parseMafSelectors(sDir, "slices", sTable, 0);
+    VectorIndex _everyIdx = parseMafSelectors(sDir, "every", sTable, _sheetsIdx.front());
+    VectorIndex _cellsIdx = parseMafSelectors(sDir, "cells", sTable, _sheetsIdx.front());
+
+    if (sDir.find("cols") != std::string::npos)
+        return m_tables[findTable(sTable)]->maxpos(_everyIdx,
+                                                   _cellsIdx,
+                                                   _sheetsIdx.front(),
+                                                   COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else if (sDir.find("lines") != std::string::npos)
+        return m_tables[findTable(sTable)]->maxpos(_everyIdx,
+                                                   _cellsIdx,
+                                                   _sheetsIdx.front(),
+                                                   ROWS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+    else
+        return m_tables[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                   VectorIndex(0, VectorIndex::OPEN_END),
+                                                   _sheetsIdx.front(),
+                                                   sDir.find("grid") != std::string::npos ? GRID : ALL);
 }
 
 
@@ -1184,8 +1557,9 @@ bool MemoryManager::updateDimensionVariables(StringView sTableName) const
 {
     // Update the dimensions for the selected
     // table
-    tableLinesCount = mu::Value(getTable(sTableName).getRows());
+    tableRowsCount = mu::Value(getTable(sTableName).getRows());
     tableColumnsCount = mu::Value(getTable(sTableName).getCols());
+    tableSheetsCount = mu::Value(getTable(sTableName).getSheets());
 
     return true;
 }

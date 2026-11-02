@@ -28,7 +28,7 @@
 
 #include "gridcellcoordscontainer.hpp"
 #include "../../kernel/core/datamanagement/container.hpp"
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 #include "cellfilter.hpp"
 
 class TablePanel;
@@ -47,6 +47,7 @@ class TableViewer : public wxGrid
         size_t nHeight;
         size_t nWidth;
         size_t nFirstNumRow;
+        size_t m_refSheet;
         bool readOnly;
         bool isGridNumeReTable;
         bool isSilentCursorMove;
@@ -113,7 +114,7 @@ class TableViewer : public wxGrid
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, NumeReWindow* window, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(NumeRe::Container<std::string>& _stringTable, const std::string& sName, const std::string& sIntName);
-        void SetData(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName);
+        void SetData(NumeRe::TableView& _table, size_t sheet, const std::string& sName, const std::string& sIntName);
         NumeRe::TableView GetData();
         NumeRe::TableView GetDataCopy();
 

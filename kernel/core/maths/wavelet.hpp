@@ -21,7 +21,7 @@
 #define WAVELET_HPP
 
 #include <vector>
-#include "../datamanagement/table.hpp"
+#include "../datamanagement/tableview.hpp"
 
 enum WaveletType
 {

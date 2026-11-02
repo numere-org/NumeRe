@@ -160,7 +160,7 @@ int TableBrowser::findPage(const std::string& tableDisplayName, const std::strin
             TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
 
             if (panel != nullptr)
-                _sIntName = panel->grid->GetInternalName();
+                _sIntName = panel->getCurrentPage()->GetInternalName();
             else if (viewer != nullptr)
                 _sIntName = viewer->GetInternalName();
 
@@ -238,7 +238,7 @@ void TableBrowser::openTable(NumeRe::TableView _table, const std::string& tableD
     // below
     if (pageNum != wxNOT_FOUND && (panel = dynamic_cast<TablePanel*>(m_tabs->GetPage(pageNum))) != nullptr)
     {
-        panel->grid->SetData(_table, tableDisplayName, sIntName);
+        panel->show(_table, tableDisplayName, sIntName);
 
         if (pageNum != m_tabs->GetSelection())
             m_tabs->ChangeSelection(pageNum);
@@ -253,7 +253,7 @@ void TableBrowser::openTable(NumeRe::TableView _table, const std::string& tableD
 
     panel = new TablePanel(m_tabs, this, wxID_ANY, GetStatusBar(), m_topWindow);
     panel->SetTerminal(m_topWindow->getTerminal());
-    panel->grid->SetData(_table, tableDisplayName, sIntName);
+    panel->show(_table, tableDisplayName, sIntName);
 
     m_tabs->AddPage(panel, wxFromUtf8(tableDisplayName), true);
 
@@ -270,8 +270,6 @@ void TableBrowser::openTable(NumeRe::TableView _table, const std::string& tableD
 /////////////////////////////////////////////////
 void TableBrowser::onPageChange(wxAuiNotebookEvent& event)
 {
-    SetTitle("NumeRe-DataViewer: " + m_tabs->GetPageText(event.GetSelection()));
-
     // Using dynamic casts here, because tracking all possible moves with
     // event handler is more error prone than relying on the functionality
     // below
@@ -279,9 +277,15 @@ void TableBrowser::onPageChange(wxAuiNotebookEvent& event)
     TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
 
     if (panel != nullptr)
-        panel->grid->refreshStatusBar();
+    {
+        SetTitle("NumeRe-DataViewer: " + panel->getTableAndSheetName());
+        panel->getCurrentPage()->refreshStatusBar();
+    }
     else if (viewer != nullptr)
+    {
+        SetTitle("NumeRe-DataViewer: " + m_tabs->GetPageText(event.GetSelection()));
         viewer->refreshStatusBar();
+    }
 }
 
 
@@ -319,7 +323,7 @@ void TableBrowser::onMenuEvent(wxCommandEvent& event)
     TableViewer* viewer = dynamic_cast<TableViewer*>(m_tabs->GetPage(m_tabs->GetSelection()));
 
     if (panel != nullptr)
-        panel->grid->OnMenu(event);
+        panel->getCurrentPage()->OnMenu(event);
     else if (viewer != nullptr)
         viewer->OnMenu(event);
 }

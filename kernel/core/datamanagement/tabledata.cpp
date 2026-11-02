@@ -336,6 +336,18 @@ size_t TableSheet::rows() const
 
 size_t TableSheet::cols() const
 {
+    for (int j = m_columns.size() - 1; j >= 0; j--)
+    {
+        if (m_columns[j] && m_columns[j]->size())
+            return j+1;
+    }
+
+    return 0;
+}
+
+
+size_t TableSheet::reserved_cols() const
+{
     return m_columns.size();
 }
 
@@ -725,19 +737,19 @@ TableData& TableData::operator=(TableData&& other)
 }
 
 
-void TableData::resize(size_t sSheets)
+void TableData::resize(size_t nSheets)
 {
-    if (sSheets > m_sheets.size())
-        reserve(sSheets);
-    else if (sSheets < m_sheets.size())
-        m_sheets.resize(sSheets);
+    if (nSheets > m_sheets.size())
+        reserve(nSheets);
+    else if (nSheets < m_sheets.size())
+        m_sheets.resize(nSheets);
 }
 
 
-void TableData::reserve(size_t sSheets)
+void TableData::reserve(size_t nSheets, size_t _nCols)
 {
-    while (sSheets > m_sheets.size())
-        addSheet("Sheet_" + toString(m_sheets.size()), 0);
+    while (nSheets > m_sheets.size())
+        addSheet("Sheet_" + toString(m_sheets.size()+1), _nCols);
 }
 
 
@@ -761,6 +773,19 @@ size_t TableData::cols() const
     for (const TblSheetPtr& sheet : m_sheets)
     {
         c = std::max(c, sheet->cols());
+    }
+
+    return c;
+}
+
+
+size_t TableData::reserved_cols() const
+{
+    size_t c = 0;
+
+    for (const TblSheetPtr& sheet : m_sheets)
+    {
+        c = std::max(c, sheet->reserved_cols());
     }
 
     return c;
@@ -870,7 +895,7 @@ mu::Array TableData::read(const TableIndices& idx) const
             && idx.m_rows.isString()
             && idx.m_cols.isString())
         {
-            vReturn[k] = m_sheets[k]->m_sheetName;
+            vReturn[k] = m_sheets[s]->m_sheetName;
             continue;
         }
 
@@ -898,7 +923,12 @@ mu::Array TableData::read(const TableIndices& idx) const
 
     // Set the corresponding dimension sizes
     if (idx.returnsMatrix())
-        vReturn.setDimSizes({rowCount, colCount, sheetCount});
+    {
+        if (sheetCount > 1)
+            vReturn.setDimSizes({rowCount, colCount, sheetCount});
+        else
+            vReturn.setDimSizes({rowCount, colCount});
+    }
 
     return vReturn;
 }
@@ -1026,7 +1056,10 @@ void TableData::write(const mu::Value& _value, const TableIndices& idx)
 
         reserve(s+1);
 
-        m_sheets[s]->write(_value, idx.m_rows, idx.m_cols);
+        if (idx.m_rows.isString() && idx.m_cols.isString())
+            m_sheets[s]->m_sheetName = _value.getStr();
+        else
+            m_sheets[s]->write(_value, idx.m_rows, idx.m_cols);
     }
 }
 
@@ -1052,7 +1085,11 @@ void TableData::write(const mu::Array& _values, const TableIndices& idx)
 
         reserve(s+1);
 
-        m_sheets[s]->write(_values, idx.m_rows, idx.m_cols);
+        if (idx.m_rows.isString() && idx.m_cols.isString())
+            m_sheets[s]->m_sheetName = _values.get(0).getStr();
+        else
+            m_sheets[s]->write(_values, idx.m_rows, idx.m_cols);
+
         return;
     }
 

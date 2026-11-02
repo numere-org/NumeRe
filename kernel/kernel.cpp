@@ -342,9 +342,10 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _defVars.vValue[3][0] = mu::Value(0.0);
 
     // Declare the table dimension variables
-    _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
-    _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("nlines", &_memoryManager.tableRowsCount);
+    _parser.DefineVar("nrows", &_memoryManager.tableRowsCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
+    _parser.DefineVar("nsheets", &_memoryManager.tableSheetsCount);
 
     // Define the operators
     g_logger.debug("Defining operators.");
@@ -2843,8 +2844,7 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         const Table& currTable = _memoryManager.getTable(iter->first);
-        sCurrentLine = iter->first + "()\t" + toString(currTable.getRows()) + " x "
-            + toString(currTable.getCols());
+        sCurrentLine = iter->first + "()\t" + currTable.printDims();
 
         std::pair<double,double> stats = currTable.minmax();
 
@@ -2947,8 +2947,7 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
 
         const Table& currTable = _memoryManager.getTable(iter->first);
 
-        sCurrentLine = iter->first + "()\t" + toString(currTable.getRows()) + " x "
-            + toString(currTable.getCols()) + "\ttable";
+        sCurrentLine = iter->first + "()\t" + currTable.printDims() + "\ttable";
 
         vars.vTables.push_back(sCurrentLine);
     }

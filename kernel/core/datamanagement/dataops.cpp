@@ -168,7 +168,12 @@ void append_data(CommandLineParser& cmdParser)
 
         // Inform the user and return
         if (!_data.isEmpty("data") && _option.systemPrints())
-            NumeReKernel::print(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getTable("data").getRows()), toString(_data.getTable("data").getCols())));
+            NumeReKernel::print(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS",
+                                          toString((int)vFilelist.size()),
+                                          sFileList,
+                                          toString(_data.getTable("data").getRows()),
+                                          toString(_data.getTable("data").getCols()),
+                                          toString(_data.getTable("data").getSheets())));
 
         return;
     }
@@ -201,7 +206,11 @@ void append_data(CommandLineParser& cmdParser)
 
     // Inform the user
     if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
-        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
+        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS",
+                                      info.sFileName,
+                                      toString(info.nRows),
+                                      toString(info.nCols),
+                                      toString(info.nLayers)));
 }
 
 

@@ -1824,10 +1824,10 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         }
         else if (_histParams.nMethod == FREEDMAN_DIACONIS)
         {
-            _histParams.binWidth[XCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(0, 1), 0.75).real()
-                                             - table.pct(_idx.row, _idx.col.subidx(0, 1), 0.25).real()) / divisor;
-            _histParams.binWidth[YCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(1, 1), 0.75).real()
-                                             - table.pct(_idx.row, _idx.col.subidx(1, 1), 0.25).real()) / divisor;
+            _histParams.binWidth[XCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front(), 0.75).real()
+                                             - table.pct(_idx.row, _idx.col.subidx(0, 1), _idx.layer.front(), 0.25).real()) / divisor;
+            _histParams.binWidth[YCOORD] = 2.0 * (table.pct(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front(), 0.75).real()
+                                             - table.pct(_idx.row, _idx.col.subidx(1, 1), _idx.layer.front(), 0.25).real()) / divisor;
         }
     }
 

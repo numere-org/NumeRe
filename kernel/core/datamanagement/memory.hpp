@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "table.hpp"
+#include "tableview.hpp"
 
 #include "tabledata.hpp"
 #include "../maths/filtering.hpp"
@@ -148,12 +148,13 @@ class Table
         void convert();
         bool convertColumns(const VectorIndex& _vCol, const VectorIndex& _vSheets, const std::string& _sType);
         bool setCategories(const VectorIndex& _vCol, const VectorIndex& _vSheets, const std::vector<std::string>& vCategories);
-        int getRows() const;
+        int getRows(size_t sheet = (size_t)-1) const;
         int getElemsInColumn(size_t col, size_t sheet) const;
         int getFilledElemsInColumn(size_t col, size_t sheet) const;
-        int getCols() const;
+        int getCols(size_t sheet = (size_t)-1) const;
         int getSheets() const;
         size_t getSize() const;
+        std::string printDims() const;
 
 
         // READ ACCESS METHODS
@@ -214,8 +215,15 @@ class Table
                                       const VectorIndex& rows,
                                       const VectorIndex& cols,
                                       const VectorIndex& sheets);
-        void importView(NumeRe::TableView _table, const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& sheets);
-        void insertCopiedView(NumeRe::TableView _table, const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& sheets, bool transpose);
+        void importView(NumeRe::TableView _table,
+                        const VectorIndex& rows,
+                        const VectorIndex& cols,
+                        const VectorIndex& sheets);
+        void insertCopiedView(NumeRe::TableView _table,
+                              const VectorIndex& rows,
+                              const VectorIndex& cols,
+                              const VectorIndex& sheets,
+                              bool transpose);
 
         bool insertBlock(size_t atRow, size_t atCol, size_t atSheet, size_t rows, size_t cols);
         bool insertCols(size_t atCol, size_t atSheet, size_t num);
@@ -246,15 +254,15 @@ class Table
         std::complex<double> cnt(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
         std::complex<double> norm(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
         std::complex<double> med(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
-        std::complex<double> pct(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, std::complex<double> dPct = 0.5) const;
         std::complex<double> exc(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
         std::complex<double> skew(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
         std::complex<double> stderr_func(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
         std::complex<double> rms(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet) const;
 
-        std::complex<double> cmp(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t sheet, std::complex<double> dRef = 0.0, int _nType = 0) const;
+        std::complex<double> pct(const VectorIndex& _vRow, const VectorIndex& _vCol, const VectorIndex& _vSheet, std::complex<double> dPct) const;
+        std::complex<double> cmp(const VectorIndex& _vRow, const VectorIndex& _vCol, size_t sheet, std::complex<double> dRef, int _nType) const;
 
-        std::vector<std::complex<double>> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const;
+        std::vector<std::complex<double>> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, const VectorIndex& _slicesIdx, int dir) const;
         std::vector<std::complex<double>> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const;
         std::vector<std::complex<double>> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, size_t sheet, int dir) const;
         std::vector<size_t> findCols(const std::vector<std::string>& vColNames, size_t inSheet, bool enableRegEx, bool autoCreate);
@@ -268,9 +276,21 @@ class Table
         std::vector<std::complex<double>> getZScore(size_t col, const VectorIndex& _vIndex, size_t inSheet) const;
         std::vector<int64_t> getBins(size_t col, size_t inSheet, size_t nBins) const;
 
-        bool smooth(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
-        bool retouch(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, AppDir Direction = ALL);
-        bool resample(VectorIndex _vRow, VectorIndex _vCol, size_t inSheet, std::pair<size_t, size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
+        bool smooth(VectorIndex _vRow,
+                    VectorIndex _vCol,
+                    size_t inSheet,
+                    NumeRe::FilterSettings _settings,
+                    AppDir Direction = ALL);
+        bool retouch(VectorIndex _vRow,
+                     VectorIndex _vCol,
+                     size_t inSheet,
+                     AppDir Direction = ALL);
+        bool resample(VectorIndex _vRow,
+                      VectorIndex _vCol,
+                      size_t inSheet,
+                      std::pair<size_t, size_t> samples,
+                      AppDir Direction = ALL,
+                      std::string sFilter = "lanczos3");
 
         std::vector<AnovaResult> getAnova(const VectorIndex& colCategories,
                                           size_t colValues,

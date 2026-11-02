@@ -21,7 +21,7 @@
 
 #include <string>
 #include <vector>
-#include "../kernel/core/datamanagement/table.hpp"
+#include "../kernel/core/datamanagement/tableview.hpp"
 
 enum DatabaseType
 {

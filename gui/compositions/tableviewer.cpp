@@ -110,7 +110,7 @@ END_EVENT_TABLE()
 ///
 /////////////////////////////////////////////////
 TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, NumeReWindow* window, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
-            : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true), m_numereWindow(window)
+            : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), m_refSheet(0), readOnly(true), m_numereWindow(window)
 {
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
@@ -1841,7 +1841,7 @@ void TableViewer::replaceTabSign(wxString& text)
 /////////////////////////////////////////////////
 void TableViewer::createZeroElementTable()
 {
-    SetTable(new GridNumeReTable(NumeRe::TableView(1, 1, 1),
+    SetTable(new GridNumeReTable(NumeRe::TableView(1, 1, 1), 0,
                                  NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
 
     isGridNumeReTable = true;
@@ -2031,11 +2031,12 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 /// the data for the grid.
 ///
 /// \param _table NumeRe::Table&
+/// \param sheet size_t
 /// \param sName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::SetData(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName)
+void TableViewer::SetData(NumeRe::TableView& _table, size_t sheet, const std::string& sName, const std::string& sIntName)
 {
     if (m_parentPanel)
         m_parentPanel->update(_table.getMetaData());
@@ -2052,9 +2053,9 @@ void TableViewer::SetData(NumeRe::TableView& _table, const std::string& sName, c
 
     // Store the number headlines and create the data
     // providing object
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-    nFirstNumRow = _table.getHeadCount(0);
-    SetTable(new GridNumeReTable(std::move(_table),
+    m_refSheet = sheet;
+    nFirstNumRow = _table.getHeadCount(sheet);
+    SetTable(new GridNumeReTable(_table, sheet,
                                  NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
     isGridNumeReTable = true;
     layoutGrid();
@@ -2633,7 +2634,7 @@ void TableViewer::reloadTable()
     if (isGridNumeReTable)
     {
         NumeRe::TableView _tab = term->getTable(m_intName);
-        SetData(_tab, m_displayName, m_intName);
+        SetData(_tab, m_refSheet, m_displayName, m_intName);
     }
     else
     {
@@ -2694,8 +2695,7 @@ void TableViewer::changeColType()
             continue;
 
         // Change the typ of this column
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-        if (_table.setColumnType(j, 0, type))
+        if (_table.setColumnType(j, m_refSheet, type))
         {
             // We have to refresh the alignment and to update the
             // renderers as well
@@ -2950,8 +2950,7 @@ mu::Array TableViewer::getSelectedValues()
 int TableViewer::GetInternalRows(int gridrow) const
 {
     if (isGridNumeReTable)
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-        gridrow -= (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(0);
+        gridrow -= (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(m_refSheet);
     else
         gridrow -= (int)nFirstNumRow;
 
@@ -2973,8 +2972,7 @@ int TableViewer::GetInternalRows(int gridrow) const
 int TableViewer::GetExternalRows(int gridrow) const
 {
     if (isGridNumeReTable)
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-        gridrow += (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(0);
+        gridrow += (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount(m_refSheet);
     else
         gridrow += (int)nFirstNumRow;
 

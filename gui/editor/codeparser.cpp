@@ -782,6 +782,7 @@ std::string CodeParser::getIdentifierType(int lineNum, const LexedLine& line, si
             || line[pos].m_str == "nlines"
             || line[pos].m_str == "nrows"
             || line[pos].m_str == "ncols"
+            || line[pos].m_str == "nsheets"
             || line[pos].m_str == "nlayers"
             || line[pos].m_str == "ndim")
             return "value";

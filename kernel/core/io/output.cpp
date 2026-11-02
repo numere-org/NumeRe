@@ -747,7 +747,6 @@ static std::string formatUnit(const std::string& sValue, const std::string& sUni
 }
 
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
 void Output::format(NumeRe::TableView _table, size_t digits, size_t chars, size_t sheet)
 {
     const Settings& _option = NumeReKernel::getInstance()->getSettings();

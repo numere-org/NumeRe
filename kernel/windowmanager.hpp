@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "core/datamanagement/table.hpp"
+#include "core/datamanagement/tableview.hpp"
 #include "core/ParserLib/muStructures.hpp"
 
 // Global forward declarations

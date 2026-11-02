@@ -150,7 +150,11 @@ std::string incrementVersion(std::string _sVer);
 
 inline bool isDimensionVar(const std::string& sVarName)
 {
-    return sVarName == "nrows" || sVarName == "ncols" || sVarName == "nlen" || sVarName == "nlines";
+    return sVarName == "nrows"
+        || sVarName == "ncols"
+        || sVarName == "nlen"
+        || sVarName == "nlines"
+        || sVarName == "nsheets";
 }
 
 #endif // PARSERSTANDALONE

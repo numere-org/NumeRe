@@ -164,14 +164,12 @@ void DataAccessParser::evalIndices(bool asMatrix)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-    if (idx.row.isOpenEnd())
+    if (idx.layer.isOpenEnd())
     {
         if (bIsCluster)
-            idx.row.setRange(0, _data.getCluster(sDataObject).size() - 1);
-        else if (asMatrix)
-            idx.row.setRange(0, _data.getTable(sDataObject).getRows() - 1);
+            idx.layer = VectorIndex(idx.layer.front());
         else
-            idx.row.setRange(0, _data.getColElements(idx.col.subidx(0, 1), idx.layer, sDataObject) - 1);
+            idx.layer.setRange(0, _data.getTable(sDataObject).getSheets() - 1);
     }
 
     if (idx.col.isOpenEnd())
@@ -179,15 +177,17 @@ void DataAccessParser::evalIndices(bool asMatrix)
         if (bIsCluster)
             idx.col = VectorIndex(idx.col.front());
         else
-            idx.col.setRange(0, _data.getTable(sDataObject).getCols() - 1);
+            idx.col.setRange(0, _data.getCols(idx.layer, sDataObject) - 1);
     }
 
-    if (idx.layer.isOpenEnd())
+    if (idx.row.isOpenEnd())
     {
         if (bIsCluster)
-            idx.layer = VectorIndex(idx.layer.front());
+            idx.row.setRange(0, _data.getCluster(sDataObject).size() - 1);
+        else if (asMatrix)
+            idx.row.setRange(0, _data.getRows(idx.col, idx.layer, sDataObject) - 1);
         else
-            idx.layer.setRange(0, _data.getTable(sDataObject).getSheets() - 1);
+            idx.row.setRange(0, _data.getRows(idx.col.subidx(0, 1), idx.layer, sDataObject) - 1);
     }
 }
 
@@ -551,16 +551,16 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
 static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOccurence, DataAccessParser&& _access, MemoryManager& _data, mu::Parser& _parser, int options);
 static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, mu::Parser& _parser);
 static std::string createMafDataAccessString(const std::string& sAccessString, mu::Parser& _parser);
-static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser);
+static std::string createMafSelectorsDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser);
 static std::pair<std::string, bool> createMafVectorName(std::string sAccessString);
-static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess);
+static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, std::string sMafAccess);
 static std::string getMafFromAccessString(const std::string& sAccessString);
 static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity);
 static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, mu::Parser& _parser, MemoryManager& _data);
 static StringView getLastToken(StringView sLine);
 
-static const int sMafListLength = 20;
-static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos", "exc", "skw", "rms", "stderr"};
+static const int sMafListLength = 21;
+static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos", "exc", "skw", "rms", "stderr", "sheets"};
 
 
 /////////////////////////////////////////////////
@@ -854,7 +854,9 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
     // evaluate the indices
     _access.evalIndices(_idx.col.size() > 1 && _idx.col.size() > 1);
 
-    if (_idx.col.isString())
+    if (_idx.col.isString()
+        && _idx.row.isString()
+        && _idx.layer.isString())
         bWriteFileName = true;
 
     // Handle the filename and headline access different from the usual data access
@@ -1072,7 +1074,7 @@ static std::string createMafDataAccessString(const std::string& sAccessString, m
         argList.remove_from(getMatchingParenthesis(argList));
         EndlessVector<StringView> args = getAllArguments(argList.subview(1));
         sDataMaf += "cols window=({" + args[1].to_string() + ",0},{" + (args[2].length() ? args[2].to_string() : std::string("1")) + ",1}) "
-            + createEveryCellDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
+            + createMafSelectorsDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
     }
 
     if (sAccessString.find(".srwin(") != std::string::npos)
@@ -1081,7 +1083,7 @@ static std::string createMafDataAccessString(const std::string& sAccessString, m
         argList.remove_from(getMatchingParenthesis(argList));
         EndlessVector<StringView> args = getAllArguments(argList.subview(1));
         sDataMaf += "lines window=({0," + args[1].to_string() + "},{1," + (args[2].length() ? args[2].to_string() : std::string("1")) + "}) "
-            + createEveryCellDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
+            + createMafSelectorsDefinition(".every({" + args[0].to_string() + "})", "every", _parser);
     }
 
     if (sAccessString.find(".grid") != std::string::npos)
@@ -1097,10 +1099,13 @@ static std::string createMafDataAccessString(const std::string& sAccessString, m
         sDataMaf += "lines";
 
     if (sAccessString.find(".every(") != std::string::npos)
-        sDataMaf += createEveryCellDefinition(sAccessString, "every", _parser);
+        sDataMaf += createMafSelectorsDefinition(sAccessString, "every", _parser);
 
     if (sAccessString.find(".cells(") != std::string::npos)
-        sDataMaf += createEveryCellDefinition(sAccessString, "cells", _parser);
+        sDataMaf += createMafSelectorsDefinition(sAccessString, "cells", _parser);
+
+    if (sAccessString.find(".slices(") != std::string::npos)
+        sDataMaf += createMafSelectorsDefinition(sAccessString, "slices", _parser);
 
     return sDataMaf;
 }
@@ -1156,11 +1161,11 @@ static std::string getMafFromAccessString(const std::string& sAccessString)
 /// \param _data Datafile&
 /// \param sMafname const std::string&
 /// \param sCache const std::string&
-/// \param sMafAccess const std::string&
+/// \param sMafAccess std::string
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess)
+static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, std::string sMafAccess)
 {
     if (sMafname == "std")
         return _data.std(sCache, sMafAccess);
@@ -1217,10 +1222,23 @@ static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, con
         return _data.size(sCache, sMafAccess);
 
     if (sMafname == "rows")
-        return std::vector<std::complex<double>>(1, _data.size(sCache, sMafAccess.find("grid") != std::string::npos ? "grid" : "").front());
+    {
+        if (sMafAccess.find("lines") != std::string::npos)
+            sMafAccess.erase(sMafAccess.find("lines"), 5);
+
+        return std::vector<std::complex<double>>(1, _data.size(sCache, sMafAccess)[0]);
+    }
 
     if (sMafname == "cols")
-        return std::vector<std::complex<double>>(1, _data.size(sCache, sMafAccess.find("grid") != std::string::npos ? "grid" : "").back());
+    {
+        if (sMafAccess.find("cols") != std::string::npos)
+            sMafAccess.erase(sMafAccess.find("cols"), 4);
+
+        return std::vector<std::complex<double>>(1, _data.size(sCache, sMafAccess)[1]);
+    }
+
+    if (sMafname == "sheets")
+        return std::vector<std::complex<double>>(1, _data.getTable(sCache).getSheets());
 
     if (sMafname == "maxpos")
         return _data.maxpos(sCache, sMafAccess);
@@ -1244,7 +1262,7 @@ static std::vector<std::complex<double>> MafDataAccess(MemoryManager& _data, con
 /// \return string
 ///
 /////////////////////////////////////////////////
-static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser)
+static std::string createMafSelectorsDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser)
 {
     std::string sExpr = sLine.substr(sLine.find("." + sType + "(") + 1 + sType.length());
     sExpr.erase(getMatchingParenthesis(sExpr) + 1);
@@ -1296,14 +1314,14 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    VectorIndex sheets(0);
+    sMethodArguments = "auto";
 
-    if (nResults < 2)
-        sMethodArguments = "auto";
-    else
+    if (nResults > 1)
         sMethodArguments = v[1].get().front().getStr();
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-    VectorIndex sheets(0);
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
 
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
@@ -1332,8 +1350,10 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 1)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[1].get(), sTableName);
 
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
@@ -1372,8 +1392,11 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 1)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[1].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     mu::Array vCategories = _kernel->getMemoryManager().getTable(sTableName).getCategoryList(cols, sheets);
 
@@ -1404,8 +1427,12 @@ static std::string tableMethod_getunit(const std::string& sTableName, std::strin
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
     mu::Array vUnits;
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+
     VectorIndex sheets(0);
+
+    if (nResults > 1)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[1].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     Table& table = _kernel->getMemoryManager().getTable(sTableName);
 
@@ -1443,8 +1470,11 @@ static std::string tableMethod_setunit(const std::string& sTableName, std::strin
         return sResultVectorName;
     }
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     Table& table = _kernel->getMemoryManager().getTable(sTableName);
 
@@ -1479,8 +1509,12 @@ static std::string tableMethod_toSiUnits(const std::string& sTableName, std::str
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     v = _kernel->getParser().Eval(nResults);
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
+
     VectorIndex sheets(0);
+
+    if (nResults > 3)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[3].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     if (nResults > 1)
@@ -1531,9 +1565,11 @@ static std::string tableMethod_asSiUnits(const std::string& sTableName, std::str
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     if (nResults > 1)
@@ -1567,9 +1603,11 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     Table& table = _kernel->getMemoryManager().getTable(sTableName);
 
@@ -1635,8 +1673,11 @@ static std::string tableMethod_replacevals(const std::string& sTableName, std::s
     if (nResults > 3)
         enableRegEx = mu::all(v[3].get());
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().getTable(sTableName).replaceVals(cols,
@@ -1670,12 +1711,50 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
     if (nResults > 1)
         enableRegEx = mu::all(v[1].get());
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     std::vector<size_t> cols = _kernel->getMemoryManager().getTable(sTableName).findCols(v[0].get().as_str_vector(),
                                                                                          sheets.front(),
                                                                                          enableRegEx,
                                                                                          false);
+
+    if (cols.size())
+        _kernel->getParser().SetInternalVar(sResultVectorName, cols);
+    else
+        _kernel->getParser().SetInternalVar(sResultVectorName, mu::Value(NAN));
+
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "fndsheets()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_findSheets(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    bool enableRegEx = false;
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults > 1)
+        enableRegEx = mu::all(v[1].get());
+
+    std::vector<size_t> cols = _kernel->getMemoryManager().getTable(sTableName).findSheets(v[0].get().as_str_vector(),
+                                                                                           enableRegEx,
+                                                                                           false);
 
     if (cols.size())
         _kernel->getParser().SetInternalVar(sResultVectorName, cols);
@@ -1703,9 +1782,11 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 3)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[3].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     bool enableRegEx = false;
 
@@ -1746,9 +1827,11 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 3)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[3].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     bool enableRegEx = false;
 
@@ -1790,8 +1873,11 @@ static std::string tableMethod_cov(const std::string& sTableName, std::string sM
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().covarof()", ".covarof(", ".covarof(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
@@ -1837,8 +1923,11 @@ static std::string tableMethod_pcorr(const std::string& sTableName, std::string 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().pcorrof()", ".pcorrof(", ".pcorrof(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
@@ -1884,8 +1973,11 @@ static std::string tableMethod_scorr(const std::string& sTableName, std::string 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().scorrof()", ".scorrof(", ".scorrof(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
@@ -1927,9 +2019,11 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
 
@@ -1965,8 +2059,11 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex cols1 = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     VectorIndex cols2 = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
@@ -2040,8 +2137,11 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 5)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[5].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     size_t nClusters = v[1].get().getAsScalarInt();
 
@@ -2102,9 +2202,11 @@ static std::string tableMethod_binsof(const std::string& sTableName, std::string
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     size_t nBins = 0;
@@ -2137,9 +2239,11 @@ static std::string tableMethod_rank(const std::string& sTableName, std::string s
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 3)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[3].get(), sTableName);
+
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
     Table::RankingStrategy _strat = Table::RANK_COMPETETIVE;
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
@@ -2214,8 +2318,11 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
         return sResultVectorName;
     }
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
     size_t rows = 1;
@@ -2254,9 +2361,11 @@ static std::string tableMethod_insertCols(const std::string& sTableName, std::st
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     size_t num = 1;
 
@@ -2295,10 +2404,43 @@ static std::string tableMethod_insertRows(const std::string& sTableName, std::st
     if (nResults > 1)
         num = v[1].get().getAsScalarInt();
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().getTable(sTableName).insertRows(row, sheets.front(), num)));
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "insertsheets()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertSheets(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+
+    size_t sheet = v[0].get().getAsScalarInt() - 1;
+    size_t num = 1;
+
+    if (nResults > 1)
+        num = v[1].get().getAsScalarInt();
+
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).insertSheets(sheet, num)));
     return sResultVectorName;
 }
 
@@ -2329,8 +2471,11 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
         return sResultVectorName;
     }
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 4)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[4].get(), sTableName);
+
     VectorIndex atCols = _kernel->getMemoryManager().arrayToIndex(v[1].get(), sTableName, sheets.front());
 
     size_t rows = 1;
@@ -2369,9 +2514,11 @@ static std::string tableMethod_removeCols(const std::string& sTableName, std::st
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 1)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[1].get(), sTableName);
+
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
@@ -2397,12 +2544,38 @@ static std::string tableMethod_removeRows(const std::string& sTableName, std::st
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 1)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[1].get(), sTableName);
+
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().getTable(sTableName).removeRows(VectorIndex(v[0].get()),
                                                                                                               sheets.front())));
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removesheets()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeSheets(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).removeSheets(VectorIndex(v[0].get()))));
     return sResultVectorName;
 }
 
@@ -2426,13 +2599,15 @@ static std::string tableMethod_reorderCols(const std::string& sTableName, std::s
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
-    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordercols()", ".reordercols(", ".reordercols(");
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
+    VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
 
     vNewOrder = VectorIndex(v[1].get());
 
@@ -2469,14 +2644,51 @@ static std::string tableMethod_reorderRows(const std::string& sTableName, std::s
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reorderrows()", ".reorderrows(", ".reorderrows(");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
     VectorIndex sheets(0);
+
+    if (nResults > 2)
+        sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[2].get(), sTableName);
+
     vNewOrder = VectorIndex(v[1].get());
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
                                         mu::Value(_kernel->getMemoryManager().getTable(sTableName).reorderRows(vIndex,
                                                                                                                sheets.front(),
                                                                                                                vNewOrder)));
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "reordersheets()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_reorderSheets(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    VectorIndex vIndex;
+    VectorIndex vNewOrder;
+    int nResults = 0;
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    const mu::StackItem* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v[0].get());
+
+    if (nResults < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordersheets()", ".reordersheets(", ".reordersheets(");
+
+    vNewOrder = VectorIndex(v[1].get());
+
+    _kernel->getParser().SetInternalVar(sResultVectorName,
+                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).reorderSheets(vIndex,
+                                                                                                                 vNewOrder)));
     return sResultVectorName;
 }
 
@@ -2506,6 +2718,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["categorize"] = tableMethod_categorize;
     mTableMethods["replacevals"] = tableMethod_replacevals;
     mTableMethods["fndcols"] = tableMethod_findCols;
+    mTableMethods["fndsheets"] = tableMethod_findSheets;
     mTableMethods["countif"] = tableMethod_counteq;
     mTableMethods["indexof"] = tableMethod_index;
     mTableMethods["covarof"] = tableMethod_cov;
@@ -2519,11 +2732,14 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["insertcells"] = tableMethod_insertBlock;
     mTableMethods["insertcols"] = tableMethod_insertCols;
     mTableMethods["insertrows"] = tableMethod_insertRows;
+    mTableMethods["insertsheets"] = tableMethod_insertSheets;
     mTableMethods["removecells"] = tableMethod_removeBlock;
     mTableMethods["removecols"] = tableMethod_removeCols;
     mTableMethods["removerows"] = tableMethod_removeRows;
+    mTableMethods["removesheets"] = tableMethod_removeSheets;
     mTableMethods["reordercols"] = tableMethod_reorderCols;
     mTableMethods["reorderrows"] = tableMethod_reorderRows;
+    mTableMethods["reordersheets"] = tableMethod_reorderSheets;
     mTableMethods["getunit"] = tableMethod_getunit;
     mTableMethods["setunit"] = tableMethod_setunit;
     mTableMethods["toSIunits"] = tableMethod_toSiUnits;
@@ -2585,6 +2801,7 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                 // Is it NOT a modifier?
                 else if (lastmethod != "every"
                     && lastmethod != "cells"
+                    && lastmethod != "slices"
                     && lastmethod != "rows"
                     && lastmethod != "lines"
                     && lastmethod != "cols"
@@ -2627,6 +2844,7 @@ static std::string getMafAccessString(const std::string& sLine, const std::strin
                 // Is it NOT a modifier?
                 else if (lastmethod != "every"
                     && lastmethod != "cells"
+                    && lastmethod != "slices"
                     && lastmethod != "rows"
                     && lastmethod != "lines"
                     && lastmethod != "cols"
@@ -2674,7 +2892,6 @@ static std::pair<std::string, bool> createMafVectorName(std::string sAccessStrin
     {
         if (sAccessString.compare(0, sTableName.length() + method.first.length() + 4, sTableName + "()." + method.first + "(") == 0)
         {
-            //std::string sMethodArguments = sAccessString.substr(sAccessString.find("." + method.first + "(") + 1 + method.first.length());
             std::string sMethodArguments = sAccessString.substr(sTableName.length() + method.first.length() + 3);
             sMethodArguments.erase(getMatchingParenthesis(sMethodArguments) + 1);
             sMethodArguments = sMethodArguments.substr(1, sMethodArguments.length() - 2);
@@ -3033,13 +3250,10 @@ std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string
     MemoryManager& _manager = NumeReKernel::getInstance()->getMemoryManager();
     std::vector<size_t> sizes(2, 0);
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-    VectorIndex sheets(0);
-
     if (_manager.isTable(sTableName))
     {
-        sizes[0] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(0, 1), sheets).real();
-        sizes[1] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(1, 1), sheets).real();
+        sizes[0] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(0, 1), _idx.layer.subidx(0, 1)).real();
+        sizes[1] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(1, 1), _idx.layer.subidx(0, 1)).real();
     }
 
     return sizes;

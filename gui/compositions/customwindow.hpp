@@ -29,7 +29,7 @@
 #include <wx/gbsizer.h>
 
 #include "../../kernel/windowmanager.hpp"
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 #include "tableviewer.hpp"
 
 // Forward declarations

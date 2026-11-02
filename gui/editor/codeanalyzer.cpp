@@ -1943,6 +1943,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
             || sSyntaxElement == "nrows"
             || sSyntaxElement == "ncols"
             || sSyntaxElement == "nlayers"
+            || sSyntaxElement == "nsheets"
             || sSyntaxElement == "ndim"
             || sSyntaxElement == "nlines")
         {
@@ -1964,6 +1965,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
     }
     else if (sSyntaxElement == "nrows"
              || sSyntaxElement == "ncols"
+             || sSyntaxElement == "nsheets"
+             || sSyntaxElement == "nlayers"
              || sSyntaxElement == "nlines")
     {
         // Should only be used in tables. Additionally,

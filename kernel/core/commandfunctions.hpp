@@ -1277,7 +1277,8 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
     {
         const Table& table = _data.getTable(iter->first);
-        string sCacheSize = toString(table.getRows()) + " x " + toString(table.getCols());
+        std::string sCacheSize = table.printDims();
+
         NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (nWinWidth - 32) / 2 - (iter->first).length() + nWinWidth % 2)
                                   + strfill(sCacheSize, (nWinWidth - 50) / 2) + strfill("[table]", 19));
 
@@ -2103,12 +2104,14 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (cmdParser.hasParam("fileformat"))
             sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
-        if (cmdParser.getCommand() == "export")
-            sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
+        if (cmdParser.hasParam("file"))
+        {
+            if (cmdParser.getCommand() == "export")
+                sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
+            else
+                sFileName = cmdParser.getFileParameterValueForSaving(".ndat", "<savepath>", "");
+        }
         else
-            sFileName = cmdParser.getFileParameterValueForSaving(".ndat", "<savepath>", "");
-
-        if (!sFileName.length())
         {
             _cache.setPrefix(_access.getDataObject());
 
@@ -3002,7 +3005,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static void clear_variables()
 {
-    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlen", "nlines", "nrows", "ans"};
+    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlen", "nlines", "nrows", "nsheets", "ans"};
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     varmap_type mVariables = _parser.GetVar();
 
@@ -3259,7 +3262,7 @@ static CommandReturnValues cmd_append(string& sCmd)
         const Table& dataTable = _data.getTable("data");
         double j1 = dataTable.getCols() + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END), "data"),
+        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getRows(VectorIndex(j1, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END), "data"),
                                                             j1, dataTable.getCols()}));
 
         sCmd = cmdParser.getReturnValueStatement();
@@ -3893,27 +3896,33 @@ static CommandReturnValues cmd_smooth(string& sCmd)
         if (!table.isValueLike(_access.getIndices().col, _access.getIndices().layer))
             throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject() + "(", _access.getDataObject());
 
-        bool success = false;
+        bool success = true;
 
-        // Apply the smoothing filter
-        switch (dir)
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
         {
-            case Table::GRID:
-            case Table::ALL:
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-                success = table.smooth(_access.getIndices().row,
-                                       _access.getIndices().col,
-                                       _access.getIndices().layer.front(),
-                                       NumeRe::FilterSettings(_type, nWindowSize, nWindowSize, dAlpha), dir);
-                break;
-            case Table::ROWS:
-            case Table::COLS:
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-                success = table.smooth(_access.getIndices().row,
-                                       _access.getIndices().col,
-                                       _access.getIndices().layer.front(),
-                                       NumeRe::FilterSettings(_type, nWindowSize, 1u, dAlpha), dir);
-                break;
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            // Apply the smoothing filter
+            switch (dir)
+            {
+                case Table::GRID:
+                case Table::ALL:
+                    success = success && table.smooth(_access.getIndices().row,
+                                                      _access.getIndices().col,
+                                                      s,
+                                                      NumeRe::FilterSettings(_type, nWindowSize, nWindowSize, dAlpha), dir);
+                    break;
+                case Table::ROWS:
+                case Table::COLS:
+                    success = success && table.smooth(_access.getIndices().row,
+                                                      _access.getIndices().col,
+                                                      s,
+                                                      NumeRe::FilterSettings(_type, nWindowSize, 1u, dAlpha), dir);
+                    break;
+            }
         }
 
         if (success)
@@ -4259,13 +4268,24 @@ static CommandReturnValues cmd_resample(string& sCmd)
         if (cmdParser.hasParam("method"))
             sFilter = cmdParser.getParameterValue("method");
 
-#warning TODO (numere#1#10/26/26): Fix this sheet dependency
-        if (table.resample(_access.getIndices().row,
-                           _access.getIndices().col,
-                           _access.getIndices().layer.front(),
-                           samples,
-                           dir,
-                           sFilter))
+        bool success = true;
+
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
+        {
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            success = success && table.resample(_access.getIndices().row,
+                                                _access.getIndices().col,
+                                                s,
+                                                samples,
+                                                dir,
+                                                sFilter);
+        }
+
+        if (success)
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")));
@@ -4457,11 +4477,22 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         else if (findParameter(sCmd, "cols"))
             dir = Table::COLS;
 
-#warning TODO (numere#1#10/26/26): Fix this layer dependency
-        if (table.retouch(_access.getIndices().row,
-                          _access.getIndices().col,
-                          _access.getIndices().layer.front(),
-                          dir))
+        bool success = true;
+
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
+        {
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            success = success && table.retouch(_access.getIndices().row,
+                                               _access.getIndices().col,
+                                               s,
+                                               dir);
+        }
+
+        if (success)
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")));
@@ -4718,13 +4749,15 @@ static CommandReturnValues cmd_load(string& sCmd)
     }
     else if (cmdParser.getExpr().length())
     {
-        if (cmdParser.hasParam("app"))
+        if (cmdParser.hasParam("app") && !_data.isEmpty("data"))
         {
             Table& table = _data.getTable("data");
             double j1 = table.getCols() + 1;
+            double k1 = table.getSheets() + 1;
             append_data(cmdParser);
             cmdParser.setReturnValue(std::vector<mu::Numerical>({1, table.getRows(),
-                                                                 j1, table.getCols()}));
+                                                                 j1, table.getCols(),
+                                                                 k1, table.getSheets()}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
@@ -4763,10 +4796,15 @@ static CommandReturnValues cmd_load(string& sCmd)
                     Table& table = _data.getTable(info.sTableName);
 
                     if (_option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(table.getRows()), toString(table.getCols())));
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS",
+                                                      info.sTableName + "()",
+                                                      toString(table.getRows()),
+                                                      toString(table.getCols()),
+                                                      toString(table.getSheets())));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows,
-                                                                         table.getCols() - info.nCols + 1, table.getCols()}));
+                                                                         table.getCols() - info.nCols + 1, table.getCols(),
+                                                                         table.getSheets() - info.nLayers + 1, table.getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4823,10 +4861,16 @@ static CommandReturnValues cmd_load(string& sCmd)
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getTable("data").getRows()), toString(_data.getTable("data").getCols())));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS",
+                                                      toString(vFilelist.size()),
+                                                      sFileName,
+                                                      toString(_data.getTable("data").getRows()),
+                                                      toString(_data.getTable("data").getCols()),
+                                                      toString(_data.getTable("data").getSheets())));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getTable("data").getRows(),
-                                                                         1, _data.getTable("data").getCols()}));
+                                                                         1, _data.getTable("data").getCols(),
+                                                                         1, _data.getTable("data").getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4852,10 +4896,15 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (!_data.isEmpty("data"))
                 {
                     if (_option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS",
+                                                      info.sFileName,
+                                                      toString(info.nRows),
+                                                      toString(info.nCols),
+                                                      toString(info.nLayers)));
 
                     cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getTable("data").getRows(),
-                                                                         1, _data.getTable("data").getCols()}));
+                                                                         1, _data.getTable("data").getCols(),
+                                                                         1, _data.getTable("data").getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;

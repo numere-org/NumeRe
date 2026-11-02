@@ -25,7 +25,7 @@
 #include "viewerbook.hpp"
 
 #include "../../kernel/core/datamanagement/container.hpp"
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 
 class NumeReWindow;
 

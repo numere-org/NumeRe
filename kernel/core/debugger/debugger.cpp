@@ -771,11 +771,7 @@ void NumeReDebugger::summarizeInformation(const std::map<std::string, std::pair<
             sInlineInfo.clear();
 
         const Table& table = instance->getMemoryManager().getTable(iter.second);
-        std::string sTableData = toString(table.getRows()) + " x " + toString(table.getCols());
-        int sheets = table.getSheets();
-
-        if (sheets > 1)
-            sTableData += " x " + toString(sheets);
+        std::string sTableData = table.printDims();
 
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel

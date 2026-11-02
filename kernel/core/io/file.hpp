@@ -731,18 +731,11 @@ namespace NumeRe
 
                     if (nLayers < 2)
                     {
-                        fileData->addSheet(sFileName, nCols);
+                        fileData->addSheet(getTableName(), nCols);
                         nLayers = 1;
                     }
                     else
-                    {
-                        fileData->reserve(nLayers);
-
-                        for (size_t i = 0; i < (size_t)nLayers; i++)
-                        {
-                            fileData->getSheet(i).reserve(nCols);
-                        }
-                    }
+                        fileData->reserve(nLayers, nCols);
                 }
                 else if (nRows < 0 || nCols < 0)
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
@@ -1737,6 +1730,7 @@ namespace NumeRe
 
                 info.nCols = nCols;
                 info.nRows = nRows;
+                info.nLayers = nLayers;
                 info.sFileExtension = sFileExtension;
                 info.sFileName = sFileName;
                 info.sTableName = getTableName();
@@ -2048,7 +2042,6 @@ namespace NumeRe
     {
         private:
             void readFile();
-            void evalIndices(const std::string& sIndices, int& nLine, int& nCol);
 
         public:
             XLSXSpreadSheet(const std::string& filename);

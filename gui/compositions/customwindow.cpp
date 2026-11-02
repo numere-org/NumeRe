@@ -1496,20 +1496,20 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 if (s.size() > 2)
                 {
                     NumeRe::TableView data(s[0], s[1], s[2]);
-                    table->SetData(data, "", "");
+                    table->SetData(data, 0, "", "");
                     table->SetMinSize(table->calculateMinSize());
                 }
                 else if (s.size() == 2)
                 {
                     NumeRe::TableView data(s[0], s[1], 1);
-                    table->SetData(data, "", "");
+                    table->SetData(data, 0, "", "");
                     table->SetMinSize(table->calculateMinSize());
                 }
             }
             else
             {
                 NumeRe::TableView data(1, 1, 1);
-                table->SetData(data, "", "");
+                table->SetData(data, 0, "", "");
                 table->SetMinSize(wxSize(-1, 300));
             }
 
@@ -2319,20 +2319,20 @@ void CustomWindow::layoutGridChild(const tinyxml2::XMLElement* currentChild, wxW
                 if (s.size() > 2)
                 {
                     NumeRe::TableView data(s[0], s[1], s[2]);
-                    table->SetData(data, "", "");
+                    table->SetData(data, 0, "", "");
                     table->SetMinSize(table->calculateMinSize());
                 }
                 else if (s.size() == 2)
                 {
                     NumeRe::TableView data(s[0], s[1], 1);
-                    table->SetData(data, "", "");
+                    table->SetData(data, 0, "", "");
                     table->SetMinSize(table->calculateMinSize());
                 }
             }
             else
             {
                 NumeRe::TableView data(1, 1, 1);
-                table->SetData(data, "", "");
+                table->SetData(data, 0, "", "");
                 table->SetMinSize(wxSize(-1, 300));
             }
 
@@ -3688,7 +3688,7 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
             case CustomWindow::TABLE:
             {
                 TableViewer* table = static_cast<TableViewer*>(object.second);
-                table->SetData(_value.tableValue, "", "");
+                table->SetData(_value.tableValue, 0, "", "");
                 break;
             }
             case CustomWindow::TREELIST:

@@ -28,6 +28,7 @@
 
 class TextField;
 class NumeReWindow;
+class ViewerBook;
 
 /////////////////////////////////////////////////
 /// \brief Generic table panel, which also
@@ -36,21 +37,25 @@ class NumeReWindow;
 class TablePanel : public wxPanel
 {
     protected:
+        ViewerBook* m_sheets;
         TextField* m_commentField;
         wxTextCtrl* m_sourceField;
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
         wxStaticText* m_lastSaveText;
         wxInfoBar* m_infoBar;
+        wxStatusBar* m_statusBar;
+        wxString m_tableDisplayName;
         bool finished;
 
+        NumeReWindow* m_topWindow;
         NumeReTerminal* m_terminal;
         wxFrame* m_topLevelFrame;
 
     public:
-        TableViewer* grid;
-
         TablePanel(wxWindow* parent, wxFrame* toplevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly = true);
+        void show(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName, bool readOnly = true);
+        void show(NumeRe::Container<std::string>& _table, const std::string& sName, const std::string& sIntName, bool readOnly = true);
         void update(const NumeRe::TableMetaData& meta);
         void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
         NumeReTerminal* GetTerminal() {return m_terminal;};
@@ -60,8 +65,11 @@ class TablePanel : public wxPanel
         wxMenuBar* getMenuBar();
         wxFrame* getFrame();
         void ready();
+        TableViewer* getCurrentPage();
+        wxString getTableAndSheetName();
 
         void OnClose(wxCloseEvent& event);
+        void OnSheetChange(wxAuiNotebookEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

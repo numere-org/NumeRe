@@ -19,7 +19,7 @@
 #include <wx/grid.h>
 #include <map>
 
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 #include "gridcellcoordscontainer.hpp"
 
 #ifndef GRIDTABLE_HPP
@@ -48,7 +48,7 @@ class GridNumeReTable : public wxGridTableBase
     public:
         GridNumeReTable();
         GridNumeReTable(int numRows, int numCols);
-        GridNumeReTable(NumeRe::TableView&& _extTable, bool showQMarks);
+        GridNumeReTable(const NumeRe::TableView& _extTable, size_t sheet, bool showQMarks);
         virtual ~GridNumeReTable() {}
 
         NumeRe::TableView getTable()

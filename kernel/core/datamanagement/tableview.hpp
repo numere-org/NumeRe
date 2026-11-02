@@ -1,0 +1,163 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2018  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+#ifndef TABLEVIEW_HPP
+#define TABLEVIEW_HPP
+
+#include "tabledata.hpp"
+#include <ctime>
+#include <memory>
+
+namespace NumeRe
+{
+    /////////////////////////////////////////////////
+    /// \brief Encapsulating structure to gather all
+    /// table meta data information.
+    /////////////////////////////////////////////////
+    struct TableMetaData
+    {
+        std::string comment;
+        std::string source;
+        __time64_t lastSavedTime;
+        bool isSaved;
+        mutable bool statsCurrent = false;
+        mutable double minVal = NAN;
+        mutable double maxVal = NAN;
+
+        void save()
+        {
+            lastSavedTime = _time64(nullptr);
+            isSaved = true;
+        }
+
+        void modify()
+        {
+            statsCurrent = false;
+
+            if (!isSaved)
+                return;
+
+            lastSavedTime = _time64(nullptr);
+            isSaved = false;
+        }
+
+        TableMetaData melt(const TableMetaData& meta)
+        {
+            TableMetaData melted(*this);
+
+            if (meta.comment.length())
+            {
+                if (melted.comment.length())
+                    melted.comment += "\n\n========\n\n" + meta.comment;
+                else
+                    melted.comment = meta.comment;
+            }
+
+            if (meta.source.length())
+            {
+                if (melted.source.length())
+                    melted.source += "; " + meta.source;
+                else
+                    melted.source = meta.source;
+            }
+
+            return melted;
+        }
+    };
+
+
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief This data container is a copy-
+    /// efficient table to interchange data between
+    /// Kernel and GUI.
+    /////////////////////////////////////////////////
+    class TableView
+    {
+        private:
+            std::shared_ptr<TableData> vTableData;
+            std::string sTableName;
+            TableMetaData m_meta;
+
+            void setMinSize(size_t i, size_t j, size_t sheet);
+            bool isNumerical(const std::string& sValue) const;
+
+        public:
+            TableView();
+            TableView(int nLines, int nCols, int sheets);
+            TableView(const TableView& _table);
+            TableView(TableData* data);
+            ~TableView();
+
+            TableView& operator=(TableView _table);
+
+            void Clear();
+
+            void setSize(size_t i, size_t j, size_t sheet);
+
+            void setName(const std::string& _sName);
+            void setComment(const std::string& _comment);
+            void setMetaData(const TableMetaData& meta);
+            void setHead(size_t i, size_t sheet, const std::string& _sHead);
+            void setHeadPart(size_t i, size_t sheet, size_t part, const std::string& _sHead);
+            void set(size_t i, size_t j, size_t sheet, const mu::Value& _dValue);
+            void setValue(size_t i, size_t j, size_t sheet, const std::complex<double>& _dValue);
+            void setValueAsString(size_t i, size_t j, size_t sheet, const std::string& _sValue);
+            void setColumn(size_t j, size_t sheet, TableColumn* column);
+            bool setColumnType(size_t j, size_t sheet, TableColumn::ColumnType _type);
+
+            std::string getName() const;
+            std::string getComment() const;
+            TableMetaData getMetaData() const;
+            int getHeadCount(size_t sheet) const;
+            std::string getHead(size_t i, size_t sheet) const;
+            std::string getCleanHead(size_t i, size_t sheet) const;
+            std::string getCleanHeadPart(size_t i, size_t sheet, size_t part = 0) const;
+            mu::Value get(size_t i, size_t j, size_t sheet) const;
+            std::complex<double> getValue(size_t i, size_t j, size_t sheet) const;
+            std::string getValueAsString(size_t i, size_t j, size_t sheet) const;
+            std::string getValueAsInternalString(size_t i, size_t j, size_t sheet) const;
+            TableColumn* getColumn(size_t j, size_t sheet) const;
+            TableColumn::ColumnType getColumnType(size_t j, size_t sheet) const;
+            TableData& getTableData() {return *vTableData;};
+
+            size_t getRows() const;
+            size_t getRows(size_t sheet) const;
+            size_t getCols() const;
+            size_t getCols(size_t sheet) const;
+            size_t getSheets() const;
+
+            bool isEmpty() const;
+
+            bool insertRows(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool appendRows(size_t sheet, size_t nNum = 1);
+            bool deleteRows(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool insertCols(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool appendCols(size_t sheet, size_t nNum = 1);
+            bool deleteCols(size_t sheet, size_t nPos = 0, size_t nNum = 1);
+            bool insertSheets(size_t nPos = 0, size_t nNum = 1);
+            bool appendSheets(size_t nNum = 1);
+            bool deleteSheets(size_t nPos = 0, size_t nNum = 1);
+
+    };
+
+}
+#endif // TABLEVIEW_HPP
+

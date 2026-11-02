@@ -224,31 +224,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This structure defines the overall
-    /// expression target, if it is composed out of a
-    /// temporary vector like {a,b}.
-    /////////////////////////////////////////////////
-/*#warning TODO (numere#6#09/12/24): This thing is likely dead now
-	struct ExpressionTarget
-	{
-	    VarArray m_targets;
-
-	    void create(StringView sTargets, const varmap_type& usedVars);
-	    void assign(const std::vector<Array>& buffer, int nResults);
-
-	    void clear()
-	    {
-	        m_targets.clear();
-	    }
-
-	    bool isValid() const
-	    {
-	        return m_targets.size();
-	    }
-	};*/
-
-
-    /////////////////////////////////////////////////
     /// \brief This is the parser state stack for a
     /// whole command line. Might contain multiple
     /// single states and cached data accesses.
