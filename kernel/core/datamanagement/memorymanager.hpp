@@ -25,7 +25,7 @@
 #include "../settings.hpp"
 #include "../structures.hpp"
 #include "tableview.hpp"
-#include "memory.hpp"
+#include "table.hpp"
 #include "cluster.hpp"
 #include "fileadapter.hpp"
 

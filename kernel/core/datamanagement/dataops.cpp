@@ -943,7 +943,7 @@ bool readImage(CommandLineParser& cmdParser)
     if (_idx.layer.isOpenEnd() && sChannels == "grey")
         _idx.layer = VectorIndex(_idx.layer.min());
     else if (_idx.layer.isOpenEnd())
-        _idx.layer.setRange(0, _idx.layer.front() + nHeight - 1);
+        _idx.layer.setRange(0, _idx.layer.front() + sChannels.length() - 1);
 
     if (!isValidIndexSet(_idx))
         throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "",
@@ -985,6 +985,11 @@ bool readImage(CommandLineParser& cmdParser)
             // Perform some pre-allocation
             _table.write(rowmax, _idx.col[2 + i], s, (uint8_t)0);
         }
+
+        if (sChannels == "grey")
+            _table.setSheetName(s, "Grey");
+        else if (k < sChannels.length())
+            _table.setSheetName(s, "Channel " + sChannels[k]);
     }
 
     _table.convertColumns(_idx.col.subidx(0, 2), _idx.layer, "value.ui32");
@@ -1026,7 +1031,7 @@ bool readImage(CommandLineParser& cmdParser)
 
                 _table.setHeadLineElement(_idx.col[2 + j],
                                           _idx.layer[n],
-                                          "z(x(:),y(" + toString(j) + "))");
+                                          "z(x(:),y(" + toString(j + 1) + "))");
             }
         }
 

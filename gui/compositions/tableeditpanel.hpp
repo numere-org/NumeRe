@@ -47,10 +47,21 @@ class TablePanel : public wxPanel
         wxStatusBar* m_statusBar;
         wxString m_tableDisplayName;
         bool finished;
+        bool isReadOnly;
+        int m_clickedTab;
 
         NumeReWindow* m_topWindow;
         NumeReTerminal* m_terminal;
         wxFrame* m_topLevelFrame;
+
+        enum TablePanelIds
+        {
+            ID_MENU_INSERT_SHEET = 16000,
+            ID_MENU_APPEND_SHEET,
+            ID_MENU_RENAME_SHEET,
+            ID_MENU_REMOVE_SHEET,
+            ID_MENU_TABLE_END
+        };
 
     public:
         TablePanel(wxWindow* parent, wxFrame* toplevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly = true);
@@ -62,6 +73,7 @@ class TablePanel : public wxPanel
         std::string getComment() const;
         void showMessage(const wxString& msg);
         void dismissMessage();
+        void reload(const std::string& sDisplayName, const std::string& sInternalName, bool is_tableView);
         wxMenuBar* getMenuBar();
         wxFrame* getFrame();
         void ready();
@@ -70,6 +82,8 @@ class TablePanel : public wxPanel
 
         void OnClose(wxCloseEvent& event);
         void OnSheetChange(wxAuiNotebookEvent& event);
+        void OnTabRightClick(wxAuiNotebookEvent& event);
+        void OnMenuEvent(wxCommandEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

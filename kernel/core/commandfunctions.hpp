@@ -5047,20 +5047,49 @@ static CommandReturnValues cmd_print(string& sCmd)
     if (_data.isTable(cmdParser.getExpr()) && getMatchingParenthesis(cmdParser.getExpr())+1 == cmdParser.getExpr().length())
     {
         DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-        Output& _out = NumeReKernel::getInstance()->getOutput();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        _out.setCompact(true);
 
         NumeReKernel::toggleTableStatus();
         make_hline();
         NumeReKernel::print("NUMERE: " + toUpperCase(_accessParser.getDataObject()) + "()");
         make_hline();
-        _out.format(_data.getTable(_accessParser.getDataObject()).extractView(_accessParser.getDataObject(),
-                                                                              _accessParser.getIndices().row,
-                                                                              _accessParser.getIndices().col,
-                                                                              _accessParser.getIndices().layer),
-                    _option.getPrecision(), 4*_option.getPrecision());
-        _out.reset();
+
+        NumeRe::TableView table = _data.getTable(_accessParser.getDataObject()).extractView(_accessParser.getDataObject(),
+                                                                                            _accessParser.getIndices().row,
+                                                                                            _accessParser.getIndices().col,
+                                                                                            _accessParser.getIndices().layer);
+
+        if (table.getSheets() == 1)
+        {
+            Output& _out = NumeReKernel::getInstance()->getOutput();
+            _out.setCompact(true);
+            _out.format(table, _option.getPrecision(), 4*_option.getPrecision());
+            _out.reset();
+        }
+        else
+        {
+            std::string sPrinted;
+            TableData& tableData = table.getTableData();
+            size_t len = 0;
+
+            for (size_t i = 0; i < tableData.sheets(); i++)
+            {
+                len = std::max(len, tableData[i].m_sheetName.length());
+            }
+
+            for (size_t i = 0; i < tableData.sheets(); i++)
+            {
+                if (sPrinted.length())
+                    sPrinted += "\n";
+
+                sPrinted += strfill(tableData[i].m_sheetName, len, ' ') + ":  {"
+                    + toString(tableData[i].rows()) + " x " + toString(tableData[i].cols()) + " sheet}";
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+        }
+
         NumeReKernel::toggleTableStatus();
         make_hline();
 

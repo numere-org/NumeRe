@@ -2626,21 +2626,8 @@ void TableViewer::saveTable(bool saveAs)
 /////////////////////////////////////////////////
 void TableViewer::reloadTable()
 {
-    if (!m_parentPanel)
-        return;
-
-    NumeReTerminal* term = m_parentPanel->GetTerminal();
-
-    if (isGridNumeReTable)
-    {
-        NumeRe::TableView _tab = term->getTable(m_intName);
-        SetData(_tab, m_refSheet, m_displayName, m_intName);
-    }
-    else
-    {
-        NumeRe::Container<std::string> _strTab = term->getStringTable(m_intName);
-        SetData(_strTab, m_displayName, m_intName);
-    }
+    if (m_parentPanel)
+        m_parentPanel->reload(m_displayName, m_intName, isGridNumeReTable);
 }
 
 
@@ -2861,6 +2848,20 @@ void TableViewer::refreshStatusBar()
         updateStatusBar(wxGridCellCoordsContainer(GetSelectedCols(), GetRows(), false), &coords);
     else
         updateStatusBar(wxGridCellCoordsContainer(GetSelectedRows(), GetCols(), true), &coords);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Changes the reference sheet displayed.
+///
+/// \param sheet size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::setRefSheet(size_t sheet)
+{
+    if (isGridNumeReTable && static_cast<GridNumeReTable*>(GetTable())->setCurrentSheet(sheet))
+        m_refSheet = sheet;
 }
 
 

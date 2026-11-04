@@ -97,6 +97,8 @@ class GridNumeReTable : public wxGridTableBase
         void sortCol(int col, bool ascending);
         bool isSorted() const;
         void removeSort();
+
+        bool setCurrentSheet(size_t sheet);
 };
 
 

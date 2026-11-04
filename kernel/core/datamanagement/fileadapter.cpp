@@ -19,7 +19,7 @@
 #include "fileadapter.hpp"
 #include "../utils/tools.hpp"
 #include "../io/logger.hpp"
-#include "memory.hpp"
+#include "table.hpp"
 
 using namespace std;
 

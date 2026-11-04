@@ -22,7 +22,7 @@
 #include "matdatastructures.hpp"
 #include "../ParserLib/muParserError.h"
 #include "../structures.hpp"
-#include "../datamanagement/memory.hpp"
+#include "../datamanagement/table.hpp"
 
 #define EIGENVALUES 0
 #define EIGENVECTORS 1

@@ -914,6 +914,25 @@ void GridNumeReTable::removeSort()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Set the reference sheet.
+///
+/// \param sheet size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool GridNumeReTable::setCurrentSheet(size_t sheet)
+{
+    if (sheet < _table.getSheets())
+    {
+        m_currentSheet = sheet;
+        return true;
+    }
+
+    return false;
+}
+
+
 
 
 

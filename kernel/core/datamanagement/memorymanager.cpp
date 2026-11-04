@@ -870,74 +870,7 @@ VectorIndex MemoryManager::parseMafSelectors(std::string& sDir, const std::strin
             if (sSheets.front() == '(' && sSheets.back() == ')')
                 sSheets = sSheets.substr(1, sSheets.length()-2);
 
-            if (sSheets.front() == '{' && sSheets.back() == '}')
-            {
-                // Definition contains a vector expression
-                _parser.SetExpr(sSheets);
-                int nResults;
-                const mu::StackItem* v = _parser.Eval(nResults);
-                return arrayToSheetIndex(v[0].get(), sTableName);
-            }
-            else
-            {
-                // Usual expression
-                _parser.SetExpr(sSheets);
-                int nResults;
-                const mu::StackItem* v = _parser.Eval(nResults);
-
-                if (nResults == 1 && v[0].get().size() == 1)
-                    return VectorIndex(v[0].get());
-                else if (nResults == 2)
-                {
-                    if (!mu::all(v[1].get()))
-                        return VectorIndex(v[0].get());
-
-                    // Two results: usual every=a,b representation
-                    std::vector<int> idx;
-
-                    for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[1].get().getAsScalarInt())
-                    {
-                        idx.push_back(i);
-                    }
-
-                    return VectorIndex(idx);
-                }
-                else //arbitrary results: use it as if it was a vector
-                    return arrayToSheetIndex(v[0].get(), sTableName);
-            }
-        }
-
-        return VectorIndex(0);
-    }
-
-    if (sDir.find(sType + "=(") != std::string::npos
-        && (sDir.find("cols") != std::string::npos || sDir.find("lines") != std::string::npos))
-    {
-        if (refSheet >= (size_t)table.getSheets())
-            refSheet = 0;
-
-        std::string sEveryCell = sDir.substr(sDir.find(sType + "=(") + sType.length()+1);
-        sEveryCell.erase(getMatchingParenthesis(sEveryCell)+1);
-        StripSpaces(sEveryCell);
-        Parser& _parser = NumeReKernel::getInstance()->getParser();
-        _parser.DisableAccessCaching();
-        updateDimensionVariables(sTableName);
-
-        if (sEveryCell.front() == '(' && sEveryCell.back() == ')')
-            sEveryCell = sEveryCell.substr(1, sEveryCell.length()-2);
-
-        if (sEveryCell.front() == '{' && sEveryCell.back() == '}')
-        {
-            // Definition contains a vector expression
-            _parser.SetExpr(sEveryCell);
-            int nResults;
-            const mu::StackItem* v = _parser.Eval(nResults);
-            return arrayToIndex(v[0].get(), sTableName, refSheet);
-        }
-        else
-        {
-            // Usual expression
-            _parser.SetExpr(sEveryCell);
+            _parser.SetExpr(sSheets);
             int nResults;
             const mu::StackItem* v = _parser.Eval(nResults);
 
@@ -959,8 +892,51 @@ VectorIndex MemoryManager::parseMafSelectors(std::string& sDir, const std::strin
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return arrayToIndex(v[0].get(), sTableName, refSheet);
+                return arrayToSheetIndex(v[0].get(), sTableName);
         }
+
+        return VectorIndex(0);
+    }
+
+    if (sDir.find(sType + "=(") != std::string::npos
+        && (sDir.find("cols") != std::string::npos || sDir.find("lines") != std::string::npos))
+    {
+        if (refSheet >= (size_t)table.getSheets())
+            refSheet = 0;
+
+        std::string sEveryCell = sDir.substr(sDir.find(sType + "=(") + sType.length()+1);
+        sEveryCell.erase(getMatchingParenthesis(sEveryCell)+1);
+        StripSpaces(sEveryCell);
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+        _parser.DisableAccessCaching();
+        updateDimensionVariables(sTableName);
+
+        if (sEveryCell.front() == '(' && sEveryCell.back() == ')')
+            sEveryCell = sEveryCell.substr(1, sEveryCell.length()-2);
+
+        _parser.SetExpr(sEveryCell);
+        int nResults;
+        const mu::StackItem* v = _parser.Eval(nResults);
+
+        if (nResults == 1 && v[0].get().size() == 1)
+            return VectorIndex(v[0].get());
+        else if (nResults == 2)
+        {
+            if (!mu::all(v[1].get()))
+                return VectorIndex(v[0].get());
+
+            // Two results: usual every=a,b representation
+            std::vector<int> idx;
+
+            for (int i = v[0].get().getAsScalarInt()-1; i < iterationDimension; i += v[1].get().getAsScalarInt())
+            {
+                idx.push_back(i);
+            }
+
+            return VectorIndex(idx);
+        }
+        else //arbitrary results: use it as if it was a vector
+            return arrayToIndex(v[0].get(), sTableName, refSheet);
     }
 
     return VectorIndex(0, iterationDimension-1);

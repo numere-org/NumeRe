@@ -24,6 +24,13 @@
 #define COLS 2
 
 
+/////////////////////////////////////////////////
+/// \brief Returns true, if the indices define
+/// the dimensions of a matrix.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableIndices::returnsMatrix() const
 {
     bool r_vec = m_rows.size() > 1;
@@ -34,6 +41,14 @@ bool TableIndices::returnsMatrix() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns true, if the indices refer to
+/// a single sheet.
+///
+/// \param _values const mu::Array&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableIndices::writeSingleSheet(const mu::Array& _values) const
 {
     bool r_vec = m_rows.size() > 1;
@@ -47,6 +62,14 @@ bool TableIndices::writeSingleSheet(const mu::Array& _values) const
 
 
 
+/////////////////////////////////////////////////
+/// \brief Construct a TableSheet instance with a
+/// name and a set of columns.
+///
+/// \param sName const std::string&
+/// \param cols size_t
+///
+/////////////////////////////////////////////////
 TableSheet::TableSheet(const std::string& sName, size_t cols) : m_sheetName(sName)
 {
     m_calculatedRows = 0;
@@ -308,6 +331,13 @@ std::vector<int> TableSheet::sortElements(const VectorIndex& _vRow, const Vector
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of rows occupied by
+/// this TableSheet.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableSheet::rows() const
 {
     if (m_columns.size())
@@ -334,6 +364,14 @@ size_t TableSheet::rows() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of columns occupied
+/// by this TableSheet excluding trailing empty
+/// columns.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableSheet::cols() const
 {
     for (int j = m_columns.size() - 1; j >= 0; j--)
@@ -346,12 +384,29 @@ size_t TableSheet::cols() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of reserved columns
+/// for this TableSheet. Includes trailing empty
+/// columns.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableSheet::reserved_cols() const
 {
     return m_columns.size();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of elements in the
+/// selected column (includes trailing empty
+/// elements).
+///
+/// \param col size_t
+/// \return int
+///
+/////////////////////////////////////////////////
 int TableSheet::getElemsInColumn(size_t col) const
 {
     if (isValidColumn(col))
@@ -361,6 +416,15 @@ int TableSheet::getElemsInColumn(size_t col) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of elements in the
+/// selected column excluding trailing empty
+/// elements.
+///
+/// \param col size_t
+/// \return int
+///
+/////////////////////////////////////////////////
 int TableSheet::getFilledElemsInColumn(size_t col) const
 {
     if (isValidColumn(col))
@@ -370,18 +434,41 @@ int TableSheet::getFilledElemsInColumn(size_t col) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Determine, if the desired column
+/// refers to a valid, i.e. existing and non-
+/// empty column.
+///
+/// \param col size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableSheet::isValidColumn(size_t col) const
 {
     return m_columns.size() > col && m_columns[col];
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the internal
+/// TableColumnArray.
+///
+/// \return TableColumnArray&
+///
+/////////////////////////////////////////////////
 TableColumnArray& TableSheet::getCols()
 {
     return m_columns;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assign another TableSheet instance.
+///
+/// \param other const TableSheet&
+/// \return TableSheet&
+///
+/////////////////////////////////////////////////
 TableSheet& TableSheet::operator=(const TableSheet& other)
 {
     m_columns.resize(other.m_columns.size());
@@ -434,18 +521,46 @@ TableSheet& TableSheet::operator=(const TableSheet& other)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Resize the number of columns. Will
+/// also allow reducing the number of columns, if
+/// the new size is smaller than the existing
+/// number of columns.
+///
+/// \param nCols const size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::resize(const size_t nCols)
 {
     m_columns.resize(nCols);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Reserve the number of columns. Will
+/// only ever increase the number of columns and
+/// never decrease it.
+///
+/// \param nCols const size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::reserve(const size_t nCols)
 {
     m_columns.resize(std::max(nCols, m_columns.size()));
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Shrink the selected columns and remove
+/// any empty trailing columns to save some
+/// memory.
+///
+/// \param _vCol const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::shrink(const VectorIndex& _vCol)
 {
     // Shrink each column
@@ -480,6 +595,15 @@ void TableSheet::shrink(const VectorIndex& _vCol)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write a column heading into the
+/// selected column.
+///
+/// \param sHeading const std::string&
+/// \param col int
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::writeHeading(const std::string& sHeading, int col)
 {
     if (col < 0)
@@ -494,6 +618,15 @@ void TableSheet::writeHeading(const std::string& sHeading, int col)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write an array of column headings into
+/// an array of columns.
+///
+/// \param _headings const mu::Array&
+/// \param _cols const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::writeHeadings(const mu::Array& _headings, const VectorIndex& _cols)
 {
     _cols.setOpenEndIndex(_cols.front()+_headings.size()-1);
@@ -514,6 +647,17 @@ void TableSheet::writeHeadings(const mu::Array& _headings, const VectorIndex& _c
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Wirte a single value into a single
+/// table cell.
+///
+/// \param _value const mu::Value&
+/// \param row int
+/// \param col int
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::write(const mu::Value& _value, int row, int col, TableColumn::ColumnType type)
 {
     if ((!m_columns.size() && !_value.isValid()) || col < 0)
@@ -538,6 +682,16 @@ void TableSheet::write(const mu::Value& _value, int row, int col, TableColumn::C
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write a singleton value into an array
+/// of cells.
+///
+/// \param _value const mu::Value&
+/// \param _rows const VectorIndex&
+/// \param _cols const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::write(const mu::Value& _value, const VectorIndex& _rows, const VectorIndex& _cols)
 {
     bool rewriteColumn = false;
@@ -566,6 +720,16 @@ void TableSheet::write(const mu::Value& _value, const VectorIndex& _rows, const 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write an array of values into an array
+/// of cells.
+///
+/// \param _values const mu::Array&
+/// \param _rows const VectorIndex&
+/// \param _cols const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::write(const mu::Array& _values, const VectorIndex& _rows, const VectorIndex& _cols)
 {
     TableColumn::ColumnType t = to_column_type(_values);
@@ -676,12 +840,24 @@ void TableSheet::write(const mu::Array& _values, const VectorIndex& _rows, const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Determine, whether this sheet is empty.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableSheet::empty() const
 {
     return !m_columns.size() || !rows();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Clear the contents of this sheet.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableSheet::clear()
 {
     m_columns.clear();
@@ -694,6 +870,14 @@ void TableSheet::clear()
 
 
 
+/////////////////////////////////////////////////
+/// \brief Create a set of sheets with a selected
+/// set of columns.
+///
+/// \param cols_per_sheet const std::vector<size_t>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::create(const std::vector<size_t>& cols_per_sheet)
 {
     clear();
@@ -705,12 +889,28 @@ void TableData::create(const std::vector<size_t>& cols_per_sheet)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Add a new sheet with a name and a
+/// number of columns.
+///
+/// \param sSheetName const std::string&
+/// \param cols size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::addSheet(const std::string& sSheetName, size_t cols)
 {
     m_sheets.emplace_back(new TableSheet(sSheetName, cols));
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assign another TableData instance.
+///
+/// \param other const TableData&
+/// \return TableData&
+///
+/////////////////////////////////////////////////
 TableData& TableData::operator=(const TableData& other)
 {
     resize(other.sheets());
@@ -724,6 +924,13 @@ TableData& TableData::operator=(const TableData& other)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Move-assign another TableData instance.
+///
+/// \param other TableData&&
+/// \return TableData&
+///
+/////////////////////////////////////////////////
 TableData& TableData::operator=(TableData&& other)
 {
     m_sheets.resize(other.sheets());
@@ -737,6 +944,16 @@ TableData& TableData::operator=(TableData&& other)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Resize the number of TableSheets. Will
+/// also allow for reducing the number of sheets,
+/// if the new number is smaller than the
+/// existing count.
+///
+/// \param nSheets size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::resize(size_t nSheets)
 {
     if (nSheets > m_sheets.size())
@@ -746,6 +963,17 @@ void TableData::resize(size_t nSheets)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Reserve a set of TableSheets with a
+/// count of columns each. Will only ever
+/// increase the number of sheets and never
+/// decrease it.
+///
+/// \param nSheets size_t
+/// \param _nCols size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::reserve(size_t nSheets, size_t _nCols)
 {
     while (nSheets > m_sheets.size())
@@ -753,6 +981,14 @@ void TableData::reserve(size_t nSheets, size_t _nCols)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the largest number of rows
+/// occupied by a TableSheet in this TableData
+/// instance.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableData::rows() const
 {
     size_t r = 0;
@@ -766,6 +1002,14 @@ size_t TableData::rows() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the largest number of columns
+/// occupied by a TableSheet in this TableData
+/// instance (excludes empty trailing columns).
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableData::cols() const
 {
     size_t c = 0;
@@ -779,6 +1023,14 @@ size_t TableData::cols() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the largest number of columns
+/// reserved by a TableSheet in this TableData
+/// instance (includes empty trailing columns).
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableData::reserved_cols() const
 {
     size_t c = 0;
@@ -792,18 +1044,39 @@ size_t TableData::reserved_cols() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of sheets in this
+/// TableData instance.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableData::sheets() const
 {
     return m_sheets.size();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Determine, whether this TableData
+/// instance is empty.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableData::empty() const
 {
     return m_sheets.size() == 0 || rows() == 0;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the number of bytes occupied
+/// by this TableData instance.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TableData::getSize() const
 {
     size_t bytes = 0;
@@ -823,6 +1096,15 @@ size_t TableData::getSize() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns a common column type for the
+/// selected columns and sheets.
+///
+/// \param _vCols const VectorIndex&
+/// \param _vSheets const VectorIndex&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
 TableColumn::ColumnType TableData::getType(const VectorIndex& _vCols, const VectorIndex& _vSheets) const
 {
     TableColumn::ColumnType type = TableColumn::TYPE_NONE;
@@ -853,6 +1135,15 @@ TableColumn::ColumnType TableData::getType(const VectorIndex& _vCols, const Vect
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Read a single value from a single cell.
+///
+/// \param row size_t
+/// \param col size_t
+/// \param sheet size_t
+/// \return mu::Value
+///
+/////////////////////////////////////////////////
 mu::Value TableData::read(size_t row, size_t col, size_t sheet) const
 {
     mu::Value retVal;
@@ -869,6 +1160,14 @@ mu::Value TableData::read(size_t row, size_t col, size_t sheet) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Read an array of values from an array
+/// of cells.
+///
+/// \param idx const TableIndices&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
 mu::Array TableData::read(const TableIndices& idx) const
 {
     mu::Array vReturn;
@@ -934,6 +1233,16 @@ mu::Array TableData::read(const TableIndices& idx) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Read an array of values from an array
+/// of cells directly into a target Variable
+/// instance.
+///
+/// \param idx const TableIndices&
+/// \param target mu::Variable*
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::read(const TableIndices& idx, mu::Variable* target) const
 {
     if (empty())
@@ -992,6 +1301,14 @@ void TableData::read(const TableIndices& idx, mu::Variable* target) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Extract a subset of this TableData
+/// instance into a new TableData instance.
+///
+/// \param idx const TableIndices&
+/// \return TableData*
+///
+/////////////////////////////////////////////////
 TableData* TableData::extract(const TableIndices& idx) const
 {
     TableData* _extract = new TableData;
@@ -1000,7 +1317,6 @@ TableData* TableData::extract(const TableIndices& idx) const
     size_t colCount = idx.m_cols.size();
     size_t sheetCount = idx.m_sheets.size();
 
-    #pragma omp parallel for if (rowCount * colCount * sheetCount > 10000)
     for (size_t k = 0; k < sheetCount; k++)
     {
         int s = idx.m_sheets[k];
@@ -1011,6 +1327,7 @@ TableData* TableData::extract(const TableIndices& idx) const
         size_t targetSheet = _extract->sheets();
         _extract->addSheet(m_sheets[s]->m_sheetName, colCount);
 
+        #pragma omp parallel for if (rowCount * colCount > 10000)
         for (size_t j = 0; j < colCount; j++)
         {
             int c = idx.m_cols[j];
@@ -1027,6 +1344,14 @@ TableData* TableData::extract(const TableIndices& idx) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get a reference to an internal
+/// TableSheet instance.
+///
+/// \param sheet size_t
+/// \return TableSheet&
+///
+/////////////////////////////////////////////////
 TableSheet& TableData::getSheet(size_t sheet)
 {
     if (sheet < m_sheets.size())
@@ -1036,6 +1361,14 @@ TableSheet& TableData::getSheet(size_t sheet)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get a const reference to an internal
+/// TableSheet instance.
+///
+/// \param sheet size_t
+/// \return const TableSheet&
+///
+/////////////////////////////////////////////////
 const TableSheet& TableData::getSheet(size_t sheet) const
 {
     if (sheet < m_sheets.size())
@@ -1045,6 +1378,15 @@ const TableSheet& TableData::getSheet(size_t sheet) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write a singleton value into an array
+/// of cells.
+///
+/// \param _value const mu::Value&
+/// \param idx const TableIndices&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::write(const mu::Value& _value, const TableIndices& idx)
 {
     for (size_t k = 0; k < idx.m_sheets.size(); k++)
@@ -1064,6 +1406,15 @@ void TableData::write(const mu::Value& _value, const TableIndices& idx)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Write an array of values into an array
+/// of cells.
+///
+/// \param _values const mu::Array&
+/// \param idx const TableIndices&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::write(const mu::Array& _values, const TableIndices& idx)
 {
     if (_values.size() == 1)
@@ -1205,6 +1556,14 @@ void TableData::write(const mu::Array& _values, const TableIndices& idx)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Erase the elements of an array of
+/// cells.
+///
+/// \param idx const TableIndices&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::erase(const TableIndices& idx)
 {
     // Delete the selected entries
@@ -1229,6 +1588,12 @@ void TableData::erase(const TableIndices& idx)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Clear this TableData instance.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableData::clear()
 {
     m_sheets.clear();

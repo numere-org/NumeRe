@@ -137,6 +137,7 @@ class TableViewer : public wxGrid
         bool isSilentSelection();
         void enableQuotationMarks(bool enable = true);
         void refreshStatusBar();
+        void setRefSheet(size_t sheet);
 
         /////////////////////////////////////////////////
         /// \brief Return the internal name of the

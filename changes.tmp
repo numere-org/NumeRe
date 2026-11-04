@@ -22,3 +22,6 @@ New	It is now possible to define user-specific constants as "environment variabl
 New	Tables are now composed out of multiple sheets rendering them in fact three-dimensional.
 Cleaned	"every()" and "cells()" changed so that using only one value as argument is accepted as a single element in the selected dimension.
 Cleaned	File types providing multiple layers or sheets are now loaded into multiple table sheets.
+Added	Table sheets are now displayed as individual tabs within the data viewer.
+Applied	Table methods have been adapted to cope with table sheets. In most cases, the default is to apply only on the first sheet. Only multi-argument methods like "TAB().avg" do act on the complete table per default.
+New	Table methods for handling sheets have been added.

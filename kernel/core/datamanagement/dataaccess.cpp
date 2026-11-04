@@ -2433,14 +2433,14 @@ static std::string tableMethod_insertSheets(const std::string& sTableName, std::
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
-    size_t sheet = v[0].get().getAsScalarInt() - 1;
+    VectorIndex sheet = _kernel->getMemoryManager().arrayToSheetIndex(v[0].get(), sTableName);
     size_t num = 1;
 
     if (nResults > 1)
         num = v[1].get().getAsScalarInt();
 
     _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).insertSheets(sheet, num)));
+                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).insertSheets(sheet.front(), num)));
     return sResultVectorName;
 }
 
@@ -2574,8 +2574,10 @@ static std::string tableMethod_removeSheets(const std::string& sTableName, std::
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
 
+    VectorIndex sheets = _kernel->getMemoryManager().arrayToSheetIndex(v[0].get(), sTableName);
+
     _kernel->getParser().SetInternalVar(sResultVectorName,
-                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).removeSheets(VectorIndex(v[0].get()))));
+                                        mu::Value(_kernel->getMemoryManager().getTable(sTableName).removeSheets(sheets)));
     return sResultVectorName;
 }
 
@@ -2679,7 +2681,7 @@ static std::string tableMethod_reorderSheets(const std::string& sTableName, std:
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sMethodArguments);
     const mu::StackItem* v = _kernel->getParser().Eval(nResults);
-    vIndex = VectorIndex(v[0].get());
+    vIndex = _kernel->getMemoryManager().arrayToSheetIndex(v[0].get(), sTableName);
 
     if (nResults < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordersheets()", ".reordersheets(", ".reordersheets(");
@@ -2711,24 +2713,24 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     std::map<std::string, TableMethod> mTableMethods;
 
     mTableMethods["aliasof"] = tableMethod_aliasof;
+    mTableMethods["anovaof"] = tableMethod_anova;
+    mTableMethods["binsof"] = tableMethod_binsof;
     mTableMethods["convert"] = tableMethod_convert;
-    mTableMethods["typeof"] = tableMethod_typeof;
-    mTableMethods["describe"] = tableMethod_annotate;
     mTableMethods["categoriesof"] = tableMethod_categories;
     mTableMethods["categorize"] = tableMethod_categorize;
+    mTableMethods["countif"] = tableMethod_counteq;
+    mTableMethods["describe"] = tableMethod_annotate;
     mTableMethods["replacevals"] = tableMethod_replacevals;
     mTableMethods["fndcols"] = tableMethod_findCols;
     mTableMethods["fndsheets"] = tableMethod_findSheets;
-    mTableMethods["countif"] = tableMethod_counteq;
+    mTableMethods["typeof"] = tableMethod_typeof;
     mTableMethods["indexof"] = tableMethod_index;
     mTableMethods["covarof"] = tableMethod_cov;
     mTableMethods["pcorrof"] = tableMethod_pcorr;
     mTableMethods["scorrof"] = tableMethod_scorr;
     mTableMethods["rankof"] = tableMethod_rank;
     mTableMethods["zscoreof"] = tableMethod_zscore;
-    mTableMethods["anovaof"] = tableMethod_anova;
     mTableMethods["kmeansof"] = tableMethod_kmeans;
-    mTableMethods["binsof"] = tableMethod_binsof;
     mTableMethods["insertcells"] = tableMethod_insertBlock;
     mTableMethods["insertcols"] = tableMethod_insertCols;
     mTableMethods["insertrows"] = tableMethod_insertRows;

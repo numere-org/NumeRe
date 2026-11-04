@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "anovaimpl.hpp"
-#include "../datamanagement/memory.hpp"
+#include "../datamanagement/table.hpp"
 
 #include "../io/logger.hpp"
 
