@@ -4236,9 +4236,9 @@ void rotateTable(CommandLineParser& cmdParser)
     Indices _idx;
     double dAlpha = 0.0; // radians
 
-    std::vector<double> source_x;
-    std::vector<double> source_y;
-    std::pair<int,int> finalSize{0,0};
+    std::pair<int,int> finalSize{0, 0};
+    VectorIndex axesIndices;
+    VectorIndex targetAxesIndices;
 
     // Find the target of this operation
     std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
@@ -4260,9 +4260,9 @@ void rotateTable(CommandLineParser& cmdParser)
 
     srcIdx.row.setOpenEndIndex(table.getRows()-1);
     srcIdx.col.setOpenEndIndex(table.getCols()-1);
+    srcIdx.layer.setOpenEndIndex(table.getSheets()-1);
 
-#warning TODO (numere#1#11/02/26): Fix the sheets for image data.
-    if (!_data.isValueLike(srcIdx.col, srcIdx.layer.front(), _accessParser.getDataObject()))
+    if (!_data.isValueLike(srcIdx.col, srcIdx.layer, _accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(),
                           _accessParser.getDataObject()+"(", _accessParser.getDataObject());
 
@@ -4270,37 +4270,15 @@ void rotateTable(CommandLineParser& cmdParser)
     if (cmdParser.getCommand() == "imrot" || cmdParser.getCommand() == "gridrot")
     {
         if (cmdParser.getCommand() == "gridrot")
-        {
-            source_x = mu::real(table.read(srcIdx.row, srcIdx.col.subidx(0, 1), srcIdx.layer.front()).as_cmplx_vector());
-            source_y = mu::real(table.read(srcIdx.row, srcIdx.col.subidx(1, 1), srcIdx.layer.front()).as_cmplx_vector());
-
-            // Remove trailing NANs
-            while (isnan(source_x.back()))
-                source_x.pop_back();
-
-            while (isnan(source_y.back()))
-                source_y.pop_back();
-
-            // Determine the interval range of both axes
-            // and calculate the relations between size and
-            // interval ranges
-            auto source_x_minmax = std::minmax_element(source_x.begin(), source_x.end());
-            auto source_y_minmax = std::minmax_element(source_y.begin(), source_y.end());
-            double dSizeRelation = source_x.size() / (double)source_y.size();
-            double dRangeRelation = fabs(*source_x_minmax.second - *source_x_minmax.first) / fabs(*source_y_minmax.second - *source_y_minmax.first);
-
-            // Warn, if the relations are too different
-            if (fabs(dSizeRelation - dRangeRelation) > 1e-3)
-                NumeReKernel::issueWarning(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_WARN_AXES_NOT_PRESERVED"));
-        }
+            axesIndices = _accessParser.getIndices().col.subidx(0, 2);
 
         _accessParser.getIndices().col = _accessParser.getIndices().col.subidx(2);
     }
 
-    Table& targetTable = _data.getTable(sTargetTable);
-
     // Extract the range (will pass the ownership)
-    Table* _source = table.extractRange(srcIdx.row, srcIdx.col, srcIdx.layer.front());
+    Table* _source = table.extractRange(srcIdx.row, srcIdx.col, srcIdx.layer);
+
+    Table& targetTable = _data.getTable(sTargetTable);
 
     // Remove obsolete entries (needed since new memory model)
     _source->shrink();
@@ -4355,93 +4333,121 @@ void rotateTable(CommandLineParser& cmdParser)
         leftP = (_source->getCols() - finalSize.second) * 0.5;
     }
 
-    // Insert the axes, if necessary
-    if (cmdParser.getCommand() == "imrot")
-    {
-        // Write the x axis
-        for (int i = 0; i < finalSize.first; i++)
-        {
-            if (_idx.row.size() <= (size_t)i)
-                break;
-
-            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), i+1);
-        }
-
-        // Write the y axis
-        for (int i = 0; i < finalSize.second; i++)
-        {
-            if (_idx.row.size() <= (size_t)i)
-                break;
-
-            targetTable.write(_idx.row[i], _idx.col[1], _idx.layer.front(), i+1);
-        }
-
-        _idx.col = _idx.col.subidx(2);
-    }
-    else if (cmdParser.getCommand() == "gridrot")
-    {
-        Point origin_axis(interpolateToGrid(source_x, origin.x, true), interpolateToGrid(source_y, origin.y, true));
-
-        // Rotate "cell" coordinates to old coord sys,
-        // interpolate values and rotate back to obtain
-        // the values of the new coordinates
-        for (int i = 0; i < finalSize.first; i++)
-        {
-            if (_idx.row.size() <= (size_t)i)
-                break;
-
-            Point p(i+topP, origin.y);
-            p.rotate(-dAlpha, origin);
-
-            p.x = interpolateToGrid(source_x, p.x, true);
-            p.y = interpolateToGrid(source_y, p.y, true);
-
-            p.rotate(dAlpha, origin_axis);
-
-            targetTable.write(_idx.row[i], _idx.col[0], _idx.layer.front(), p.x);
-        }
-
-        for (int j = 0; j < finalSize.second; j++)
-        {
-            if (_idx.row.size() <= (size_t)j)
-                break;
-
-            Point p(origin.x, j+leftP);
-            p.rotate(-dAlpha, origin);
-
-            p.x = interpolateToGrid(source_x, p.x, true);
-            p.y = interpolateToGrid(source_y, p.y, true);
-
-            p.rotate(dAlpha, origin_axis);
-
-            targetTable.write(_idx.row[j], _idx.col[1], _idx.layer.front(), p.y);
-        }
-
-        _idx.col = _idx.col.subidx(2);
-    }
-
     // Prepare the needed number of columns
-    table.reserve(_idx.col.subidx(0, finalSize.second).max()+1, _idx.layer.front()+1);
+    targetTable.reserve(_idx.col.subidx(0, finalSize.second).max()+1, _idx.layer.subidx(0, _source->getSheets()).max()+1);
 
-    // Calculate the rotated grid
-    #pragma omp parallel for
-    for (int j = 0; j < finalSize.second; j++)
+    targetAxesIndices = _idx.col.subidx(0, 2);
+    _idx.col = _idx.col.subidx(2);
+
+    for (size_t k = 0; k < _source->getSheets(); k++)
     {
-        if (_idx.col.size() <= (size_t)j)
+        if (_idx.layer[k] < 0)
             continue;
 
-        for (int i = 0; i < finalSize.first; i++)
+        // Insert the axes, if necessary
+        if (cmdParser.getCommand() == "imrot")
         {
-            if (_idx.row.size() <= (size_t)i)
-                break;
+            // Write the x axis
+            for (int i = 0; i < finalSize.first; i++)
+            {
+                if (_idx.row.size() <= (size_t)i)
+                    break;
 
-            // Create a point in rotated source coordinates
-            // and rotate it backwards
-            Point p(j + leftP, i + topP);
-            p.rotate(-dAlpha, origin);
+                targetTable.write(_idx.row[i], targetAxesIndices[0], _idx.layer[k], i+1);
+            }
 
-            // Store the interpolated value in target coordinates
-            table.writeDirect(_idx.row[i], _idx.col[j], _idx.layer.front(), _source->readMemInterpolated(p.y, p.x, srcIdx.layer.front()));
+            // Write the y axis
+            for (int i = 0; i < finalSize.second; i++)
+            {
+                if (_idx.row.size() <= (size_t)i)
+                    break;
+
+                targetTable.write(_idx.row[i], targetAxesIndices[1], _idx.layer[k], i+1);
+            }
+        }
+        else if (cmdParser.getCommand() == "gridrot")
+        {
+            std::vector<double> source_x = mu::real(table.read(srcIdx.row, axesIndices[0], k).as_cmplx_vector());
+            std::vector<double> source_y = mu::real(table.read(srcIdx.row, axesIndices[1], k).as_cmplx_vector());
+
+            // Remove trailing NANs
+            while (isnan(source_x.back()))
+                source_x.pop_back();
+
+            while (isnan(source_y.back()))
+                source_y.pop_back();
+
+            // Determine the interval range of both axes
+            // and calculate the relations between size and
+            // interval ranges
+            auto source_x_minmax = std::minmax_element(source_x.begin(), source_x.end());
+            auto source_y_minmax = std::minmax_element(source_y.begin(), source_y.end());
+            double dSizeRelation = source_x.size() / (double)source_y.size();
+            double dRangeRelation = fabs(*source_x_minmax.second - *source_x_minmax.first)
+                / fabs(*source_y_minmax.second - *source_y_minmax.first);
+
+            // Warn, if the relations are too different
+            if (fabs(dSizeRelation - dRangeRelation) > 1e-3)
+                NumeReKernel::issueWarning(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_WARN_AXES_NOT_PRESERVED"));
+
+            Point origin_axis(interpolateToGrid(source_x, origin.x, true), interpolateToGrid(source_y, origin.y, true));
+
+            // Rotate "cell" coordinates to old coord sys,
+            // interpolate values and rotate back to obtain
+            // the values of the new coordinates
+            for (int i = 0; i < finalSize.first; i++)
+            {
+                if (_idx.row.size() <= (size_t)i)
+                    break;
+
+                Point p(i+topP, origin.y);
+                p.rotate(-dAlpha, origin);
+
+                p.x = interpolateToGrid(source_x, p.x, true);
+                p.y = interpolateToGrid(source_y, p.y, true);
+
+                p.rotate(dAlpha, origin_axis);
+
+                targetTable.write(_idx.row[i], targetAxesIndices[0], _idx.layer[k], p.x);
+            }
+
+            for (int j = 0; j < finalSize.second; j++)
+            {
+                if (_idx.row.size() <= (size_t)j)
+                    break;
+
+                Point p(origin.x, j+leftP);
+                p.rotate(-dAlpha, origin);
+
+                p.x = interpolateToGrid(source_x, p.x, true);
+                p.y = interpolateToGrid(source_y, p.y, true);
+
+                p.rotate(dAlpha, origin_axis);
+
+                targetTable.write(_idx.row[j], targetAxesIndices[1], _idx.layer[k], p.y);
+            }
+        }
+
+        // Calculate the rotated grid
+        #pragma omp parallel for
+        for (int j = 0; j < finalSize.second; j++)
+        {
+            if (_idx.col.size() <= (size_t)j)
+                continue;
+
+            for (int i = 0; i < finalSize.first; i++)
+            {
+                if (_idx.row.size() <= (size_t)i)
+                    break;
+
+                // Create a point in rotated source coordinates
+                // and rotate it backwards
+                Point p(j + leftP, i + topP);
+                p.rotate(-dAlpha, origin);
+
+                // Store the interpolated value in target coordinates
+                table.writeDirect(_idx.row[i], _idx.col[j], _idx.layer[k], _source->readMemInterpolated(p.y, p.x, k));
+            }
         }
     }
 

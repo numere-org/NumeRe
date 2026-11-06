@@ -1900,6 +1900,7 @@ std::string CodeParser::expandReturnTypes(std::string sReturnType)
     replaceAll(sReturnType, "SCT", "dictstruct");
     replaceAll(sReturnType, "CAT", "category");
     replaceAll(sReturnType, "TIM", "datetime");
+    replaceAll(sReturnType, "ANY", "any");
     replaceAll(sReturnType, "ARG", "any");
 
     return sReturnType;
