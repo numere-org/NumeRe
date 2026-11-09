@@ -4339,7 +4339,7 @@ void rotateTable(CommandLineParser& cmdParser)
     targetAxesIndices = _idx.col.subidx(0, 2);
     _idx.col = _idx.col.subidx(2);
 
-    for (size_t k = 0; k < _source->getSheets(); k++)
+    for (int k = 0; k < _source->getSheets(); k++)
     {
         if (_idx.layer[k] < 0)
             continue;

@@ -4132,6 +4132,7 @@ std::vector<std::string> Plot::separateFunctionsAndData()
 /// \return void
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#1#11/05/26): This function needs to be extended for table sheets
 void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 {
     size_t typeCounter = 0;
