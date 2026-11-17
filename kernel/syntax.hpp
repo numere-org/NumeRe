@@ -87,6 +87,8 @@ class NumeReSyntax
         std::vector<SyntaxBlockDefinition> splitDefs(std::string sDefString);
         bool matchItem(const std::vector<std::string>& vVector, const std::string& sString);
         void prepareAutoCompMaps();
+        void highlightSegment(const std::string& sCommandLine, std::string& colors, size_t from = 0, size_t len = std::string::npos);
+        void highlightInlineCodeSegments(const std::string& sCommandLine, std::string& colors, size_t from = 0, size_t len = std::string::npos);
     public:
         enum SyntaxColors
         {

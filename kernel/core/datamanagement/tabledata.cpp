@@ -376,7 +376,7 @@ size_t TableSheet::cols() const
 {
     for (int j = m_columns.size() - 1; j >= 0; j--)
     {
-        if (m_columns[j] && m_columns[j]->size())
+        if (m_columns[j])
             return j+1;
     }
 
@@ -848,7 +848,7 @@ void TableSheet::write(const mu::Array& _values, const VectorIndex& _rows, const
 /////////////////////////////////////////////////
 bool TableSheet::empty() const
 {
-    return !m_columns.size() || !rows();
+    return !cols();
 }
 
 
@@ -1066,7 +1066,7 @@ size_t TableData::sheets() const
 /////////////////////////////////////////////////
 bool TableData::empty() const
 {
-    return m_sheets.size() == 0 || rows() == 0;
+    return m_sheets.size() == 0 || cols() == 0;
 }
 
 

@@ -21,6 +21,7 @@
 #include "matfuncs.hpp"
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
+#include "../procedure/mangler.hpp"
 #include "../utils/stringtools.hpp"
 #include "../io/logger.hpp"
 #include <list>
@@ -86,7 +87,7 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     // DEPRECATED: Declared at v1.1.8rc
-    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
+    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", Mangler::demangleExpression(sCmd)));
 
     // Create the cache
     MatOpCache _cache;
@@ -141,6 +142,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 bAllowMatrixClearing = true;
                 _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                 _idx.col = VectorIndex(0, VectorIndex::OPEN_END);
+                _idx.layer = VectorIndex(0);
             }
         }
         else if (sTargetName[parens] == '{')
@@ -154,6 +156,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
                 bAllowMatrixClearing = true;
                 _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                 _idx.col = VectorIndex(0, VectorIndex::INVALID);
+                _idx.layer = VectorIndex(0);
             }
         }
 
@@ -172,6 +175,7 @@ bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManage
         sTargetName = "matrix";
         _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
         _idx.col = VectorIndex(0, VectorIndex::OPEN_END);
+        _idx.layer = VectorIndex(0);
 
         if (!_data.isTable("matrix("))
             _data.addTable("matrix", _option);
@@ -1366,6 +1370,7 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data)
 {
     Indices _idx;
+    _idx.layer = VectorIndex(0LL);
     string sI[2] = {"<<NONE>>", "<<NONE>>"};
     string sJ[2] = {"<<NONE>>", "<<NONE>>"};
     string sArgument = "";

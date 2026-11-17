@@ -27,6 +27,7 @@
 #include "maths/matrixoperations.hpp"
 #include "maths/odesolver.hpp"
 #include "plotting/plotting.hpp"
+#include "procedure/mangler.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
@@ -942,17 +943,17 @@ static string createListDirectoryHeader(const string& sPathName, const string& s
     if (sHeader.length() > nFirstColLength)
     {
         sHeader += "$";
-        sHeader.append(nFirstColLength, '-');
+        sHeader += strRepeat("─", nFirstColLength);
     }
     else
-        sHeader.append(nFirstColLength - sHeader.length(), '-');
+        sHeader += strRepeat("─", nFirstColLength - sHeader.length());
 
     sHeader += "  <" + toUpperCase(sLangString) + ">  ";
 
     if (sHeader.find('$') != string::npos)
-        sHeader.append(nWindowLength - 4 - sHeader.length() + sHeader.rfind('$'), '-');
+        sHeader += strRepeat("─", nWindowLength - 4 - countUnicodePoints(sHeader) + sHeader.rfind('$'));
     else
-        sHeader.append(nWindowLength - 4 - sHeader.length(), '-');
+        sHeader += strRepeat("─", nWindowLength - 4 - countUnicodePoints(sHeader));
 
     return sHeader;
 }
@@ -1176,10 +1177,9 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
     make_hline();
     NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")));
     make_hline();
+
     if (!_functions.getDefinedFunctions())
-    {
         NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
-    }
     else
     {
         // Print all custom defined functions on the terminal
@@ -1190,15 +1190,15 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 
             // Print the comment, if it is available
             if (_functions.getComment(i).length())
-            {
                 NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION", _functions.getComment(i)), _option, true, 0, 25) + "\n"); //10
-            }
 
             // Print the actual implementation of the function
             NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
+
         NumeReKernel::printPreFmt("|   -- " + toString(_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
     }
+
     NumeReKernel::toggleTableStatus();
     make_hline();
     return;
@@ -1292,7 +1292,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
         nBytesSum += table.getSize();
     }
 
-    NumeReKernel::printPreFmt("|   " + strfill("-", nWinWidth - 4, '-') + "\n");
+    NumeReKernel::printPreFmt("|   " + strfills("─", nWinWidth - 4, "─") + "\n");
 
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
@@ -4448,7 +4448,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 
     // DEPRECATED: Declared at v1.1.2rc1
     if (findCommand(sCmd).sString == "retoque")
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
+        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", Mangler::demangleExpression(sCmd)));
 
     DataAccessParser _access(sCmd, false);
 

@@ -20,6 +20,7 @@
 
 #include "plugins.hpp"
 #include "../kernel.hpp"
+#include "procedure/mangler.hpp"
 
 /*
  * Plugin zur Erzeugung von Histogramm-Rubriken
@@ -1928,7 +1929,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
     std::string sCountMethod = cmdParser.getParameterValue("counts");
 
     if (cmdParser.hasParam("sum"))
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
 
     HistogramParameters _histParams;
 
@@ -1973,7 +1974,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     if ((cmdParser.hasParam("cols") || cmdParser.hasParam("c")) && !isValidIndexSet(_idx))
     {
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
         long long int nDataRow = VectorIndex::INVALID;
         long long int nDataRowFinal = 0;
 
@@ -2083,7 +2084,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
         if (sTargettable.length())
         {
-            NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+            NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
             bWriteToCache = true;
 
             if (sTargettable.find('(') == std::string::npos)
@@ -2095,10 +2096,11 @@ void plugin_histogram(CommandLineParser& cmdParser)
             sTargettable.erase(sTargettable.find('('));
             _tIdx.row = VectorIndex(0, VectorIndex::OPEN_END);
             _tIdx.col = VectorIndex(_data.getTable(sTargettable).getCols(), VectorIndex::OPEN_END);
+            _tIdx.layer = VectorIndex(0);
         }
         else if (cmdParser.hasParam("tocache") || cmdParser.hasParam("totable"))
         {
-            NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+            NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
             bWriteToCache = true;
 
             if (!sTargettable.length())
@@ -2106,6 +2108,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
                 sTargettable = "table";
                 _tIdx.row = VectorIndex(0, VectorIndex::OPEN_END);
                 _tIdx.col = VectorIndex(_data.getTable("table").getCols(), VectorIndex::OPEN_END);
+                _tIdx.layer = VectorIndex(0);
             }
         }
     }
@@ -2115,12 +2118,12 @@ void plugin_histogram(CommandLineParser& cmdParser)
         _histParams.sSavePath = cmdParser.getFileParameterValueForSaving(".dat", NumeReKernel::getInstance()->getSettings().getSavePath(), "");
     else if (cmdParser.hasParam("save"))
     {
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
         _histParams.sSavePath = cmdParser.getParsedParameterValueAsString("save", "", true, true);
     }
     else if (cmdParser.hasParam("export"))
     {
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
         _histParams.sSavePath = cmdParser.getParsedParameterValueAsString("export", "", true, true);
     }
 

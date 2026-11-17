@@ -2924,7 +2924,7 @@ void NumeReEditor::sortSelection(bool ascending)
 /// \return char
 ///
 /////////////////////////////////////////////////
-static char applyFunctionHeuristics(const std::string& func)
+/*static char applyFunctionHeuristics(const std::string& func)
 {
     // Check the following special cases
     if (func == "time" || func == "clock" || func == "to_time")
@@ -2948,7 +2948,7 @@ static char applyFunctionHeuristics(const std::string& func)
         return 0; // Not detectable here
 
     return 'f';
-}
+}*/
 
 
 /////////////////////////////////////////////////
@@ -2959,7 +2959,7 @@ static char applyFunctionHeuristics(const std::string& func)
 /// \return char
 ///
 /////////////////////////////////////////////////
-static char applyCommandHeuristics(const std::string& command)
+/*static char applyCommandHeuristics(const std::string& command)
 {
     // Find the key for the corresponding language string
     std::string sKey = wxToUtf8(_guilang.getKey("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(command) + "_[*]"));
@@ -2983,7 +2983,7 @@ static char applyCommandHeuristics(const std::string& command)
         return 0; // Not detectable here
 
     return 'f';
-}
+}*/
 
 
 /////////////////////////////////////////////////
@@ -2994,7 +2994,7 @@ static char applyCommandHeuristics(const std::string& command)
 /// \return char
 ///
 /////////////////////////////////////////////////
-static char applyValueHeuristics(std::string val)
+/*static char applyValueHeuristics(std::string val)
 {
     val = getNextArgument(val);
 
@@ -3050,7 +3050,7 @@ static char applyValueHeuristics(std::string val)
         return val[0];
 
     return 'f';
-}
+}*/
 
 
 /////////////////////////////////////////////////

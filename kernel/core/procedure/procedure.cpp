@@ -20,6 +20,7 @@
 #include "procedure.hpp"
 #include "mangler.hpp"
 #include "../../kernel.hpp"
+#include "../plotting/plotting.hpp"
 #include "procedurevarfactory.hpp"
 #include <memory>
 #define MAX_PROCEDURE_STACK_SIZE 2000000
@@ -177,10 +178,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
     {
-        if (sCurrentCommand != "for"
-            && sCurrentCommand != "if"
-            && sCurrentCommand != "while"
-            && sCurrentCommand != "switch"
+        if ((!isFlowCtrlStatement(sCurrentCommand) || getCurrentBlockDepth() > 0)
+            && !Plot::isPlottingCommand(sCurrentCommand)
             && sCurrentCommand != "define"
             && sCurrentCommand != "redef"
             && sCurrentCommand != "redefine"
@@ -2575,8 +2574,8 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
         {
             // Catch and convert parser errors
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): '"
-                                      + Mangler::demangleExpression(e.GetExpr()) + "'");
+            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): `"
+                                      + Mangler::demangleExpression(e.GetExpr()) + "`");
         }
         catch (SyntaxError& e)
         {
@@ -2592,21 +2591,21 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             {
                 // Display custom errors with their message
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: `" + e.getToken() + "`");
             }
             else if (e.errorcode == SyntaxError::ASSERTION_ERROR)
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: '"
-                                          + Mangler::demangleExpression(e.getExpr()) + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: `"
+                                          + Mangler::demangleExpression(e.getExpr()) + "`");
             }
             else
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): '"
-                                          + Mangler::demangleExpression(e.getExpr()) + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): `"
+                                          + Mangler::demangleExpression(e.getExpr()) + "`");
             }
         }
         catch (...)

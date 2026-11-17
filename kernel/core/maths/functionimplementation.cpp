@@ -7306,7 +7306,7 @@ mu::Array tstfnc_verifyValue(const mu::Array& result, const mu::Array& expected,
     }
 
     if (sDiagString.length())
-        mu::warning("Verification failure in verifyval(result,expected,fTol) within operation result == expected\nFailing components:\n" + sDiagString);
+        mu::warning("Verification failure in `verifyval(result,expected,fTol)` within operation `result == expected`\nFailing components:\n" + sDiagString);
 
     return testResult;
 }
@@ -7366,7 +7366,7 @@ mu::Array tstfnc_verifyNeq(const mu::Array& result, const mu::Array& notExpected
     }
 
     if (sDiagString.length())
-        mu::warning("Verification failure in verifyneq(result,notexpected,fTol) within operation result != notexpected\nFailing components:\n" + sDiagString);
+        mu::warning("Verification failure in `verifyneq(result,notexpected,fTol)` within operation `result != notexpected`\nFailing components:\n" + sDiagString);
 
     return testResult;
 }
@@ -7429,9 +7429,9 @@ mu::Array tstfnc_verifyRange(const mu::Array& result, const mu::Array& lowerBoun
     if (sDiagString.length())
     {
         if (incl)
-            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower <= result && result <= upper\nFailing components:\n" + sDiagString);
+            mu::warning("Verification failure in `verifyrange(result,lower,upper)` within operation `lower <= result && result <= upper`\nFailing components:\n" + sDiagString);
         else
-            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower < result && result < upper\nFailing components:\n" + sDiagString);
+            mu::warning("Verification failure in `verifyrange(result,lower,upper)` within operation `lower < result && result < upper`\nFailing components:\n" + sDiagString);
     }
 
     return testResult;

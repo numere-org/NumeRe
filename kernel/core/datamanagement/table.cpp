@@ -184,6 +184,7 @@ Table& Table::operator=(const Table& other)
 /////////////////////////////////////////////////
 bool Table::reserve(size_t _nCols, size_t _nSheets)
 {
+    g_logger.debug("Reserving " + toString(_nCols) + " columns in " + toString(_nSheets) + " sheets.");
     return Allocate(_nCols, _nSheets);
 }
 
@@ -3295,7 +3296,7 @@ std::vector<std::complex<double>> Table::size(const VectorIndex& _everyIdx, cons
     {
         int s = _slicesIdx[k];
 
-        if (s < 0 || s >= m_data.sheets())
+        if (s < 0 || (size_t)s >= m_data.sheets())
             continue;
 
         const TableSheet& currSheet = m_data.getSheet(s);
@@ -3552,7 +3553,10 @@ std::vector<size_t> Table::findCols(const std::vector<std::string>& vColNames, s
 {
     std::vector<size_t> vColIndices;
 
-    if (inSheet >= m_data.sheets() || !m_data.getSheet(inSheet).rows())
+    if (autoCreate && inSheet >= m_data.sheets())
+        m_data.reserve(inSheet+1);
+
+    if (inSheet >= m_data.sheets())
         return vColIndices;
 
     TableSheet& sheet = m_data.getSheet(inSheet);

@@ -512,6 +512,7 @@ std::vector<int> toIntVector(std::string sString);
 std::string condenseText(const std::string& sText);
 std::string truncString(const std::string& sText, size_t nMaxChars);
 std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false);
+std::string strfills(const std::string& sString, size_t nWidth, const std::string& sFill = " ", bool limit = false);
 std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ');
 
 void StripSpaces(std::string&);

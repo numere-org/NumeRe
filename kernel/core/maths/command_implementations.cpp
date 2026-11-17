@@ -30,6 +30,7 @@
 #include "wavelet.hpp"
 #include "filtering.hpp"
 #include "../AudioLib/audiofile.hpp"
+#include "../procedure/mangler.hpp"
 #include "../../kernel.hpp"
 #include "../../../network/http.h"
 
@@ -963,7 +964,8 @@ bool differentiate(CommandLineParser& cmdParser)
             // Shall the x values be calculated?
             if (cmdParser.hasParam("xvals"))
             {
-                NumeReKernel::getInstance()->issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+                NumeReKernel::getInstance()->issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED",
+                                                                    Mangler::demangleExpression(cmdParser.getCommandLine())));
 
                 // The x values are approximated to be in the
                 // middle of the two samplex
@@ -2679,9 +2681,11 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 
     mu::Array xAxis = _dataView.getAxis(0);
     mu::Array yAxis;
+    double axisMax = xAxis.call("max").get(0).getNum().asF64();
+    double axisMin = xAxis.call("min").get(0).getNum().asF64();
 
-    _fft.dNyquistFrequency[0] = _fft.lines / (xAxis.back() - xAxis.front()).getNum().asF64() / 2.0;
-    _fft.dTimeInterval[0] = (_fft.lines - 1) / (xAxis.call("max").front().getNum().asF64() - xAxis.call("min").front().getNum().asF64());
+    _fft.dNyquistFrequency[0] = _fft.lines / (axisMax - axisMin) / 2.0;
+    _fft.dTimeInterval[0] = (_fft.lines - 1) / (axisMax - axisMin);
 
     if (bIs2DFFT)
     {
@@ -2691,9 +2695,11 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             _fft.cols--;
 
         int collines = yAxis.call("num").getAsScalarInt();
+        axisMax = yAxis.call("max").get(0).getNum().asF64();
+        axisMin = yAxis.call("min").get(0).getNum().asF64();
 
-        _fft.dNyquistFrequency[1] = collines / (yAxis.back() - yAxis.front()).getNum().asF64() / 2.0;
-        _fft.dTimeInterval[1] = (collines - 1) / (yAxis.call("max").front().getNum().asF64() - yAxis.call("min").front().getNum().asF64());;
+        _fft.dNyquistFrequency[1] = collines / (axisMax - axisMin) / 2.0;
+        _fft.dTimeInterval[1] = (collines - 1) / (axisMax - axisMin);
     }
 
     // Check the dimensions of the input data
@@ -3493,13 +3499,13 @@ bool readAudioFile(CommandLineParser& cmdParser)
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "");
     std::string sAudioFile = cmdParser.getExprAsFileName(".wav");
-    Table& targetTable = _data.getTable(sTarget);
 
     g_logger.info("Load audiofile '" + sAudioFile + "'.");
 
     // Read the whole table or only the metadata
     if (sTarget.length())
     {
+        Table& targetTable = _data.getTable(sTarget);
         std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
         if (!audiofile || !audiofile->isValid())
@@ -3856,7 +3862,8 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
     Indices& _idx = _accessParser.getIndices();
-    Table& table = _data.getTable(_accessParser.getDataObject());
+    const Table& table = _data.getTable(_accessParser.getDataObject());
+    Table& targetTable = _data.getTable(sTargetCache);
 
     if (!_data.isValueLike(_idx.col, _idx.layer.front(), _accessParser.getDataObject()))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(",
@@ -3895,32 +3902,32 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     if (_target.col.isOpenEnd())
         _target.col.setRange(0, _target.col.front() + _result.GetNy()/2 + 1);
 
-    table.reserve(_target.col.max()+1, _target.layer.front()+1);
+    targetTable.reserve(_target.col.max()+1, _target.layer.front()+1);
 
     // Write the time axis
     for (int i = 0; i < _result.GetNx(); i++)
-        table.write(_target.row[i],
-                    _target.col.front(),
-                    _target.layer.front(),
-                    dXmin + i * dSampleSize);
+        targetTable.write(_target.row[i],
+                          _target.col.front(),
+                          _target.layer.front(),
+                          dXmin + i * dSampleSize);
 
     // Define headline
-    table.setHeadLineElement(_target.col.front(),
-                             _target.layer.front(),
-                             _data.getHeadLineElement(_idx.col.front(), _idx.layer.front(), _accessParser.getDataObject()));
+    targetTable.setHeadLineElement(_target.col.front(),
+                                   _target.layer.front(),
+                                   _data.getHeadLineElement(_idx.col.front(), _idx.layer.front(), _accessParser.getDataObject()));
     dSampleSize = 2 * (dFmax - dFmin) / ((double)_result.GetNy() - 1.0);
 
     // Write the frequency axis
     for (int i = 0; i < _result.GetNy() / 2; i++)
-        table.write(_target.row[i],
-                    _target.col[1],
-                    _target.layer.front(),
-                    dFmin + i * dSampleSize); // Fourier f
+        targetTable.write(_target.row[i],
+                          _target.col[1],
+                          _target.layer.front(),
+                          dFmin + i * dSampleSize); // Fourier f
 
-    table.convertColumns(_target.col.subidx(0, 2), _target.layer.front(), "value.f64");
+    targetTable.convertColumns(_target.col.subidx(0, 2), _target.layer.front(), "value.f64");
 
     // Define headline
-    table.setHeadLineElement(_target.col[1], _target.layer.front(), "f [Hz]");
+    targetTable.setHeadLineElement(_target.col[1], _target.layer.front(), "f [Hz]");
 
     // Write first row in slow mode for pre-allocation
     for (int j = 0; j < _result.GetNy() / 2; j++)
@@ -3929,18 +3936,18 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
             continue;
 
         // Pre-allocate, first row index has to be valid
-        table.write(_target.row.front(),
-                    _target.col[j+2],
-                    _target.layer.front(),
-                    _result[(j + _result.GetNy() / 2)*_result.GetNx()]);
+        targetTable.write(_target.row.front(),
+                          _target.col[j+2],
+                          _target.layer.front(),
+                          _result[(j + _result.GetNy() / 2)*_result.GetNx()]);
 
         // Update the headline
-        table.setHeadLineElement(_target.col[j+2],
+        targetTable.setHeadLineElement(_target.col[j+2],
                                  _target.layer.front(),
                                  "A(f(" + toString(j + 1) + "))");
     }
 
-    table.convertColumns(_target.col.subidx(2, _result.GetNy()), _target.layer.front(), "value.f64");
+    targetTable.convertColumns(_target.col.subidx(2, _result.GetNy()), _target.layer.front(), "value.f64");
 
     // Write the STFA map in fast mode
     #pragma omp parallel for
@@ -3954,7 +3961,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
             if (_target.row[i] == VectorIndex::INVALID)
                 break;
 
-            table.writeUnsafe(_target.row[i],
+            targetTable.writeUnsafe(_target.row[i],
                               _target.col[j+2],
                               _target.layer.front(),
                               _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
@@ -4231,7 +4238,7 @@ void rotateTable(CommandLineParser& cmdParser)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-    Table& table = _data.getTable(_accessParser.getDataObject());
+    const Table& table = _data.getTable(_accessParser.getDataObject());
 
     Indices _idx;
     double dAlpha = 0.0; // radians
@@ -4334,7 +4341,8 @@ void rotateTable(CommandLineParser& cmdParser)
     }
 
     // Prepare the needed number of columns
-    targetTable.reserve(_idx.col.subidx(0, finalSize.second).max()+1, _idx.layer.subidx(0, _source->getSheets()).max()+1);
+    targetTable.reserve(_idx.col.subidx(0, finalSize.second+2).max()+1,
+                        _idx.layer.subidx(0, _source->getSheets()).max()+1);
 
     targetAxesIndices = _idx.col.subidx(0, 2);
     _idx.col = _idx.col.subidx(2);
@@ -4428,7 +4436,9 @@ void rotateTable(CommandLineParser& cmdParser)
             }
         }
 
-        // Calculate the rotated grid
+        // Calculate the rotated grid. Parallelisation with Table.writeDirect is
+        // possible here, because there is a separate thread for each column, so
+        // there is no race condition for the values in a single column.
         #pragma omp parallel for
         for (int j = 0; j < finalSize.second; j++)
         {
@@ -4446,15 +4456,15 @@ void rotateTable(CommandLineParser& cmdParser)
                 p.rotate(-dAlpha, origin);
 
                 // Store the interpolated value in target coordinates
-                table.writeDirect(_idx.row[i], _idx.col[j], _idx.layer[k], _source->readMemInterpolated(p.y, p.x, k));
+                targetTable.writeDirect(_idx.row[i], _idx.col[j], _idx.layer[k], _source->readMemInterpolated(p.y, p.x, k));
             }
         }
     }
 
     // clear the memory instance
     delete _source;
-    table.markModified();
-    table.shrink();
+    targetTable.markModified();
+    targetTable.shrink();
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));

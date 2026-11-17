@@ -379,11 +379,10 @@ struct NumeReTask
 /// the "windows" in the console.
 ///
 /// \param sString const std::string&
-/// \param cHeadLineSep char
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-inline std::string sectionHeadline(const std::string& sString, char cHeadLineSep = '-')
+inline std::string sectionHeadline(const std::string& sString)
 {
     std::string sSectionHeadline = "|\n|   " + toUpperCase(sString);
 
@@ -392,8 +391,9 @@ inline std::string sectionHeadline(const std::string& sString, char cHeadLineSep
     else
         sSectionHeadline += " ";
 
-    sSectionHeadline.append(NumeReKernel::nLINE_LENGTH-countUnicodePoints(sSectionHeadline), cHeadLineSep);
+    sSectionHeadline += strRepeat("─", NumeReKernel::nLINE_LENGTH-countUnicodePoints(sSectionHeadline));
     sSectionHeadline += "\n";
+
     return sSectionHeadline;
 }
 

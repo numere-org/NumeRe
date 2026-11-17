@@ -501,11 +501,13 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size() - 1);
             _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.col.size() - 1);
+            _iTargetIndex.layer = VectorIndex(0LL, _iSourceIndex.layer.size() - 1);
         }
         else
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size() - 1);
             _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.row.size() - 1);
+            _iTargetIndex.layer = VectorIndex(0LL, _iSourceIndex.layer.size()-1);
         }
     }
     else if (_iTargetIndex.row.size())
@@ -989,7 +991,7 @@ bool readImage(CommandLineParser& cmdParser)
         if (sChannels == "grey")
             _table.setSheetName(s, "Grey");
         else if (k < sChannels.length())
-            _table.setSheetName(s, "Channel " + sChannels[k]);
+            _table.setSheetName(s, std::string("Channel ") + sChannels[k]);
     }
 
     _table.convertColumns(_idx.col.subidx(0, 2), _idx.layer, "value.ui32");

@@ -268,7 +268,7 @@ wxString GridNumeReTable::GetValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols(m_currentSheet))
         return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, m_currentSheet, row)));
-    else if (row - m_numHeadLines >= (int)_table.getRows(m_currentSheet) || col >= (int)_table.getCols(m_currentSheet))
+    else if (row - m_numHeadLines >= std::max((int)_table.getRows(m_currentSheet), 1) || col >= (int)_table.getCols(m_currentSheet))
         return "";
     else if (!m_showQMarks)
     {
@@ -295,7 +295,7 @@ wxString GridNumeReTable::GetEditableValue(int row, int col)
 {
     if (row < m_numHeadLines && col < (int)_table.getCols(m_currentSheet))
         return wxFromUtf8(ensureValidUtf8(_table.getCleanHeadPart(col, m_currentSheet, row)));
-    else if (row - m_numHeadLines >= (int)_table.getRows(m_currentSheet) || col >= (int)_table.getCols(m_currentSheet))
+    else if (row - m_numHeadLines >= std::max((int)_table.getRows(m_currentSheet), 1) || col >= (int)_table.getCols(m_currentSheet))
         return "";
     else
         return wxFromUtf8(ensureValidUtf8(replaceControlCharacters(_table.getValueAsInternalString(getRow(row), col, m_currentSheet))));

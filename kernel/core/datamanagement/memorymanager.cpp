@@ -1438,6 +1438,10 @@ void MemoryManager::copyTable(const std::string& source, const std::string& targ
 /////////////////////////////////////////////////
 void MemoryManager::copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx)
 {
+    // Create the target table, if it does not exist
+    if (!exists(target.substr(0, target.find('('))))
+        addTable(target, NumeReKernel::getInstance()->getSettings());
+
     Table& sourceTable = getTable(source);
     Table& targetTable = getTable(target);
 
@@ -1450,10 +1454,6 @@ void MemoryManager::copyTable(const std::string& source, const Indices& sourceId
 
     // Get the extract as a table
     NumeRe::TableView extract = sourceTable.extractView(source, sourceIdx.row, sourceIdx.col, sourceIdx.layer);
-
-    // Create the target table, if it does not exist
-    if (!exists(target.substr(0, target.find('('))))
-        addTable(target, NumeReKernel::getInstance()->getSettings());
 
     // Insert the copied table at the new location
     targetTable.insertCopiedView(extract, targetIdx.row, targetIdx.col, targetIdx.layer, false);

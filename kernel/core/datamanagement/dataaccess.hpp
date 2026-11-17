@@ -185,6 +185,33 @@ class DataView
         }
 
         /////////////////////////////////////////////////
+        /// \brief Returns the datagrid dimensions. Only
+        /// meaningful for DataViews containing tables.
+        ///
+        /// \return std::vector<size_t>
+        ///
+        /////////////////////////////////////////////////
+        std::vector<size_t> getDataGridDimensions() const
+        {
+            if (isTable())
+                return m_access.getDataGridDimensions();
+
+            return m_array.getDimSizes();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the table access indices. Only
+        /// meaningful for table accesses.
+        ///
+        /// \return Indices&
+        ///
+        /////////////////////////////////////////////////
+        Indices& getTableIndices()
+        {
+            return m_access.getIndices();
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Returns the table access indices. Only
         /// meaningful for table accesses.
         ///
@@ -209,6 +236,7 @@ class DataView
         }
 
         bool isValueLike() const;
+        bool isDataTime(const VectorIndex& cols, const VectorIndex& layers = VectorIndex(0)) const;
         bool isValid() const;
 
         mu::Array getAxis(size_t axis) const;

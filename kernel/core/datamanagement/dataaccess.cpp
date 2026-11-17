@@ -347,9 +347,40 @@ void DataView::sortTable()
 bool DataView::isValueLike() const
 {
     if (isTable())
-        return m_table->isValueLike(m_access.getIndices().col, m_access.getIndices().layer);
+        return m_table->isValueLike(m_access.getIndices().col.subidx(m_axisCount),
+                                    m_access.getIndices().layer);
 
-    return m_array.getCommonType() == mu::TYPE_NUMERICAL || m_array.getCommonType() == mu::TYPE_GENERATOR;
+    // To cope with clusters, explictly calculate the common type
+    mu::DataType commonType = mu::TYPE_VOID;
+    m_array.getType(commonType);
+
+    return commonType == mu::TYPE_NUMERICAL || commonType == mu::TYPE_GENERATOR;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the selected columns
+/// contain a datetime type.
+///
+/// \param cols const VectorIndex&
+/// \param layers const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DataView::isDataTime(const VectorIndex& cols, const VectorIndex& layers) const
+{
+    if (isTable())
+        return m_table->getType(m_access.getIndices().col.subidx(m_axisCount).get(cols),
+                                m_access.getIndices().layer.get(layers)) == TableColumn::TYPE_DATETIME;
+
+    mu::Array arr = get(VectorIndex(0, VectorIndex::OPEN_END), cols, layers);
+
+    // To cope with clusters, explictly calculate the common type
+    mu::DataType commonType = mu::TYPE_VOID;
+    arr.getType(commonType);
+
+    return commonType == mu::TYPE_NUMERICAL
+        && arr.getCommonNumericalType() == mu::DATETIME;
 }
 
 
@@ -380,7 +411,7 @@ bool DataView::isValid() const
 /////////////////////////////////////////////////
 mu::Array DataView::getAxis(size_t axis) const
 {
-    if (isTable() && m_axisCount > axis)
+    if (isTable() && axis < m_axisCount)
     {
         const Indices& _idx = m_access.getIndices();
         return m_table->read(_idx.row, _idx.col.subidx(axis, 1), _idx.layer);
@@ -405,8 +436,10 @@ bool DataView::reserveAxes(size_t axisCount, bool asDataGrid)
 {
     if (isTable() && !m_axisCount && cols() > 1)
     {
+        g_logger.debug("Requested " + toString(axisCount) + " axes for " + toString(cols()) + " columns with datagriddim " + toString(m_access.getDataGridDimensions()[1]) + ".");
         bool isTuple = cols() == 3 && !asDataGrid;
-        bool isGrid = 2+m_access.getDataGridDimensions()[1] <= cols() && asDataGrid;
+        size_t colGridDim = m_access.getDataGridDimensions()[1];
+        bool isGrid = abs(2+(int64_t)colGridDim - (int64_t)cols()) < 0.1 * colGridDim && asDataGrid;
 
         if (axisCount == 1 || (axisCount == 2 && (isGrid || isTuple)))
         {
@@ -464,6 +497,10 @@ mu::Array DataView::get(const VectorIndex& rows, const VectorIndex& cols, const 
                              _idx.col.subidx(m_axisCount).get(cols),
                              _idx.layer.get(layers));
     }
+
+    rows.setOpenEndIndex(m_array.rows()-1);
+    cols.setOpenEndIndex(m_array.cols()-1);
+    layers.setOpenEndIndex(m_array.layers()-1);
 
     std::vector<mu::Array> indices({rows.getVector(), cols.getVector(), layers.getVector()});
     return m_array.call("submat", mu::MultiArgFuncParams(&indices[0], 3));
@@ -652,7 +689,7 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
         // Try to handle the assignment operator shortcut
         if (eq_pos != std::string::npos)
         {
-            StringView target(sLine, 0, eq_pos);
+           StringView target(sLine, 0, eq_pos);
             target.strip();
 
             // Direct assignment shortcut
@@ -788,7 +825,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
     // handle MAF methods. sEntity already has "(" at its back
     while ((nPos = sLine.find(sEntity + ").", nPos)) != std::string::npos)
     {
-        if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~'))
+        if (isInQuotes(sLine, nPos, true) || (nPos && (!isDelimiter(sLine[nPos - 1]) || sLine[nPos - 1] == '~')))
         {
             nPos++;
             continue;
@@ -811,7 +848,7 @@ void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryM
         nPos = sLine.find(sEntity, nPos);
 
         // Ensure that this is delimited occurence
-        if (nPos && ((!isDelimiter(sLine[nPos - 1]) && sLine[nPos - 1] != '~') || isInQuotes(sLine, nPos, true)))
+        if (nPos && ((!isDelimiter(sLine[nPos - 1]) || sLine[nPos - 1] == '~') || isInQuotes(sLine, nPos, true)))
         {
             nPos++;
             continue;
@@ -3251,12 +3288,15 @@ bool parser_CheckMultArgFunc(StringView sLeft, StringView sRight)
 std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string& sTableName)
 {
     MemoryManager& _manager = NumeReKernel::getInstance()->getMemoryManager();
-    std::vector<size_t> sizes(2, 0);
+    std::vector<size_t> sizes(3, 1);
 
     if (_manager.isTable(sTableName))
     {
-        sizes[0] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(0, 1), _idx.layer.subidx(0, 1)).real();
-        sizes[1] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(1, 1), _idx.layer.subidx(0, 1)).real();
+        sizes[0] = _manager.cnt(sTableName, _idx.row, _idx.col[0], _idx.layer[0]).real();
+        sizes[1] = _manager.cnt(sTableName, _idx.row, _idx.col[1], _idx.layer[0]).real();
+
+        if (_idx.layer.size() > 1)
+            sizes[2] = _manager.cnt(sTableName, _idx.row, _idx.col[2], _idx.layer[0]).real();
     }
 
     return sizes;

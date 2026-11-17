@@ -92,28 +92,28 @@ string Output::replaceTeXControls(const string& _sText)
 
     for (size_t i = 0; i < sReturn.length(); i++)
     {
-        if (sReturn[i] == (char)0xC4 || sReturn[i] == (char)142) // Ä
+        if (sReturn[i] == (char)0xC4 || sReturn[i] == (char)142) // Ã„
             sReturn.replace(i,1,"\\\"A");
 
-        if (sReturn[i] == (char)0xE4 || sReturn[i] == (char)132) // ä
+        if (sReturn[i] == (char)0xE4 || sReturn[i] == (char)132) // Ã¤
             sReturn.replace(i,1,"\\\"a");
 
-        if (sReturn[i] == (char)0xD6 || sReturn[i] == (char)153) // Ö
+        if (sReturn[i] == (char)0xD6 || sReturn[i] == (char)153) // Ã–
             sReturn.replace(i,1,"\\\"O");
 
-        if (sReturn[i] == (char)0xF6 || sReturn[i] == (char)148) // ö
+        if (sReturn[i] == (char)0xF6 || sReturn[i] == (char)148) // Ã¶
             sReturn.replace(i,1,"\\\"o");
 
-        if (sReturn[i] == (char)0xDC || sReturn[i] == (char)154) // Ü
+        if (sReturn[i] == (char)0xDC || sReturn[i] == (char)154) // Ãœ
             sReturn.replace(i,1,"\\\"U");
 
-        if (sReturn[i] == (char)0xFC || sReturn[i] == (char)129) // ü
+        if (sReturn[i] == (char)0xFC || sReturn[i] == (char)129) // Ã¼
             sReturn.replace(i,1,"\\\"u");
 
-        if (sReturn[i] == (char)0xDF || sReturn[i] == (char)225) // ß
+        if (sReturn[i] == (char)0xDF || sReturn[i] == (char)225) // ÃŸ
             sReturn.replace(i,1,"\\ss ");
 
-        if (sReturn[i] == (char)0xB0 || sReturn[i] == (char)248) // °
+        if (sReturn[i] == (char)0xB0 || sReturn[i] == (char)248) // Â°
             sReturn.replace(i,1,"$^\\circ$");
 
         if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
@@ -663,7 +663,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
                     sPrint = "|   ";
 
                 if (!bFile)
-                    sPrint.assign(nLineLength+1, '-');
+                    sPrint = strRepeat("â”€", nLineLength+1);
                 else
                 {
                     sPrint.assign(nLen-1, '=');
@@ -677,7 +677,7 @@ void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLine
         if (nLineEndCol != nCols)
         {
             if (nLineLength > 2)
-                print(std::string(nLineLength+1, '-'));
+                print(strRepeat("â”€", nLineLength+1));
 
             nLineStartCol = nLineEndCol;
             nLineLength = 0;
@@ -1069,7 +1069,7 @@ void Output::format(NumeRe::TableView _table, size_t digits, size_t chars, size_
         else
         {
             std::string sPrint = "|   ";
-            sPrint.append(nLineLength-3, '-');
+            sPrint += strfills("â”€", nLineLength-3, "â”€");
             print(sPrint);
         }
 

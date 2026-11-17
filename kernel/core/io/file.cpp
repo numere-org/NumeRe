@@ -1588,7 +1588,8 @@ namespace NumeRe
                 fileData->getSheet(i).m_sheetName = sheetNames[i];
             }
 
-            nCols = *std::max_element(sheetSizes.begin(), sheetSizes.end());
+            if (sheetSizes.size())
+                nCols = *std::max_element(sheetSizes.begin(), sheetSizes.end());
         }
     }
 

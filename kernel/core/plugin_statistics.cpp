@@ -21,6 +21,7 @@
 #include "plugins.hpp"
 #include "maths/parser_functions.hpp"
 #include "maths/student_t.hpp"
+#include "procedure/mangler.hpp"
 #include "../kernel.hpp"
 
 /*
@@ -418,12 +419,12 @@ void plugin_statistics(CommandLineParser& cmdParser)
         sSavePath = cmdParser.getFileParameterValueForSaving(".dat", NumeReKernel::getInstance()->getSettings().getSavePath(), "");
     else if (cmdParser.hasParam("save"))
     {
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
         sSavePath = cmdParser.getParsedParameterValueAsString("save", "", true, true);
     }
     else if (cmdParser.hasParam("export"))
     {
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", Mangler::demangleExpression(cmdParser.getCommandLine())));
         sSavePath = cmdParser.getParsedParameterValueAsString("export", "", true, true);
     }
 

@@ -2045,7 +2045,7 @@ void TableViewer::SetData(NumeRe::TableView& _table, size_t sheet, const std::st
     m_intName = sIntName;
 
     // Create an empty table, if necessary
-    if (_table.isEmpty() || !_table.getRows())
+    if (_table.isEmpty() || !_table.getCols())
     {
         createZeroElementTable();
         return;

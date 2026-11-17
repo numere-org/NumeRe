@@ -113,6 +113,9 @@ void TablePanel::show(NumeRe::TableView& _table, const std::string& sName, const
 {
     SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
 
+    if (!_table.getSheets())
+        _table.appendSheets(1);
+
     while (m_sheets->GetPageCount() > _table.getSheets())
     {
         m_sheets->DeletePage(m_sheets->GetPageCount()-1);

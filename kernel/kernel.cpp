@@ -1024,15 +1024,15 @@ void NumeReKernel::initializeStackTracker()
 void NumeReKernel::printVersionInfo(bool shortInfo)
 {
     bWritingTable = true;
-    make_hline(80);
+    printPreFmt("╔" + strRepeat("═", 78) + "╗\n");
     std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
 
-    printPreFmt("| " + sAppName + strfill("|\n", 79 - countUnicodePoints(sAppName)));
-    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
-                + printBuildDate() + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
-                + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
-    make_hline(80);
+    printPreFmt("║ " + sAppName + strfill("║\n", 79 - countUnicodePoints(sAppName)));
+    printPreFmt("║ Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
+                + printBuildDate() + " ║\n");
+    printPreFmt("║ Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
+                + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " ║\n");
+    printPreFmt("╚" + strRepeat("═", 78) + "╝\n");
 
     if (!shortInfo)
     {
@@ -3580,7 +3580,7 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
     toggleTableStatus();
 
     // Show the progress depending on the selected type
-    if (sType == "std")
+    if (sType == "std" || !sType.length())
     {
         // Only value
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
@@ -4449,11 +4449,11 @@ bool NumeReKernel::GetAsyncCancelState()
 void make_hline(int nLength)
 {
     if (nLength == -1)
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfills("═", NumeReKernel::nLINE_LENGTH - 1, "═") + "\n");
     else if (nLength < -1)
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfills("─", NumeReKernel::nLINE_LENGTH - 1, "─") + "\n");
     else
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), nLength, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfills("═", nLength, "═") + "\n");
 
     return;
 }

@@ -732,6 +732,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 Indices tgt;
                 tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
                 tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                tgt.layer = VectorIndex(0, VectorIndex::OPEN_END);
                 _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), sNewArgName, tgt);
             }
             else
@@ -751,6 +752,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     Indices _idx;
                     _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                     _idx.col = VectorIndex(0);
+                    _idx.layer = VectorIndex(0);
                     _dataRef->getTable(sNewArgName).write(_idx, v);
                 }
                 catch (...)
@@ -1134,6 +1136,7 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
                         Indices tgt;
                         tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
                         tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                        tgt.layer = VectorIndex(0, VectorIndex::OPEN_END);
                         _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), currentVar, tgt);
                     }
                     else
@@ -1146,6 +1149,7 @@ void ProcedureVarFactory::createLocalTables(std::string sTableList)
                         Indices _idx;
                         _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
                         _idx.col = VectorIndex(0);
+                        _idx.layer = VectorIndex(0);
                         _dataRef->getTable(currentVar).write(_idx, v);
                     }
                 }

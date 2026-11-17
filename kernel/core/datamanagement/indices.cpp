@@ -349,7 +349,7 @@ static mu::Array stringToNumIndex(const mu::Array& a, const IndexData& idx_data,
 
                 for (size_t layer = 1; layer < idx_data.idx.layer.size(); layer++)
                 {
-                    if (table.findCols({index_string}, layer, false, idx_data.assignment) != indices)
+                    if (table.findCols({index_string}, idx_data.idx.layer[layer], false, idx_data.assignment) != indices)
                         throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, index_string);
                 }
             }
