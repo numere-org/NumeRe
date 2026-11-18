@@ -972,8 +972,10 @@ void Plot::applyPlotSizeAndQualitySettings()
         // Switch between fullHD and the normal resolution
         if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)
             factor = 1920.0 * 1440.0;
-        else
+        else if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 1)
             factor = 1280.0 * 960.0;
+        else
+            factor = 1024.0 * 768.0;
     }
     else
     {
@@ -4124,6 +4126,29 @@ std::vector<std::string> Plot::separateFunctionsAndData()
 
 
 /////////////////////////////////////////////////
+/// \brief Get a DataView from the various data
+/// sources.
+///
+/// \param expr const std::string&
+/// \param _data MemoryManager&
+/// \param _parser mu::Parser&
+/// \param isTablePlot bool
+/// \return DataView
+///
+/////////////////////////////////////////////////
+static DataView getCurrentDataView(const std::string& expr, MemoryManager& _data, mu::Parser& _parser, bool isTablePlot)
+{
+    if (isTablePlot)
+        return DataView(getAccessParserForPlotAndFit(expr));
+    else
+    {
+        _parser.SetExpr(expr);
+        return DataView(_parser.Eval(), expr);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Creates the internal mglData objects
 /// and fills them with the data values from the
 /// MemoryManager class instance in the kernel.
@@ -4157,12 +4182,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
     for (size_t i = 0; i < vDataPlots.size(); i++)
     {
         size_t nParPos = vDataPlots[i].find('(');
-        DataAccessParser _accessParser;
         bool openEnd = false;
-        bool isTablePlot = _data.containsTables(vDataPlots[i]);
-        mu::Array vVals;
-        size_t rows = 0;
+        size_t nNumberOfColumnNodes = 0;
         size_t cols = 0;
+        bool isTablePlot = _data.containsTables(vDataPlots[i]);
 
         while (m_types[typeCounter] != PT_DATA && typeCounter+1 < m_types.size())
             typeCounter++;
@@ -4173,155 +4196,125 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
         // Get the indices for the current data plot object optimized
         // for the plotting algorithm
-        if (isTablePlot)
-            _accessParser = getAccessParserForPlotAndFit(vDataPlots[i]);
-        else
-        {
-            _parser.SetExpr(vDataPlots[i]);
-            vVals = _parser.Eval();
-            mu::DataType type = mu::TYPE_VOID;
-            vVals.getType(type);
-
-            if (type != mu::TYPE_NUMERICAL && type != mu::TYPE_GENERATOR)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, vDataPlots[i], vDataPlots[i]);
-
-            rows = vVals.rows();
-            cols = vVals.cols();
-        }
-
-        Indices& _idx = _accessParser.getIndices();
+        DataView view = getCurrentDataView(vDataPlots[i], _data, _parser, isTablePlot);
 
         if (isTablePlot)
         {
+            Indices& _idx = view.getTableIndices();
+            const std::string& sDataTable = view.getDataName();
             openEnd = _idx.col.isOpenEnd();
-            std::string& sDataTable = _accessParser.getDataObject();
 
             // fill the open end indices
-            _accessParser.evalIndices();
+            view.evalIndices(true);
+            Table& table = _data.getTable(sDataTable);
 
-            if (_idx.row.last() >= _data.getLines(sDataTable, false))
-                _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
+            if (_idx.row.last() >= table.getRows())
+                _idx.row.setRange(0, table.getRows()-1);
 
-            if (_idx.col.last() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d")
-                _idx.col.setRange(0, _data.getCols(sDataTable)-1);
+            if (_idx.col.last() >= table.getCols() && _pInfo.sCommand != "plot3d")
+                _idx.col.setRange(0, table.getCols()-1);
+
+            if (_idx.layer.last() >= table.getSheets())
+                _idx.layer.setRange(0, table.getSheets()-1);
+
+            nNumberOfColumnNodes = _idx.col.numberOfNodes();
 
             // Validize the indices depending on whether a cluster or
             // a table is used for the current data access
-            if (_idx.row.front() >= _data.getLines(sDataTable, false)
-                || (_idx.col.front() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d"))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCurrentExpr, sDataTable, _idx.row.to_string() + ", " + _idx.col.to_string());
-
-            rows = _idx.row.size();
-            cols = _idx.col.size();
+            if (_idx.row.front() >= table.getRows()
+                || (_idx.col.front() >= table.getCols() && _pInfo.sCommand != "plot3d"))
+                throw SyntaxError(SyntaxError::INVALID_INDEX,
+                                  sCurrentExpr,
+                                  sDataTable,
+                                  _idx.row.to_string() + ", " + _idx.col.to_string());
         }
+
+        cols = view.cols();
+
+        if (!view.isValueLike())
+            throw SyntaxError(SyntaxError::PLOT_ERROR,
+                              sCurrentExpr,
+                              vDataPlots[i],
+                              vDataPlots[i]);
+
 
         if (isPlot1D(_pInfo.sCommand))
         {
-            size_t datarows = 1;
+            size_t dataCols = 1;
+            size_t axisCols = 0;
 
-            if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                datarows = 3;
-            else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
-                datarows = 2;
-            else if (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))
-                datarows = 4;
-            else if (_idx.col.numberOfNodes() >= 2)
-                datarows = _idx.col.numberOfNodes() - 1*!_pData.getSettings(PlotData::LOG_BOXPLOT);
+            if (_pData.getSettings(PlotData::LOG_XERROR)
+                && _pData.getSettings(PlotData::LOG_YERROR))
+                dataCols = 3;
+            else if (_pData.getSettings(PlotData::LOG_XERROR)
+                     || _pData.getSettings(PlotData::LOG_YERROR))
+                dataCols = 2;
+            else if (_pData.getSettings(PlotData::LOG_OHLC)
+                     || _pData.getSettings(PlotData::LOG_CANDLESTICK))
+                dataCols = 4;
+            else if (nNumberOfColumnNodes >= 2)
+                dataCols = nNumberOfColumnNodes - 1*!_pData.getSettings(PlotData::LOG_BOXPLOT);
 
-            m_manager.assets[typeCounter].create1DPlot(PT_DATA, rows,
-                                                       isTablePlot ? datarows : std::max(datarows, cols > 1 ? cols-1 : 1));
+            m_manager.assets[typeCounter].create1DPlot(PT_DATA, view.rows(),
+                                                       isTablePlot ? dataCols : std::max(dataCols, cols > 1 ? cols-1 : 1));
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  view.getDataName(),
+                                  view.getDataName());
+
+            axisCols = cols > 1;
 
             // A vector index was used. Insert a column index
             // if the current plot is a boxplot or an axis coordinate
             // is missing
             if (_pData.getSettings(PlotData::LOG_BOXPLOT)
-                || _idx.col.numberOfNodes() == 1
-                || (_idx.col.size() < 5 && (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))))
-                _idx.col.prepend(std::vector<int>({-1}));
+                || nNumberOfColumnNodes == 1
+                || (cols < 5 && (_pData.getSettings(PlotData::LOG_OHLC)
+                                 || _pData.getSettings(PlotData::LOG_CANDLESTICK))))
+                axisCols = 0;
 
-            if (vVals.size() || _idx.col.front() == VectorIndex::INVALID)
+            if (!axisCols)
             {
-                for (size_t n = 0; n < rows; n++)
-                    m_manager.assets[typeCounter].writeAxis(cols > 1 && vVals.size() ? vVals.get(n, 0).getNum().asF64() : n+1.0, n, XCOORD);
+                for (size_t n = 0; n < view.rows(); n++)
+                {
+                    m_manager.assets[typeCounter].writeAxis(n+1,
+                                                            n,
+                                                            XCOORD);
+                }
             }
             else
             {
-                mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                    _idx.row, _idx.col.front(), false);
-
-                if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
+                if (view.isDataTime(0))
                     isTimeAxis[XRANGE] = true;
 
-                for (size_t n = 0; n < vAxis.size(); n++)
+                for (size_t n = 0; n < view.rows(); n++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(vAxis[n].getNum().asF64(), n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(view.get(n, 0).getNum().asF64(),
+                                                            n,
+                                                            XCOORD);
                 }
             }
 
             // Fill the mglData objects with the data from the
             // referenced data object
-            if (!isTablePlot)
-            {
-                if (vVals.cols() == 1ull
-                    && vVals.getCommonType() == mu::TYPE_NUMERICAL
-                    && vVals.getCommonNumericalType() == mu::DATETIME)
-                    isTimeAxis[YRANGE] = true;
+            if (view.isDataTime(VectorIndex(axisCols, dataCols+axisCols-1)))
+                isTimeAxis[YRANGE] = true;
 
-                for (size_t q = 0; q < datarows; q++)
-                {
-                    for (size_t n = 0; n < rows; n++)
-                    {
-                        if (q + (cols > 1) < vVals.cols())
-                            m_manager.assets[typeCounter].writeData(vVals.get(n, q+(cols > 1)).getNum().asCF64(), q, n);
-                        else
-                            m_manager.assets[typeCounter].writeData(0.0, q, n);
-                    }
-                }
-            }
-            else if (datarows == 1 && _idx.col.numberOfNodes() == 2 && !openEnd)
+            for (size_t q = 0; q < dataCols; q++)
             {
-                vVals = getDataFromObject(_accessParser.getDataObject(),
-                                          _idx.row, _idx.col.last(), false);
+                size_t selectedCol = q + axisCols;
 
-                if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
-                    isTimeAxis[YRANGE] = true;
+                if (!openEnd && q+1 == dataCols && nNumberOfColumnNodes - dataCols <= 1)
+                    selectedCol = cols-1;
 
-                for (size_t n = 0; n < vVals.size(); n++)
+                for (size_t n = 0; n < view.rows(); n++)
                 {
-                    m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), 0, n);
-                }
-            }
-            else
-            {
-                for (size_t q = 0; q < datarows; q++)
-                {
-                    if (q >= _idx.col.size())
-                    {
-                        // Write zeroes for errorbars or similar
-                        for (size_t n = 0; n < _idx.row.size(); n++)
-                            m_manager.assets[typeCounter].writeData(0.0, q, n);
-                    }
-                    else if (_idx.col[q+1] == VectorIndex::INVALID)
-                    {
-                        for (size_t n = 0; n < _idx.row.size(); n++)
-                            m_manager.assets[typeCounter].writeData(n+1.0, q, n);
-                    }
+                    if (selectedCol < cols)
+                        m_manager.assets[typeCounter].writeData(view.get(n, selectedCol).getNum().asCF64(), q, n);
                     else
-                    {
-                        vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                  _idx.row, _idx.col[q+1], false);
-
-                        if (vVals.getCommonType() == mu::TYPE_NUMERICAL && vVals.getCommonNumericalType() == mu::DATETIME)
-                            isTimeAxis[YRANGE] = true;
-
-                        for (size_t n = 0; n < vVals.size(); n++)
-                        {
-                            m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), q, n);
-                        }
-                    }
+                        m_manager.assets[typeCounter].writeData(0.0, q, n);
                 }
             }
 
@@ -4398,50 +4391,34 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         }
         else if (isPlot3D(_pInfo.sCommand))
         {
-            size_t datarows = 1;
+            size_t dataCols = 1;
 
-            if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                datarows = 2;
-            else if (_idx.col.numberOfNodes() > 2)
-                datarows = _idx.col.numberOfNodes() - 1;
+            if (_pData.getSettings(PlotData::LOG_XERROR)
+                && _pData.getSettings(PlotData::LOG_YERROR))
+                dataCols = 2;
+            else if (nNumberOfColumnNodes > 2)
+                dataCols = nNumberOfColumnNodes - 1;
 
-            m_manager.assets[typeCounter].create3DPlot(PT_DATA, rows, isTablePlot ? datarows : std::max(vVals.cols() / 3, datarows));
+            m_manager.assets[typeCounter].create3DPlot(PT_DATA, view.rows(), isTablePlot ? dataCols : std::max(cols / 3, dataCols));
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  view.getDataName(),
+                                  view.getDataName());
 
-            for (size_t q = 0; q < 3*datarows; q++)
+            for (size_t q = 0; q < 3*dataCols; q++)
             {
                 // If the column is invalid or completely empty, then
                 // use zeros to fill it
-                if (!isTablePlot)
-                {
-                    for (size_t t = 0; t < rows; t++)
-                    {
-                        m_manager.assets[typeCounter].writeData(q < vVals.cols() ? vVals.get(t, q).getNum().asCF64() : 0.0, q, t);
-                    }
-                }
-                else if (_idx.col[q] == VectorIndex::INVALID
-                         || !_data.getColElements(_idx.col.subidx(q, 1), _accessParser.getDataObject()))
-                {
-                    for (size_t t = 0; t < rows; t++)
-                        m_manager.assets[typeCounter].writeData(0.0, q, t);
-                }
-                else
-                {
-                    vVals = getDataFromObject(_accessParser.getDataObject(),
-                                              _idx.row, _idx.col[q], false);
+                if (view.isDataTime(q))
+                    isTimeAxis[q % 3] = true;
 
-                    if (vVals.getCommonType() == mu::TYPE_NUMERICAL
-                        && vVals.getCommonNumericalType() == mu::DATETIME
-                        && q <= ZRANGE)
-                        isTimeAxis[q] = true;
-
-                    for (size_t t = 0; t < vVals.size(); t++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vVals[t].getNum().asCF64(), q, t);
-                    }
+                for (size_t t = 0; t < view.rows(); t++)
+                {
+                    const mu::Value& v = view.get(t, q);
+                    m_manager.assets[typeCounter].writeData(q < cols && !v.isVoid() ? v.getNum().asCF64() : 0.0, q, t);
                 }
             }
 
@@ -4461,10 +4438,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             bool isBars = _pInfo.sCommand == "dens" && _pData.getSettings(PlotData::FLOAT_BARS) > 0;
             std::vector<size_t> samples;
 
-            if (isTablePlot)
-                samples = _accessParser.getDataGridDimensions();
-            else
-                samples.assign({vVals.rows(), vVals.cols()});
+            samples = view.getDataGridDimensions();
 
             // Density plots with bars enabled need
             // one additional element per axis
@@ -4478,33 +4452,29 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  view.getDataName(),
+                                  view.getDataName());
+
+            view.reserveAxes(2, true);
 
             // Write the axes (do not write the additional value for
             // the bar-density mixture)
             for (size_t axis = 0; axis < samples.size(); axis++)
             {
-                if (isTablePlot)
-                {
-                    mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                        _idx.row, _idx.col[axis], false);
+                mu::Array vAxis = view.getAxis(axis);
 
-                    if (vAxis.getCommonType() == mu::TYPE_NUMERICAL
-                        && vAxis.getCommonNumericalType() == mu::DATETIME
-                        && axis <= YRANGE)
-                        isTimeAxis[axis] = true;
+                if (vAxis.getCommonType() == mu::TYPE_NUMERICAL
+                    && vAxis.getCommonNumericalType() == mu::DATETIME
+                    && axis <= YRANGE)
+                    isTimeAxis[axis] = true;
 
-                    for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
-                    {
-                        m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
-                    }
-                }
-                else
+                for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
                 {
-                    for (size_t m = 0; m < samples[axis]-isBars; m++)
-                    {
-                        m_manager.assets[typeCounter].writeAxis(m+1.0, m, (PlotCoords)axis);
-                    }
+                    m_manager.assets[typeCounter].writeAxis(vAxis.get(m).getNum().asF64(),
+                                                            m,
+                                                            (PlotCoords)axis);
                 }
             }
 
@@ -4523,46 +4493,33 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     + m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-2];
             }
 
-            if (isTablePlot)
+            if (view.isDataTime(VectorIndex(0, VectorIndex::OPEN_END)))
             {
-                // Write the meshgrid data
-                #pragma omp parallel for
-                for (size_t y = 0; y < samples[1]-isBars; y++)
-                {
-                    mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
-                                                       _idx.row, _idx.col[y+2], false);
-
-                    if (vals.getCommonType() == mu::TYPE_NUMERICAL
-                        && vals.getCommonNumericalType() == mu::DATETIME
-                        && !isTimeAxis[ZRANGE])
-                    {
-                        #pragma omp critical
-                        {
-                            isTimeAxis[ZRANGE] = true;
-                            isTimeAxis[CRANGE] = true;
-                        }
-                    }
-
-                    for (size_t x = 0; x < std::min(samples[0]-isBars, vals.size()); x++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vals[x].as_cmplx(), 0, x, y);
-                    }
-                }
+                isTimeAxis[ZRANGE] = true;
+                isTimeAxis[CRANGE] = true;
             }
-            else
+
+            #pragma omp parallel for
+            for (size_t y = 0; y < view.cols(); y++)
             {
-                #pragma omp parallel for
-                for (size_t y = 0; y < vVals.cols(); y++)
+                if (y >= samples[1])
+                    continue;
+
+                for (size_t x = 0; x < view.rows(); x++)
                 {
-                    for (size_t x = 0; x < rows; x++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vVals.get(x, y).as_cmplx(), 0, x, y);
-                    }
+                    if (x >= samples[0])
+                        break;
+
+                    m_manager.assets[typeCounter].writeData(view.get(x, y).as_cmplx(),
+                                                            0,
+                                                            x,
+                                                            y);
                 }
             }
 
             // Calculate the data ranges
-            if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && typeCounter < (m_manager.assets.size() / 3) * 3)
+            if (_pData.getSettings(PlotData::LOG_PARAMETRIC)
+                && typeCounter < (m_manager.assets.size() / 3) * 3)
                 dataRanges[typeCounter%3] = dataRanges[typeCounter%3].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
             else
             {
@@ -4579,23 +4536,42 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         }
         else if (isMesh3D(_pInfo.sCommand))
         {
-            if (vVals.getDims() < 3 || isTablePlot)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' ')+1);
+            if (view.layers() == 1)
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  sCurrentExpr.find(' ')+1);
 
-            m_manager.assets[typeCounter].create3DMesh(PT_DATA, vVals.getDimSizes());
+            view.reserveAxes(3, true);
+            m_manager.assets[typeCounter].create3DMesh(PT_DATA,
+                                                       {view.rows(),
+                                                        view.cols(),
+                                                        view.layers()});
             m_manager.assets[typeCounter].boundAxes = "lb";
 
-            #pragma omp parallel for
-            for (size_t x = 0; x < vVals.rows(); x++)
+            for (size_t axis = 0; axis < 3; axis++)
             {
-                for (size_t y = 0; y < vVals.cols(); y++)
+                mu::Array vAxis = view.getAxis(axis);
+
+                for (size_t i = 0; i < vAxis.size(); i++)
                 {
-                    for (size_t z = 0; z < vVals.layers(); z++)
+                    m_manager.assets[typeCounter].writeAxis(vAxis.get(i).getNum().asF64(),
+                                                            i,
+                                                            (PlotCoords)axis);
+                }
+            }
+
+            #pragma omp parallel for
+            for (size_t x = 0; x < view.rows(); x++)
+            {
+                for (size_t y = 0; y < view.cols(); y++)
+                {
+                    for (size_t z = 0; z < view.layers(); z++)
                     {
-                        m_manager.assets[typeCounter].writeAxis(x+1.0, x, XCOORD);
-                        m_manager.assets[typeCounter].writeAxis(y+1.0, y, YCOORD);
-                        m_manager.assets[typeCounter].writeAxis(z+1.0, z, ZCOORD);
-                        m_manager.assets[typeCounter].writeData(vVals.get({x,y,z}).as_cmplx(), 0, x, y, z);
+                        m_manager.assets[typeCounter].writeData(view.get(x,y,z).as_cmplx(),
+                                                                0,
+                                                                x,
+                                                                y,
+                                                                z);
                     }
                 }
             }
@@ -4610,12 +4586,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         {
             std::vector<size_t> samples;
 
-            if (isTablePlot)
-                samples = _accessParser.getDataGridDimensions();
-            else
-                samples = vVals.getDimSizes();
+            samples = view.getDataGridDimensions();
 
-            if (samples.size() == 2)
+            if (samples.size() == 2 || samples[2] == 1)
                 m_manager.assets[typeCounter].create2DMesh(PT_DATA, samples, 1);
             else if (samples.size() > 2)
                 m_manager.assets[typeCounter].create2DVect(PT_DATA, samples);
@@ -4623,22 +4596,29 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  view.getDataName(),
+                                  view.getDataName());
 
             // Write the axes
             if (isTablePlot)
             {
-                for (size_t axis = 0; axis < samples.size(); axis++)
-                {
-                    mu::Array vAxis = getDataFromObject(_accessParser.getDataObject(),
-                                                        _idx.row, _idx.col[axis], false);
+                view.reserveAxes(2, true);
 
-                    if (vAxis.getCommonType() == mu::TYPE_NUMERICAL && vAxis.getCommonNumericalType() == mu::DATETIME)
+                for (size_t axis = 0; axis < 2; axis++)
+                {
+                    mu::Array vAxis = view.getAxis(axis);
+
+                    if (vAxis.getCommonType() == mu::TYPE_NUMERICAL
+                        && vAxis.getCommonNumericalType() == mu::DATETIME)
                         isTimeAxis[axis] = true;
 
                     for (size_t m = 0; m < std::min(samples[axis], vAxis.size()); m++)
                     {
-                        m_manager.assets[typeCounter].writeAxis(vAxis[m].getNum().asF64(), m, (PlotCoords)axis);
+                        m_manager.assets[typeCounter].writeAxis(vAxis.get(m).getNum().asF64(),
+                                                                m,
+                                                                (PlotCoords)axis);
                     }
                 }
             }
@@ -4648,27 +4628,14 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 {
                     for (size_t m = 0; m < samples[axis]; m++)
                     {
-                        m_manager.assets[typeCounter].writeAxis(m+1.0, m, (PlotCoords)axis);
+                        m_manager.assets[typeCounter].writeAxis(m+1.0,
+                                                                m,
+                                                                (PlotCoords)axis);
                     }
                 }
             }
 
-            if (isTablePlot)
-            {
-                // Write the complex vector data
-                #pragma omp parallel for
-                for (size_t y = 0; y < samples[1]; y++)
-                {
-                    mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
-                                                       _idx.row, _idx.col[y+2], false);
-
-                    for (size_t x = 0; x < std::min(samples[0], vals.size()); x++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vals[x].as_cmplx(), 0, x, y);
-                    }
-                }
-            }
-            else if (samples.size() == 2)
+            if (samples.size() == 2 || samples[2] == 1)
             {
                 // Write the complex vector data
                 #pragma omp parallel for
@@ -4676,7 +4643,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 {
                     for (size_t x = 0; x < samples[0]; x++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals.get(x, y).as_cmplx(), 0, x, y);
+                        m_manager.assets[typeCounter].writeData(view.get(x, y).as_cmplx(),
+                                                                0,
+                                                                x,
+                                                                y);
                     }
                 }
             }
@@ -4688,8 +4658,14 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 {
                     for (size_t x = 0; x < samples[0]; x++)
                     {
-                        m_manager.assets[typeCounter].writeData(vVals.get({x, y, 0}).as_cmplx(), 0, x, y);
-                        m_manager.assets[typeCounter].writeData(vVals.get({x, y, 1}).as_cmplx(), 1, x, y);
+                        m_manager.assets[typeCounter].writeData(view.get(x, y, 0).as_cmplx(),
+                                                                0,
+                                                                x,
+                                                                y);
+                        m_manager.assets[typeCounter].writeData(view.get(x, y, 1).as_cmplx(),
+                                                                1,
+                                                                x,
+                                                                y);
                     }
                 }
             }
@@ -4702,9 +4678,12 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         }
         else if (isVect3D(_pInfo.sCommand))
         {
-            if (vVals.getDims() < 4 || isTablePlot)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' ')+1);
+            if (isTablePlot || view.getArray().getDims() < 4 )
+                throw SyntaxError(SyntaxError::PLOT_ERROR,
+                                  sCurrentExpr,
+                                  sCurrentExpr.find(' ')+1);
 
+            const mu::Array& vVals = view.getArray();
             m_manager.assets[i].create3DVect(PT_DATA, vVals.getDimSizes());
             m_manager.assets[typeCounter].boundAxes = "lb";
 
@@ -4721,10 +4700,19 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                             m_manager.assets[typeCounter].writeAxis(y+1.0, y, YCOORD);
                             m_manager.assets[typeCounter].writeAxis(z+1.0, z, ZCOORD);
 
-                            if (vVals.getSize(3) <= i) // Always fill missing dimensions with zero
-                                m_manager.assets[typeCounter].writeData(0.0, i, x, y, z);
+                             // Always fill missing dimensions with zero
+                            if (vVals.getSize(3) <= i)
+                                m_manager.assets[typeCounter].writeData(0.0,
+                                                                        i,
+                                                                        x,
+                                                                        y,
+                                                                        z);
                             else
-                                m_manager.assets[typeCounter].writeData(vVals.get({x,y,z,i}).as_cmplx(), i, x, y, z);
+                                m_manager.assets[typeCounter].writeData(vVals.get({x,y,z,i}).as_cmplx(),
+                                                                        i,
+                                                                        x,
+                                                                        y,
+                                                                        z);
                         }
                     }
                 }
@@ -4737,7 +4725,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             dataRanges[CRANGE] = dataRanges[CRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
         }
         else
-            throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
+            throw SyntaxError(SyntaxError::PLOT_ERROR,
+                              sCurrentExpr,
+                              view.getDataName(),
+                              view.getDataName());
 
         typeCounter++;
     }
@@ -4818,9 +4809,10 @@ void Plot::createDataLegends()
             //_access.evalIndices();
             std::string sTableName = _access.getDataObject();
             const VectorIndex& vCols = _access.getIndices().col;
+            const VectorIndex& vLayers = _access.getIndices().layer;
 
             if (vCols.numberOfNodes() == 1)
-                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.front(), sTableName));
+                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.front(), vLayers.front(), sTableName));
             else if (vCols.numberOfNodes() == 2)
             {
                 // First and second index value available
@@ -4833,7 +4825,7 @@ void Plot::createDataLegends()
                         if (isBarPlot)
                         {
                             sTemp.clear();
-                            vCols.setOpenEndIndex(_data.getCols(sTableName)-1);
+                            vCols.setOpenEndIndex(_data.getTable(sTableName).getCols()-1);
 
                             // Don't use the first one
                             for (size_t i = 1; i < vCols.size(); i++)
@@ -4841,7 +4833,7 @@ void Plot::createDataLegends()
                                 if (sTemp.length())
                                     sTemp += "\n";
 
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                                sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                             }
 
                             sTemp = toExternalString(sTemp);
@@ -4849,25 +4841,25 @@ void Plot::createDataLegends()
                         else
                         {
                             if (vCols.isOpenEnd())
-                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                         + _data.getTopHeadLineElement(vCols[0], sTableName));
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                             else
-                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                                                         + _data.getTopHeadLineElement(vCols.front(), sTableName));
+                                sTemp = toExternalString(_data.getTopHeadLineElement(vCols.last(), vLayers.front(), sTableName) + " vs. "
+                                                         + _data.getTopHeadLineElement(vCols.front(), vLayers.front(), sTableName));
                         }
                     }
                     else
                     {
-                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
-                    sTemp = toExternalString(_data.getTopHeadLineElement(vCols[0], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vCols[1], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vCols[2], sTableName));
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vCols[2], vLayers.front(), sTableName));
                 }
             }
             else if (vCols.numberOfNodes() == 3)
@@ -4888,28 +4880,28 @@ void Plot::createDataLegends()
                                 if (sTemp.length())
                                     sTemp += "\n";
 
-                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                                sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                             }
 
                             sTemp = toExternalString(sTemp);
                         }
                         else
-                            sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                     + _data.getTopHeadLineElement(vCols[0], sTableName));
+                            sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                     + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                     else
                     {
-                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                                                 + _data.getTopHeadLineElement(vCols[0], sTableName));
+                        sTemp = toExternalString(_data.getTopHeadLineElement(vCols[1], vLayers.front(), sTableName) + " vs. "
+                                                 + _data.getTopHeadLineElement(vCols[0], vLayers.front(), sTableName));
                     }
                 }
                 else
                 {
                     // three-dimensional plot
                     std::vector<int> vNodes = vCols.getVector();
-                    sTemp = toExternalString(_data.getTopHeadLineElement(vNodes[0], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
-                                             + _data.getTopHeadLineElement(vNodes[2], sTableName));
+                    sTemp = toExternalString(_data.getTopHeadLineElement(vNodes[0], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[1], vLayers.front(), sTableName) + ", "
+                                             + _data.getTopHeadLineElement(vNodes[2], vLayers.front(), sTableName));
                 }
             }
             else
@@ -4925,7 +4917,7 @@ void Plot::createDataLegends()
                         if (sTemp.length())
                             sTemp += "\n";
 
-                        sTemp += _data.getTopHeadLineElement(vCols[i], sTableName);
+                        sTemp += _data.getTopHeadLineElement(vCols[i], vLayers.front(), sTableName);
                     }
 
                     sTemp = toExternalString(sTemp);

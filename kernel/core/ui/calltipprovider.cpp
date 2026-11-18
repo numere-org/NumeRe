@@ -830,6 +830,7 @@ namespace NumeRe
             size_t p = sKey.rfind('[')+1;
             sToken = sKey.substr(p, sKey.length()-1 - p) + "." + _lang.get(sKey);
             replaceAll(sToken, "STRUCT.", "DICTSTRUCT.");
+            replaceAll(sToken, "DATA.", "TABLE().");
         }
 
         CallTip _cTip = addLinebreaks(realignLangString(sToken), m_maxLineLength);

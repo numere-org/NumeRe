@@ -494,7 +494,7 @@ void EditorNotebook::OnTabScroll(wxMouseEvent &event)
     }
     else
     {
-        if (ctrl_idx+1 == ctrl->GetPageCount())
+        if (ctrl_idx+1 == (int)ctrl->GetPageCount())
             SetSelectionToPage(ctrl->GetPage(0));
         else
             SetSelectionToPage(ctrl->GetPage(ctrl_idx+1));

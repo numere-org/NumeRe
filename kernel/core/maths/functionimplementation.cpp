@@ -721,26 +721,30 @@ mu::Array numfnc_Med(const mu::MultiArgFuncParams& vElements)
     if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
-    Memory _mem;
+    Table _mem;
 
     if (vElements.count() == 1)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            _mem.writeData(i, 0, vElements[0].get(i));
+            _mem.write(i, 0, 0, vElements[0].get(i));
         }
 
-        return mu::Value(_mem.med(VectorIndex(0, vElements[0].size()-1), VectorIndex(0)));
+        return mu::Value(_mem.med(VectorIndex(0, vElements[0].size()-1),
+                                  VectorIndex(0),
+                                  VectorIndex(0)));
     }
     else
     {
         for (size_t i = 0; i < vElements.count(); i++)
         {
-            _mem.writeData(i, 0, vElements[i].front());
+            _mem.write(i, 0, 0, vElements[i].front());
         }
     }
 
-    return mu::Value(_mem.med(VectorIndex(0, vElements.count()-1), VectorIndex(0)));
+    return mu::Value(_mem.med(VectorIndex(0, vElements.count()-1),
+                              VectorIndex(0),
+                              VectorIndex(0)));
 #endif // PARSERSTANDALONE
 }
 
@@ -759,20 +763,23 @@ mu::Array numfnc_Pct(const mu::MultiArgFuncParams& vElements)
     if (!containsValidElements(vElements))
         return mu::Value(NAN);
 
-    Memory _mem;
+    Table _mem;
 
     if (vElements.count() == 2)
     {
         for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            _mem.writeData(i, 0, vElements[0].get(i));
+            _mem.write(i, 0, 0, vElements[0].get(i));
         }
 
         mu::Array ret;
 
         for (size_t i = 0; i < vElements[1].size(); i++)
         {
-            ret.push_back(_mem.pct(VectorIndex(0, vElements[0].size()-1), VectorIndex(0), vElements[1].get(i).getNum().asCF64()));
+            ret.push_back(_mem.pct(VectorIndex(0, vElements[0].size()-1),
+                                   VectorIndex(0),
+                                   VectorIndex(0),
+                                   vElements[1].get(i).getNum().asCF64()));
         }
 
         return ret;
@@ -780,10 +787,13 @@ mu::Array numfnc_Pct(const mu::MultiArgFuncParams& vElements)
 
     for (size_t i = 0; i < vElements.count()-1; i++)
     {
-        _mem.writeData(i, 0, vElements[i].front());
+        _mem.write(i, 0, 0, vElements[i].front());
     }
 
-    return mu::Value(_mem.pct(VectorIndex(0, vElements.count()-2), VectorIndex(0), vElements[vElements.count()-1].front().getNum().asCF64()));
+    return mu::Value(_mem.pct(VectorIndex(0, vElements.count()-2),
+                              VectorIndex(0),
+                              VectorIndex(0),
+                              vElements[vElements.count()-1].front().getNum().asCF64()));
 
 #endif // PARSERSTANDALONE
 }
@@ -7296,7 +7306,7 @@ mu::Array tstfnc_verifyValue(const mu::Array& result, const mu::Array& expected,
     }
 
     if (sDiagString.length())
-        mu::warning("Verification failure in verifyval(result,expected,fTol) within operation result == expected\nFailing components:\n" + sDiagString);
+        mu::warning("Verification failure in `verifyval(result,expected,fTol)` within operation `result == expected`\nFailing components:\n" + sDiagString);
 
     return testResult;
 }
@@ -7356,7 +7366,7 @@ mu::Array tstfnc_verifyNeq(const mu::Array& result, const mu::Array& notExpected
     }
 
     if (sDiagString.length())
-        mu::warning("Verification failure in verifyneq(result,notexpected,fTol) within operation result != notexpected\nFailing components:\n" + sDiagString);
+        mu::warning("Verification failure in `verifyneq(result,notexpected,fTol)` within operation `result != notexpected`\nFailing components:\n" + sDiagString);
 
     return testResult;
 }
@@ -7419,9 +7429,9 @@ mu::Array tstfnc_verifyRange(const mu::Array& result, const mu::Array& lowerBoun
     if (sDiagString.length())
     {
         if (incl)
-            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower <= result && result <= upper\nFailing components:\n" + sDiagString);
+            mu::warning("Verification failure in `verifyrange(result,lower,upper)` within operation `lower <= result && result <= upper`\nFailing components:\n" + sDiagString);
         else
-            mu::warning("Verification failure in verifyrange(result,lower,upper) within operation lower < result && result < upper\nFailing components:\n" + sDiagString);
+            mu::warning("Verification failure in `verifyrange(result,lower,upper)` within operation `lower < result && result < upper`\nFailing components:\n" + sDiagString);
     }
 
     return testResult;

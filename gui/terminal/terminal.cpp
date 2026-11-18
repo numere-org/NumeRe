@@ -260,7 +260,7 @@ void NumeReTerminal::updatePackage(const std::string& package)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::passEditedTable(NumeRe::Table _table)
+void NumeReTerminal::passEditedTable(NumeRe::TableView _table)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.table = _table;
@@ -1082,7 +1082,7 @@ void NumeReTerminal::pass_command(const wxString& command, bool isEvent)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReTerminal::getTable(const std::string& sTableName)
+NumeRe::TableView NumeReTerminal::getTable(const std::string& sTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getTable(sTableName);

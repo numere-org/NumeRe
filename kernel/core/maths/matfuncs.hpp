@@ -1736,19 +1736,21 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Memory _mem;
+    Table _mem;
     size_t nElems = funcData.mat1.data().size();
 
     // Preallocate
-    _mem.writeData(nElems-1, 0, 0.0);
+    _mem.write(nElems-1, 0, 0, 0.0);
 
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
+        _mem.writeUnsafe(i, 0, 0, funcData.mat1.data()[i]);
     }
 
-    return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
+    return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1),
+                                             VectorIndex(0),
+                                             VectorIndex(0)));
 }
 
 
@@ -1779,7 +1781,7 @@ static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& 
         {
             if (!isnan(funcData.mat1(i, j)))
             {
-                Memory _mem;
+                Table _mem;
 
                 for (int n = 0; n < 2*funcData.nVal+1; n++)
                 {
@@ -1791,11 +1793,13 @@ static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& 
                         if (j+m-funcData.mVal < 0 || j+m-funcData.mVal >= (int)funcData.mat1.cols())
                             continue;
 
-                        _mem.writeData(m + n*(2*funcData.mVal+1), 0, funcData.mat1(i+n-funcData.nVal, j+m-funcData.mVal));
+                        _mem.write(m + n*(2*funcData.mVal+1), 0, 0, funcData.mat1(i+n-funcData.nVal, j+m-funcData.mVal));
                     }
                 }
 
-                _mResult(i, j) = _mem.med(VectorIndex(0, (2*funcData.nVal+1)*(2*funcData.mVal+1)), VectorIndex(0));
+                _mResult(i, j) = _mem.med(VectorIndex(0, (2*funcData.nVal+1)*(2*funcData.mVal+1)),
+                                          VectorIndex(0),
+                                          VectorIndex(0));
             }
         }
     }
@@ -1818,19 +1822,22 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Memory _mem;
+    Table _mem;
     size_t nElems = funcData.mat1.data().size();
 
     // Preallocate
-    _mem.writeData(nElems-1, 0, 0.0);
+    _mem.write(nElems-1, 0, 0, 0.0);
 
     //#pragma omp parallel for
     for (size_t i = 0; i < nElems; i++)
     {
-        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
+        _mem.writeUnsafe(i, 0, 0, funcData.mat1.data()[i]);
     }
 
-    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal.getNum().asCF64()));
+    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1),
+                                             VectorIndex(0),
+                                             VectorIndex(0),
+                                             funcData.fVal.getNum().asCF64()));
 }
 
 

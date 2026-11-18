@@ -27,6 +27,7 @@
 #include "maths/matrixoperations.hpp"
 #include "maths/odesolver.hpp"
 #include "plotting/plotting.hpp"
+#include "procedure/mangler.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
@@ -397,8 +398,11 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
                     if (cmdParser.hasParam("free"))
                     {
                         std::string sName = sTableName.substr(0, sTableName.find('('));
-                        _data.deleteBulk(sName, 0, _data.getLines(sName) - 1, 0, _data.getCols(sName) - 1);
-                        _data.writeComment(sName, "");
+                        Table& table = _data.getTable(sName);
+                        table.deleteBulk(VectorIndex(0, VectorIndex::OPEN_END),
+                                         VectorIndex(0, VectorIndex::OPEN_END),
+                                         VectorIndex(0, VectorIndex::OPEN_END));
+                        table.writeComment("");
 
                         if (sReturnVal.length())
                             sReturnVal += ", ";
@@ -468,17 +472,24 @@ static bool editObject(CommandLineParser& cmdParser)
             throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, cmdParser.getCommandLine(), cmdParser.getExpr());
 
         std::string sTableName = access.getDataObject();
+        Table& table = _data.getTable(sTableName);
 
-        NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
+        NumeReKernel::showTable(table.extractView(sTableName,
+                                                  VectorIndex(0, VectorIndex::OPEN_END),
+                                                  VectorIndex(0, VectorIndex::OPEN_END),
+                                                  VectorIndex(0, VectorIndex::OPEN_END)), sTableName, true);
         NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
 
-        NumeRe::Table _table = NumeReKernel::getTable();
+        NumeRe::TableView _tableView = NumeReKernel::getTable();
         NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
 
-        if (_table.isEmpty())
+        if (_tableView.isEmpty())
             return true;
 
-        _data.importTable(_table, sTableName);
+        table.importView(_tableView,
+                         VectorIndex(0, VectorIndex::OPEN_END),
+                         VectorIndex(0, VectorIndex::OPEN_END),
+                         VectorIndex(0, VectorIndex::OPEN_END));
         return true;
     }
 
@@ -932,17 +943,17 @@ static string createListDirectoryHeader(const string& sPathName, const string& s
     if (sHeader.length() > nFirstColLength)
     {
         sHeader += "$";
-        sHeader.append(nFirstColLength, '-');
+        sHeader += strRepeat("─", nFirstColLength);
     }
     else
-        sHeader.append(nFirstColLength - sHeader.length(), '-');
+        sHeader += strRepeat("─", nFirstColLength - sHeader.length());
 
     sHeader += "  <" + toUpperCase(sLangString) + ">  ";
 
     if (sHeader.find('$') != string::npos)
-        sHeader.append(nWindowLength - 4 - sHeader.length() + sHeader.rfind('$'), '-');
+        sHeader += strRepeat("─", nWindowLength - 4 - countUnicodePoints(sHeader) + sHeader.rfind('$'));
     else
-        sHeader.append(nWindowLength - 4 - sHeader.length(), '-');
+        sHeader += strRepeat("─", nWindowLength - 4 - countUnicodePoints(sHeader));
 
     return sHeader;
 }
@@ -1166,10 +1177,9 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
     make_hline();
     NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")));
     make_hline();
+
     if (!_functions.getDefinedFunctions())
-    {
         NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
-    }
     else
     {
         // Print all custom defined functions on the terminal
@@ -1180,15 +1190,15 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 
             // Print the comment, if it is available
             if (_functions.getComment(i).length())
-            {
                 NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION", _functions.getComment(i)), _option, true, 0, 25) + "\n"); //10
-            }
 
             // Print the actual implementation of the function
             NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
+
         NumeReKernel::printPreFmt("|   -- " + toString(_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
     }
+
     NumeReKernel::toggleTableStatus();
     make_hline();
     return;
@@ -1256,7 +1266,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 
 
     // Get the current defined data tables
-    const map<string, std::pair<size_t, size_t>>& tableMap = _data.getTableMap();
+    const map<string, TableReference>& tableMap = _data.getTableMap();
 
     NumeReKernel::toggleTableStatus();
     make_hline();
@@ -1266,21 +1276,23 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
     // Print all defined tables first
     for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
     {
-        string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
+        const Table& table = _data.getTable(iter->first);
+        std::string sCacheSize = table.printDims();
+
         NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (nWinWidth - 32) / 2 - (iter->first).length() + nWinWidth % 2)
                                   + strfill(sCacheSize, (nWinWidth - 50) / 2) + strfill("[table]", 19));
 
-        if (_data.getSize(iter->second.second) >= 1024 * 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-        else if (_data.getSize(iter->second.second) >= 1024)
-            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0), 4), 9) + " KBytes\n");
+        if (table.getSize() >= 1024 * 1024)
+            NumeReKernel::printPreFmt(strfill(toString(table.getSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+        else if (table.getSize() >= 1024)
+            NumeReKernel::printPreFmt(strfill(toString(table.getSize() / (1024.0), 4), 9) + " KBytes\n");
         else
-            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second)), 9) + "  Bytes\n");
+            NumeReKernel::printPreFmt(strfill(toString(table.getSize()), 9) + "  Bytes\n");
 
-        nBytesSum += _data.getSize(iter->second.second);
+        nBytesSum += table.getSize();
     }
 
-    NumeReKernel::printPreFmt("|   " + strfill("-", nWinWidth - 4, '-') + "\n");
+    NumeReKernel::printPreFmt("|   " + strRepeat("─", nWinWidth - 4) + "\n");
 
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
@@ -1933,8 +1945,9 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 
     // Copy the target data to a new table
     _accessParser.evalIndices();
-    Memory* mem = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row,
-                  _accessParser.getIndices().col);
+    Table* mem = _data.getTable(_accessParser.getDataObject()).extractRange(_accessParser.getIndices().row,
+                                                                            _accessParser.getIndices().col,
+                                                                            _accessParser.getIndices().layer);
     _cache.melt(mem, "table", true);
 }
 
@@ -2091,12 +2104,14 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (cmdParser.hasParam("fileformat"))
             sFileFormat = cmdParser.getParsedParameterValueAsString("fileformat", "", true, true);
 
-        if (cmdParser.getCommand() == "export")
-            sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
+        if (cmdParser.hasParam("file"))
+        {
+            if (cmdParser.getCommand() == "export")
+                sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
+            else
+                sFileName = cmdParser.getFileParameterValueForSaving(".ndat", "<savepath>", "");
+        }
         else
-            sFileName = cmdParser.getFileParameterValueForSaving(".ndat", "<savepath>", "");
-
-        if (!sFileName.length())
         {
             _cache.setPrefix(_access.getDataObject());
 
@@ -2990,7 +3005,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static void clear_variables()
 {
-    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlen", "nlines", "nrows", "ans"};
+    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlen", "nlines", "nrows", "nsheets", "ans"};
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     varmap_type mVariables = _parser.GetVar();
 
@@ -3244,9 +3259,14 @@ static CommandReturnValues cmd_append(string& sCmd)
     {
         NumeReKernel::printPreFmt("\r");
 
-        double j1 = _data.getCols("data") + 1;
+        const Table& dataTable = _data.getTable("data");
+        int64_t j1 = dataTable.getCols() + 1;
+        int64_t k1 = dataTable.getSheets() + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
+        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getRows(VectorIndex(j1, VectorIndex::OPEN_END),
+                                                                              VectorIndex(0, VectorIndex::OPEN_END), "data"),
+                                                            j1, dataTable.getCols(),
+                                                            k1, dataTable.getSheets()}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -3782,7 +3802,11 @@ static CommandReturnValues cmd_show(string& sCmd)
 
             // Do only stuff, if data is available
             if (_data.isValid())
-                NumeReKernel::showTable(_data.extractTable(_accessParser.getDataObject()), _accessParser.getDataObject());
+                NumeReKernel::showTable(_data.getTable(_accessParser.getDataObject()).extractView(_accessParser.getDataObject(),
+                                                                                                  VectorIndex(0, VectorIndex::OPEN_END),
+                                                                                                  VectorIndex(0, VectorIndex::OPEN_END),
+                                                                                                  VectorIndex(0, VectorIndex::OPEN_END)),
+                                        _accessParser.getDataObject());
             else
                 throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
         }
@@ -3818,7 +3842,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     int nWindowSize = 1;
     double dAlpha = NAN;
     NumeRe::FilterSettings::FilterType _type = NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR;
-    MemoryManager::AppDir dir = MemoryManager::ALL;
+    Table::AppDir dir = Table::ALL;
 
     // Find the window size
     auto vParVal = cmdParser.getParsedParameterValue("order");
@@ -3853,11 +3877,11 @@ static CommandReturnValues cmd_smooth(string& sCmd)
 
     // Find the app dir
     if (cmdParser.hasParam("grid"))
-        dir = MemoryManager::GRID;
+        dir = Table::GRID;
     else if (cmdParser.hasParam("rows") || cmdParser.hasParam("lines"))
-        dir = MemoryManager::LINES;
+        dir = Table::ROWS;
     else if (cmdParser.hasParam("cols"))
-        dir = MemoryManager::COLS;
+        dir = Table::COLS;
 
     if (!cmdParser.exprContainsDataObjects())
         return COMMAND_PROCESSED;
@@ -3870,23 +3894,38 @@ static CommandReturnValues cmd_smooth(string& sCmd)
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
 
         _access.evalIndices();
+        Table& table = _data.getTable(_access.getDataObject());
 
-        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+        if (!table.isValueLike(_access.getIndices().col, _access.getIndices().layer))
             throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject() + "(", _access.getDataObject());
 
-        bool success = false;
+        bool success = true;
 
-        // Apply the smoothing filter
-        switch (dir)
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
         {
-            case MemoryManager::GRID:
-            case MemoryManager::ALL:
-                success = _data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, NumeRe::FilterSettings(_type, nWindowSize, nWindowSize, dAlpha), dir);
-                break;
-            case MemoryManager::LINES:
-            case MemoryManager::COLS:
-                success = _data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, NumeRe::FilterSettings(_type, nWindowSize, 1u, dAlpha), dir);
-                break;
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            // Apply the smoothing filter
+            switch (dir)
+            {
+                case Table::GRID:
+                case Table::ALL:
+                    success = success && table.smooth(_access.getIndices().row,
+                                                      _access.getIndices().col,
+                                                      s,
+                                                      NumeRe::FilterSettings(_type, nWindowSize, nWindowSize, dAlpha), dir);
+                    break;
+                case Table::ROWS:
+                case Table::COLS:
+                    success = success && table.smooth(_access.getIndices().row,
+                                                      _access.getIndices().col,
+                                                      s,
+                                                      NumeRe::FilterSettings(_type, nWindowSize, 1u, dAlpha), dir);
+                    break;
+            }
         }
 
         if (success)
@@ -4189,6 +4228,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
 
     if (_access.getDataObject().length())
     {
+        Table& table = _data.getTable(_access.getDataObject());
         auto vParVal = cmdParser.getParsedParameterValue("samples");
 
         std::pair<size_t, size_t> samples;
@@ -4205,8 +4245,8 @@ static CommandReturnValues cmd_resample(string& sCmd)
         }
         else
         {
-            samples.first = _data.getLines(_access.getDataObject(), false);
-            samples.second = _data.getCols(_access.getDataObject(), false);
+            samples.first = table.getRows();
+            samples.second = table.getCols();
         }
 
         if (!isValidIndexSet(_access.getIndices()))
@@ -4214,24 +4254,41 @@ static CommandReturnValues cmd_resample(string& sCmd)
 
         _access.evalIndices();
 
-        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+        if (!table.isValueLike(_access.getIndices().col, _access.getIndices().layer))
             throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject() + "(", _access.getDataObject());
 
-        MemoryManager::AppDir dir = MemoryManager::ALL;
+        Table::AppDir dir = Table::ALL;
 
         if (cmdParser.hasParam("grid"))
-            dir = MemoryManager::GRID;
+            dir = Table::GRID;
         else if (cmdParser.hasParam("cols"))
-            dir = MemoryManager::COLS;
+            dir = Table::COLS;
         else if (cmdParser.hasParam("rows") || cmdParser.hasParam("lines"))
-            dir = MemoryManager::LINES;
+            dir = Table::ROWS;
 
         std::string sFilter = "lanczos3";
 
         if (cmdParser.hasParam("method"))
             sFilter = cmdParser.getParameterValue("method");
 
-        if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, samples, dir, sFilter))
+        bool success = true;
+
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
+        {
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            success = success && table.resample(_access.getIndices().row,
+                                                _access.getIndices().col,
+                                                s,
+                                                samples,
+                                                dir,
+                                                sFilter);
+        }
+
+        if (success)
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")));
@@ -4394,34 +4451,51 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 
     // DEPRECATED: Declared at v1.1.2rc1
     if (findCommand(sCmd).sString == "retoque")
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
+        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", Mangler::demangleExpression(sCmd)));
 
     DataAccessParser _access(sCmd, false);
 
     if (_access.getDataObject().length())
     {
+        Table& table = _data.getTable(_access.getDataObject());
+
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
-            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false) - 1);
+            _access.getIndices().row.setRange(0, table.getRows() - 1);
 
         if (_access.getIndices().col.isOpenEnd())
-            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject()) - 1);
+            _access.getIndices().col.setRange(0, table.getCols() - 1);
 
-        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+        if (!table.isValueLike(_access.getIndices().col, _access.getIndices().layer))
             throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _access.getDataObject() + "(", _access.getDataObject());
 
-        MemoryManager::AppDir dir = MemoryManager::ALL;
+        Table::AppDir dir = Table::ALL;
 
         if (findParameter(sCmd, "grid"))
-            dir = MemoryManager::GRID;
+            dir = Table::GRID;
         else if (findParameter(sCmd, "rows") || findParameter(sCmd, "lines"))
-            dir = MemoryManager::LINES;
+            dir = Table::ROWS;
         else if (findParameter(sCmd, "cols"))
-            dir = MemoryManager::COLS;
+            dir = Table::COLS;
 
-        if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, dir))
+        bool success = true;
+
+        for (size_t k = 0; k < _access.getIndices().layer.size(); k++)
+        {
+            int s = _access.getIndices().layer[k];
+
+            if (s < 0 || s >= table.getSheets())
+                continue;
+
+            success = success && table.retouch(_access.getIndices().row,
+                                               _access.getIndices().col,
+                                               s,
+                                               dir);
+        }
+
+        if (success)
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")));
@@ -4678,11 +4752,15 @@ static CommandReturnValues cmd_load(string& sCmd)
     }
     else if (cmdParser.getExpr().length())
     {
-        if (cmdParser.hasParam("app"))
+        if (cmdParser.hasParam("app") && !_data.isEmpty("data"))
         {
-            double j1 = _data.getCols("data") + 1;
+            Table& table = _data.getTable("data");
+            double j1 = table.getCols() + 1;
+            double k1 = table.getSheets() + 1;
             append_data(cmdParser);
-            cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data"), j1, _data.getCols("data")}));
+            cmdParser.setReturnValue(std::vector<mu::Numerical>({1, table.getRows(),
+                                                                 j1, table.getCols(),
+                                                                 k1, table.getSheets()}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
@@ -4718,10 +4796,18 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty(info.sTableName))
                 {
-                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
+                    Table& table = _data.getTable(info.sTableName);
 
-                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
+                    if (_option.systemPrints() && !cmdParser.hasParam("mask"))
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS",
+                                                      info.sTableName + "()",
+                                                      toString(table.getRows()),
+                                                      toString(table.getCols()),
+                                                      toString(table.getSheets())));
+
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, info.nRows,
+                                                                         table.getCols() - info.nCols + 1, table.getCols(),
+                                                                         table.getSheets() - info.nLayers + 1, table.getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4778,9 +4864,16 @@ static CommandReturnValues cmd_load(string& sCmd)
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS",
+                                                      toString(vFilelist.size()),
+                                                      sFileName,
+                                                      toString(_data.getTable("data").getRows()),
+                                                      toString(_data.getTable("data").getCols()),
+                                                      toString(_data.getTable("data").getSheets())));
 
-                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getTable("data").getRows(),
+                                                                         1, _data.getTable("data").getCols(),
+                                                                         1, _data.getTable("data").getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4806,9 +4899,15 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (!_data.isEmpty("data"))
                 {
                     if (_option.systemPrints() && !cmdParser.hasParam("mask"))
-                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS",
+                                                      info.sFileName,
+                                                      toString(info.nRows),
+                                                      toString(info.nCols),
+                                                      toString(info.nLayers)));
 
-                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getTable("data").getRows(),
+                                                                         1, _data.getTable("data").getCols(),
+                                                                         1, _data.getTable("data").getSheets()}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4865,7 +4964,9 @@ static CommandReturnValues cmd_reload(string& sCmd)
         cmd_load(sArgument);
     }
 
-    _parser.SetInternalVar("_~load[~_~]", std::vector<std::complex<double>>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+    _parser.SetInternalVar("_~load[~_~]", std::vector<std::complex<double>>({1, _data.getTable("data").getRows(),
+                                                                             1, _data.getTable("data").getCols(),
+                                                                             1, _data.getTable("data").getSheets()}));
     sCmd.replace(_mMatch.nPos, string::npos, "_~load[~_~]");
 
     return COMMAND_HAS_RETURNVALUE;
@@ -4950,17 +5051,49 @@ static CommandReturnValues cmd_print(string& sCmd)
     if (_data.isTable(cmdParser.getExpr()) && getMatchingParenthesis(cmdParser.getExpr())+1 == cmdParser.getExpr().length())
     {
         DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
-        Output& _out = NumeReKernel::getInstance()->getOutput();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        _out.setCompact(true);
 
         NumeReKernel::toggleTableStatus();
         make_hline();
         NumeReKernel::print("NUMERE: " + toUpperCase(_accessParser.getDataObject()) + "()");
         make_hline();
-        _out.format(_data.extractTable(_accessParser.getDataObject(), _accessParser.getIndices().row, _accessParser.getIndices().col),
-                    _option.getPrecision(), 4*_option.getPrecision());
-        _out.reset();
+
+        NumeRe::TableView table = _data.getTable(_accessParser.getDataObject()).extractView(_accessParser.getDataObject(),
+                                                                                            _accessParser.getIndices().row,
+                                                                                            _accessParser.getIndices().col,
+                                                                                            _accessParser.getIndices().layer);
+
+        if (table.getSheets() == 1)
+        {
+            Output& _out = NumeReKernel::getInstance()->getOutput();
+            _out.setCompact(true);
+            _out.format(table, _option.getPrecision(), 4*_option.getPrecision());
+            _out.reset();
+        }
+        else
+        {
+            std::string sPrinted;
+            TableData& tableData = table.getTableData();
+            size_t len = 0;
+
+            for (size_t i = 0; i < tableData.sheets(); i++)
+            {
+                len = std::max(len, tableData[i].m_sheetName.length());
+            }
+
+            for (size_t i = 0; i < tableData.sheets(); i++)
+            {
+                if (sPrinted.length())
+                    sPrinted += "\n";
+
+                sPrinted += strfill(tableData[i].m_sheetName, len, ' ') + ":  {"
+                    + toString(tableData[i].rows()) + " x " + toString(tableData[i].cols()) + " sheet}";
+            }
+
+            replaceAll(sPrinted, "\n", "\n|   ");
+            NumeReKernel::printPreFmt("\r|   " + sPrinted + "\n");
+        }
+
         NumeReKernel::toggleTableStatus();
         make_hline();
 

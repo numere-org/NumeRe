@@ -108,19 +108,19 @@ void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int d
 }
 
 
-NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData)
+NumeRe::TableView decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData)
 {
     int nLevels = log2(vWaveletData.size());
     int nTimePoints = vWaveletData.size() / 2;
-    NumeRe::Table wavelet;
-    wavelet.setSize(nTimePoints, nLevels+3);
+    NumeRe::TableView wavelet;
+    wavelet.setSize(nTimePoints, nLevels+3, 1);
     std::vector<double> data(nTimePoints);
     const double* output = nullptr;
 
     // write the axes
     for (int i = 0; i <= nLevels; i++)
     {
-        wavelet.setValue(i, 1, i);
+        wavelet.setValue(i, 1, 0, i);
     }
 
     // Resample the axisdata
@@ -129,7 +129,7 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
     const double* axis_out = axis.get_line();
     for (int i = 0; i < nTimePoints; i++)
     {
-        wavelet.setValue(i, 0, axis_out[i]);
+        wavelet.setValue(i, 0, 0, axis_out[i]);
     }
 
     // write the data
@@ -140,7 +140,7 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             // this case means only to write the data to a whole line
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, i+2, vWaveletData[i]);
+                wavelet.setValue(j, i+2, 0, vWaveletData[i]);
             }
         }
         else
@@ -159,7 +159,7 @@ NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const s
             // write the output to the table
             for (int j = 0; j < nTimePoints; j++)
             {
-                wavelet.setValue(j, i+2, output[j]);
+                wavelet.setValue(j, i+2, 0, output[j]);
             }
         }
     }

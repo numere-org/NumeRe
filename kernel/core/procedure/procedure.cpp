@@ -20,6 +20,7 @@
 #include "procedure.hpp"
 #include "mangler.hpp"
 #include "../../kernel.hpp"
+#include "../plotting/plotting.hpp"
 #include "procedurevarfactory.hpp"
 #include <memory>
 #define MAX_PROCEDURE_STACK_SIZE 2000000
@@ -177,10 +178,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
     {
-        if (sCurrentCommand != "for"
-            && sCurrentCommand != "if"
-            && sCurrentCommand != "while"
-            && sCurrentCommand != "switch"
+        if (!(isFlowCtrlStatement(sCurrentCommand) || getCurrentBlockDepth() > 0)
+            && !Plot::isPlottingCommand(sCurrentCommand)
             && sCurrentCommand != "define"
             && sCurrentCommand != "redef"
             && sCurrentCommand != "redefine"
@@ -472,7 +471,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
     // Write the return values to cache
     if (bWriteToCache)
-        _data.writeToTable(_idx, sCache, v[0].get());
+        _data.getTable(sCache).write(_idx, v[0].get());
 
     // Clear the vector variables after the loop returned
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
@@ -1385,8 +1384,11 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                             else
                                 _data.copyTable(_return.sReturnedTable, sTargetTable);
 
-                            sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_data.getLines(sTargetTable),
-                                                                                             _data.getCols(sTargetTable)}))
+                            Table& target = _data.getTable(sTargetTable);
+
+                            sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({target.getRows(),
+                                                                                             target.getCols(),
+                                                                                             target.getSheets()}))
                                     + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                         }
                         else
@@ -2573,8 +2575,8 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
         {
             // Catch and convert parser errors
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): '"
-                                      + Mangler::demangleExpression(e.GetExpr()) + "'");
+            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (expression#" + toString(e.GetCode()) + "): `"
+                                      + Mangler::demangleExpression(e.GetExpr()) + "`");
         }
         catch (SyntaxError& e)
         {
@@ -2590,21 +2592,21 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             {
                 // Display custom errors with their message
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: `" + e.getToken() + "`");
             }
             else if (e.errorcode == SyntaxError::ASSERTION_ERROR)
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: '"
-                                          + Mangler::demangleExpression(e.getExpr()) + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED ASSERTION: `"
+                                          + Mangler::demangleExpression(e.getExpr()) + "`");
             }
             else
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): '"
-                                          + Mangler::demangleExpression(e.getExpr()) + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION (syntax#" + toString(e.errorcode) + "): `"
+                                          + Mangler::demangleExpression(e.getExpr()) + "`");
             }
         }
         catch (...)
@@ -2692,6 +2694,7 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             sTargetTable.erase(sTargetTable.find_last_not_of(" =")+1);
 
         StripSpaces(sTargetTable);
+        const Table& returnedTable = _data.getTable(_return.sReturnedTable);
 
         if (sTargetTable.find('(') != std::string::npos
             && getMatchingParenthesis(sTargetTable) == sTargetTable.length()-1
@@ -2700,8 +2703,10 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             // Copy efficient move operations
             if (_return.delayDelete
                 && sTargetTable.ends_with("()")
-                && _return.sourceIdx.row.isFullRange(_data.getLines(_return.sReturnedTable)-1)
-                && _return.sourceIdx.col.isFullRange(_data.getCols(_return.sReturnedTable)-1))
+                && _return.sourceIdx.row.isFullRange(returnedTable.getRows()-1)
+                && _return.sourceIdx.col.isFullRange(returnedTable.getCols()-1)
+                && _return.sourceIdx.layer.isFullRange(returnedTable.getSheets()-1)
+                )
             {
                 sTargetTable.erase(sTargetTable.find('('));
 
@@ -2726,17 +2731,20 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             }
 
             _parser.SetInternalVar(sReplaceName, std::vector<std::complex<double>>({_return.sourceIdx.row.size(),
-                                                                                    _return.sourceIdx.col.size()}));
+                                                                                    _return.sourceIdx.col.size(),
+                                                                                    _return.sourceIdx.layer.size()}));
             sLine = sReplaceName + sLine.substr(nPos2);
             return sReplaceName.length();
         }
-        else if (_return.sourceIdx.row.size() == 1u || _return.sourceIdx.col.size() == 1u)
+        else if ((_return.sourceIdx.row.size() == 1u || _return.sourceIdx.col.size() == 1u)
+                 && _return.sourceIdx.layer.size() == 1u)
         {
             // If we only return a single row or column, then we can convert
             // it in a simple vector instead
-            _parser.SetInternalVar(sReplaceName, _data.getElement(_return.sourceIdx.row,
-                                                                  _return.sourceIdx.col,
-                                                                  _return.sReturnedTable));
+            _parser.SetInternalVar(sReplaceName,
+                                   _data.getTable(_return.sReturnedTable).read(_return.sourceIdx.row,
+                                                                               _return.sourceIdx.col,
+                                                                               _return.sourceIdx.layer));
             sLine.replace(nPos, nPos2-nPos, sReplaceName);
 
             if (_return.delayDelete)

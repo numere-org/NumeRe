@@ -21,7 +21,7 @@
 #define WAVELET_HPP
 
 #include <vector>
-#include "../datamanagement/table.hpp"
+#include "../datamanagement/tableview.hpp"
 
 enum WaveletType
 {
@@ -34,7 +34,7 @@ enum WaveletType
 };
 
 void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int dir);
-NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData);
+NumeRe::TableView decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData);
 
 #endif // WAVELET_HPP
 

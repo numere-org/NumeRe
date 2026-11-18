@@ -64,7 +64,7 @@ int NumeReKernel::nLastStatusVal = -1;
 size_t NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
-NumeRe::Table NumeReKernel::table;
+NumeRe::TableView NumeReKernel::table;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
@@ -342,9 +342,10 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _defVars.vValue[3][0] = mu::Value(0.0);
 
     // Declare the table dimension variables
-    _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
-    _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("nlines", &_memoryManager.tableRowsCount);
+    _parser.DefineVar("nrows", &_memoryManager.tableRowsCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
+    _parser.DefineVar("nsheets", &_memoryManager.tableSheetsCount);
 
     // Define the operators
     g_logger.debug("Defining operators.");
@@ -987,7 +988,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("is_data", strfnc_is_data, false);                             // is_data(str) <- tables/clusters may change
     _parser.DefineFun("is_table", strfnc_is_table, false);                           // is_table(str) <- tables/clusters may change
     _parser.DefineFun("is_cluster", strfnc_is_cluster, false);                       // is_cluster(str) <- tables/clusters may change
-    _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
+    _parser.DefineFun("findcolumn", strfnc_findcolumn, false, 1);                    // findcolumn(str,str,sheet) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
     _parser.DefineFun("readxml", strfnc_readxml, true, 1);                           // readxml(file,isfile)
@@ -1023,15 +1024,15 @@ void NumeReKernel::initializeStackTracker()
 void NumeReKernel::printVersionInfo(bool shortInfo)
 {
     bWritingTable = true;
-    make_hline(80);
+    printPreFmt("╔" + strRepeat("═", 78) + "╗\n");
     std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
 
-    printPreFmt("| " + sAppName + strfill("|\n", 79 - countUnicodePoints(sAppName)));
-    printPreFmt("| Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
-                + printBuildDate() + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
-                + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
-    make_hline(80);
+    printPreFmt("║ " + sAppName + strfill("║\n", 79 - countUnicodePoints(sAppName)));
+    printPreFmt("║ Version: " + getVersion() + strfill("Build: ", 79 - 22 - countUnicodePoints(getVersion()))
+                + printBuildDate() + " ║\n");
+    printPreFmt("║ Copyright (c) 2013-" + getBuildYear() + ", Erik A. Hänel et al."
+                + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " ║\n");
+    printPreFmt("╚" + strRepeat("═", 78) + "╝\n");
 
     if (!shortInfo)
     {
@@ -1436,7 +1437,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             createCalculationAnswer(nNum, v);
 
             if (bWriteToCache)
-                _memoryManager.writeToTable(_idx, sCache, v[0].get());
+                _memoryManager.getTable(sCache).write(_idx, v[0].get());
         }
         // This section starts the error handling
         catch (mu::Parser::exception_type& e)
@@ -2259,7 +2260,9 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             _option.enableSystemPrints(false);
 
             // Call the relevant procedure
-            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _pData, _script);
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(),
+                                                    _procedure.getPluginVarList(),
+                                                    _parser, _functions, _memoryManager, _option, _pData, _script);
 
             // Handle the return values
             if (_rTemp.sReturnedTable.length())
@@ -2291,8 +2294,9 @@ bool NumeReKernel::executePlugins(std::string& sLine)
                     else
                         _memoryManager.copyTable(_rTemp.sReturnedTable, sTargetTable);
 
-                    sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getLines(sTargetTable),
-                                                                                     _memoryManager.getCols(sTargetTable)}))
+                    sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getTable(sTargetTable).getRows(),
+                                                                                     _memoryManager.getTable(sTargetTable).getCols(),
+                                                                                     _memoryManager.getTable(sTargetTable).getSheets()}))
                             + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                 }
                 else
@@ -2800,7 +2804,7 @@ NumeReVariables NumeReKernel::getVariableList()
     constexpr size_t MAXSTRINGLENGTH = 512;
 
     mu::varmap_type varmap = _parser.GetVar();
-    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    std::map<std::string, TableReference> tablemap = _memoryManager.getTableMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2842,14 +2846,14 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).starts_with("_~"))
             continue;
 
-        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
-            + toString(_memoryManager.getCols(iter->first, false));
+        const Table& currTable = _memoryManager.getTable(iter->first);
+        sCurrentLine = iter->first + "()\t" + currTable.printDims();
 
-        std::pair<double,double> stats = _memoryManager.getTable(iter->first)->minmax();
+        std::pair<double,double> stats = currTable.minmax();
 
         sCurrentLine += "\ttable\t{" + toString(stats.first, DEFAULT_MINMAX_PRECISION) + ", ..., "
             + toString(stats.second, DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t"
-            + formatByteSize(_memoryManager.getBytes(iter->first));
+            + formatByteSize(currTable.getSize());
 
         vars.vTables.push_back(sCurrentLine);
     }
@@ -2906,7 +2910,7 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    std::map<std::string, TableReference> tablemap = _memoryManager.getTableMap();
     std::string sCurrentLine;
 
     // Gather all (global) numerical variables
@@ -2944,8 +2948,9 @@ NumeReVariables NumeReKernel::getVariableListForAutocompletion()
         if ((iter->first).starts_with("_~"))
             continue;
 
-        sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x "
-            + toString(_memoryManager.getCols(iter->first, false)) + "\ttable";
+        const Table& currTable = _memoryManager.getTable(iter->first);
+
+        sCurrentLine = iter->first + "()\t" + currTable.printDims() + "\ttable";
 
         vars.vTables.push_back(sCurrentLine);
     }
@@ -3578,7 +3583,7 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
     toggleTableStatus();
 
     // Show the progress depending on the selected type
-    if (sType == "std")
+    if (sType == "std" || !sType.length())
     {
         // Only value
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
@@ -3796,7 +3801,7 @@ void NumeReKernel::installationDone()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::showTable(NumeRe::Table _table, std::string __name, bool openeditable)
+void NumeReKernel::showTable(NumeRe::TableView _table, std::string __name, bool openeditable)
 {
     if (!m_parent)
         return;
@@ -3904,10 +3909,10 @@ void NumeReKernel::showWindow(const NumeRe::Window& window)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReKernel::getTable()
+NumeRe::TableView NumeReKernel::getTable()
 {
     if (!m_parent)
-        return NumeRe::Table();
+        return NumeRe::TableView();
 
     bool bHasTable = false;
     bool bWasCanceled = false;
@@ -3926,7 +3931,7 @@ NumeRe::Table NumeReKernel::getTable()
     while (!bHasTable && !bWasCanceled);
 
     if (bWasCanceled)
-        return NumeRe::Table();
+        return NumeRe::TableView();
 
     return table;
 }
@@ -3940,7 +3945,7 @@ NumeRe::Table NumeReKernel::getTable()
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
+NumeRe::TableView NumeReKernel::getTable(const std::string& sTableName)
 {
     g_logger.info("Requested table: " + sTableName);
 
@@ -3949,10 +3954,13 @@ NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
     if (sSelectedTable.find("()") != std::string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getCols(sSelectedTable))
-        return NumeRe::Table();
+    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getTable(sSelectedTable).getCols())
+        return NumeRe::TableView();
 
-    return _memoryManager.extractTable(sSelectedTable);
+    return _memoryManager.getTable(sSelectedTable).extractView(sSelectedTable,
+                                                               VectorIndex(0, VectorIndex::OPEN_END),
+                                                               VectorIndex(0, VectorIndex::OPEN_END),
+                                                               VectorIndex(0, VectorIndex::OPEN_END));
 }
 
 
@@ -4239,7 +4247,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     }
 
     // Get the table variable map
-    std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
+    std::map<std::string, TableReference> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     for (const auto& iter : tableMap)
     {
@@ -4444,11 +4452,11 @@ bool NumeReKernel::GetAsyncCancelState()
 void make_hline(int nLength)
 {
     if (nLength == -1)
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("═", NumeReKernel::nLINE_LENGTH - 1) + "\n");
     else if (nLength < -1)
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("─", NumeReKernel::nLINE_LENGTH - 1) + "\n");
     else
-        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), nLength, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("═", nLength) + "\n");
 
     return;
 }

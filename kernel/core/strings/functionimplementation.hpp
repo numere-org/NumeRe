@@ -105,7 +105,7 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts); // OPT
 mu::Array strfnc_is_data(const mu::Array& sStr);
 mu::Array strfnc_is_table(const mu::Array& sStr);
 mu::Array strfnc_is_cluster(const mu::Array& sStr);
-mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col);
+mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col, const mu::Array& sheet); // OPT=1
 mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const mu::Array& len); // OPT=2
 mu::Array strfnc_gettypeof(const mu::Array& vals);
 mu::Array strfnc_readxml(const mu::Array& xmlFiles, const mu::Array& opts); // OPT=1

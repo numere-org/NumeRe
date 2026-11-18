@@ -3073,7 +3073,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     // this was implied by the syntax of the command
     // line
     if (bWriteToCache)
-        _dataRef->writeToTable(_idx, sCache, v[0].get());
+        _dataRef->getTable(sCache).write(_idx, v[0].get());
 
     if (returnCommand)
     {
@@ -3569,7 +3569,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // this was implied by the syntax of the command
     // line
     if (bWriteToCache)
-        _dataRef->writeToTable(_idx, sDataObject, v[0].get());
+        _dataRef->getTable(sDataObject).write(_idx, v[0].get());
 
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {

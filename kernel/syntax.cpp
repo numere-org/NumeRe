@@ -537,39 +537,35 @@ void NumeReSyntax::prepareAutoCompMaps()
 
 
 /////////////////////////////////////////////////
-/// \brief This function applies the highlighting
-/// colors to the command line (only used in the
-/// terminal).
+/// \brief Highlight a defined segment of the
+/// command line.
 ///
 /// \param sCommandLine const std::string&
-/// \return std::string
+/// \param colors std::string&
+/// \param from size_t
+/// \param len size_t
+/// \return void
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
+void NumeReSyntax::highlightSegment(const std::string& sCommandLine, std::string& colors, size_t from, size_t len)
 {
-    // Ensure that a command line with a length is available
-    if (!sCommandLine.length())
-        return "";
+    if (from >= sCommandLine.length())
+        return;
 
-    // Search for the error marker.
-    // If found jump to the error highlighting function and return
-    if (sCommandLine.front() == (char)15)
-        return highlightError(sCommandLine);
+    if (from+len > sCommandLine.length())
+        len = sCommandLine.length()-from;
 
-    // Search for the warning operator.
-    if (sCommandLine.starts_with("|!>"))
-        return highlightWarning(sCommandLine);
+    if (colors.length() > from)
+        colors.replace(from, len, len, '0'+SYNTAX_STD);
+    else
+        colors.append(len, '0'+SYNTAX_STD);
 
-    // Create a color string, which will only contain default colors
-    std::string colors;
-
-    // Fill the color string with the default colors
-    colors.assign(sCommandLine.length(),'0'+SYNTAX_STD);
     char c;
 
     // Avoid some special cases
     // These shall not be highlighted, because they are messages from the kernel
-    if (!sCommandLine.starts_with("|<-")
+    if (!from
+        && !sCommandLine.starts_with("|<-")
         && !sCommandLine.starts_with("|-\?\?>")
         && !(sCommandLine.starts_with("||") || sCommandLine.starts_with("||->"))
         && !sCommandLine.starts_with("|FOR")
@@ -581,18 +577,21 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         && !sCommandLine.starts_with("|TRY")
         && !sCommandLine.starts_with("|CTCH")
         && !sCommandLine.starts_with("|WHL"))
-        return colors;
+    {
+        highlightInlineCodeSegments(sCommandLine, colors, from, len);
+        return;
+    }
 
     // Search for strings
-    if (sCommandLine.find('"') != std::string::npos)
+    if (sCommandLine.find('"', from) != std::string::npos)
     {
         char c_string = '0'+SYNTAX_STRING;
         char c_normal = '0'+SYNTAX_STD;
         c = c_string;
-        size_t firstQ = sCommandLine.find('"');
+        size_t firstQ = sCommandLine.find('"', from);
 
         // Simply alternate the colors
-        for (size_t k = firstQ; k < sCommandLine.length(); k++)
+        for (size_t k = firstQ; k < from+len; k++)
         {
             if (c == c_normal && isQuotationMark(sCommandLine, k))
             {
@@ -609,14 +608,14 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
     }
 
     // Search for procedures
-    if (sCommandLine.find('$') != std::string::npos)
+    if (sCommandLine.find('$', from) != std::string::npos)
     {
         int c_proc = '0'+SYNTAX_PROCEDURE;
         int c_normal = '0'+SYNTAX_STD;
         c = c_proc;
 
         // Apply the color from the dollar sign just up to the next whitespace or an opening parenthesis
-        for (size_t k = sCommandLine.find('$'); k < sCommandLine.length(); k++)
+        for (size_t k = sCommandLine.find('$', from); k < from+len; k++)
         {
             if (sCommandLine[k] == '(' || sCommandLine[k] == ' ')
                 c = c_normal;
@@ -631,7 +630,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
     }
 
     // Apply the syntax elements
-    for (size_t i = 0; i < sCommandLine.length(); i++)
+    for (size_t i = from; i < from+len; i++)
     {
         // find the first relevant character
         if (!i && sCommandLine.starts_with("|<-"))
@@ -807,6 +806,72 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
             i += nLen;
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Simple helper member function to find
+/// and highlight all inline code segments.
+///
+/// \param sCommandLine const std::string&
+/// \param colors std::string&
+/// \param from size_t
+/// \param len size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReSyntax::highlightInlineCodeSegments(const std::string& sCommandLine, std::string& colors, size_t from, size_t len)
+{
+    if (from >= sCommandLine.length())
+        return;
+
+    if (from+len > sCommandLine.length())
+        len = sCommandLine.length()-from;
+
+    size_t startPos = sCommandLine.find('`', from);
+
+    while (startPos < from+len)
+    {
+        size_t endPos = sCommandLine.find('`', startPos+1);
+
+        if (endPos < from+len)
+            highlightSegment(sCommandLine, colors, startPos+1, endPos-startPos-1);
+        else
+            break;
+
+        startPos = sCommandLine.find('`', endPos+1);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function applies the highlighting
+/// colors to the command line (only used in the
+/// terminal).
+///
+/// \param sCommandLine const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
+{
+    // Ensure that a command line with a length is available
+    if (!sCommandLine.length())
+        return "";
+
+    // Search for the error marker.
+    // If found jump to the error highlighting function and return
+    if (sCommandLine.front() == (char)15)
+        return highlightError(sCommandLine);
+
+    // Search for the warning operator.
+    if (sCommandLine.starts_with("|!>"))
+        return highlightWarning(sCommandLine);
+
+    // Create a color string, which will only contain default colors
+    std::string colors;
+
+    highlightSegment(sCommandLine, colors, 0, sCommandLine.length());
 
     // Return the color string
     return colors;
@@ -826,6 +891,8 @@ std::string NumeReSyntax::highlightError(const std::string& sCommandLine)
 {
     std::string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_OPERATOR);
+    highlightInlineCodeSegments(sCommandLine, colors);
+
     return colors;
 }
 
@@ -843,6 +910,8 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 {
     std::string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_NUMBER);
+    highlightInlineCodeSegments(sCommandLine, colors);
+
     return colors;
 }
 

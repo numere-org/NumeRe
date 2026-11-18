@@ -25,14 +25,72 @@
 using namespace std;
 using namespace mu;
 
-static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd, StringView sTableName, bool isAssignment);
-static void extractIndexList(StringView sCols, vector<StringView>& vLines, vector<StringView>& vCols);
-static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName,
-                               StringView sCmd, bool isAssignment);
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sTableName,
-                                StringView sCmd, bool isAssignment);
-static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign);
+enum INDEX_TYPE
+{
+    INDEX_ROW,
+    INDEX_COL,
+    INDEX_LAYER
+};
+
+struct IndexData;
+
+static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data,
+                                     StringView sArgument, StringView sCmd, StringView sTableName, bool isAssignment);
+static void extractIndexList(StringView sCols,
+                             std::vector<StringView>& vLines, std::vector<StringView>& vCols, std::vector<StringView>& vLayers);
+static void handleIndexVectors(Parser& _parser, const IndexData& idx_data, VectorIndex& _vIdx, StringView sIndex, INDEX_TYPE type);
+static void handleCasualIndices(Parser& _parser, IndexData& idx_data, INDEX_TYPE index_type);
+static void handleSingleCasualIndex(VectorIndex& _vIdx, std::vector<StringView>& vIndexDef,
+                                    std::string& sIndexExpressions, std::vector<std::pair<INDEX_TYPE, size_t>>& vIndex, INDEX_TYPE type);
 static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd);
+
+struct IndexData
+{
+    std::vector<StringView> rows;
+    std::vector<StringView> cols;
+    std::vector<StringView> layers;
+    Indices& idx;
+    StringView cmd;
+    StringView tablename;
+    bool assignment;
+
+    IndexData(Indices& _idx, StringView indices, StringView _cmd, StringView _name, bool _assignment) : idx(_idx), cmd(_cmd), tablename(_name), assignment(_assignment)
+    {
+        // extract the (textual) indices from the argument list
+        extractIndexList(indices, rows, cols, layers);
+    }
+
+    void evaluateLayer(mu::Parser& _parser)
+    {
+        // Detect, whether the layer indices are candidates
+        // for vectors
+        if (layers.size() == 1)
+            handleIndexVectors(_parser, *this, idx.layer, layers.front(), INDEX_LAYER);
+        else if (layers.size() > 1)
+            handleCasualIndices(_parser, *this, INDEX_LAYER);
+    }
+
+    void evaluateColumn(mu::Parser& _parser)
+    {
+        // Detect, whether the column indices are candidates
+        // for vectors
+        if (cols.size() == 1)
+            handleIndexVectors(_parser, *this, idx.col, cols.front(), INDEX_COL);
+        else if (cols.size() > 1)
+            handleCasualIndices(_parser, *this, INDEX_COL);
+    }
+
+    void evaluateRow(mu::Parser& _parser)
+    {
+        // Detect, whether the row indices are candidates
+        // for vectors
+        if (rows.size() == 1)
+            handleIndexVectors(_parser, *this, idx.row, rows.front(), INDEX_ROW);
+        else if (rows.size() > 1)
+            handleCasualIndices(_parser, *this, INDEX_ROW);
+    }
+};
+
 
 
 /////////////////////////////////////////////////
@@ -76,7 +134,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     size_t nPos = 0;
 
     // Check, whether indices are available
-    if ((nPos = sCmd.find_first_of("({")) == string::npos)
+    if ((nPos = sCmd.find_first_of("({")) == std::string::npos)
         return;
 
     // Find parenthesis position and get the matching closing parenthesis
@@ -113,6 +171,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     {
         _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
         _idx.col = VectorIndex(0, VectorIndex::OPEN_END);
+        _idx.layer = VectorIndex(0, VectorIndex::OPEN_END);
         return;
     }
 
@@ -136,9 +195,9 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd, sTableName, isAssignment);
 
     // Check indices here
-    if (!_idx.row.checkRange() || !_idx.col.checkRange())
+    if (!_idx.row.checkRange() || !_idx.col.checkRange() || !_idx.layer.checkRange())
         throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), nPos+1,
-                          _idx.row.to_string() + ", " + _idx.col.to_string());
+                          _idx.row.to_string() + ", " + _idx.col.to_string() + ", " + _idx.layer.to_string());
 // 1800
 }
 
@@ -164,43 +223,19 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 /////////////////////////////////////////////////
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd, StringView sTableName, bool isAssignment)
 {
-    vector<StringView> vLines;
-    vector<StringView> vCols;
+    IndexData idx_data(_idx, sArgument, sCmd, sTableName, isAssignment);
 
-    // extract the (textual) indices from the argument list and store it in sI and sJ
-    extractIndexList(sArgument, vLines, vCols);
-//        _idx.row.setIndex(0,0);
-//        _idx.col.setIndex(0,0);
-//        return;
-//1450
-    // Detect, whether the line indices are candidates
-    // for vectors
-    if (vLines.size() == 1)
-    {
-        // Try to match the textual indices to vectors
-        handleIndexVectors(_parser, _idx.row, vLines.front(), sTableName, sCmd, isAssignment);
-    }
+    // The evaluation has to be done backwards, because the column
+    // indices depend on the layer indices
+    idx_data.evaluateLayer(_parser);
+    idx_data.evaluateColumn(_parser);
+    idx_data.evaluateRow(_parser);
 
-    // Detect, whether the column indices are candidates
-    // for vectors
-    if (vCols.size() == 1)
-    {
-        // Try to match the textual indices to vectors
-        handleIndexVectors(_parser, _idx.col, vCols.front(), sTableName, sCmd, isAssignment);
-    }
-
-    // Ensure that the indices are casuals and no indices
-    if (vLines.size() > 1 || vCols.size() > 1)
-    {
-        // Handle the casual indices
-        handleCasualIndices(_parser, _idx, vLines, vCols, sTableName, sCmd, isAssignment);
-    }
-
-    if (_idx.row.numberOfNodes() > 2 || _idx.col.numberOfNodes() > 2)
-    {
-        // Expand the casual indices to vectors if needed
+    // Expand the casual indices to vectors if needed
+    if (_idx.row.numberOfNodes() > 2
+        || _idx.col.numberOfNodes() > 2
+        || _idx.layer.numberOfNodes() > 2)
         expandIndexVectors(_idx, _data, sCmd);
-    }
 }
 
 
@@ -210,35 +245,36 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
 /// returns them as vectors of StringView
 /// instances.
 ///
-/// \param sCols StringView
-/// \param vLines vector<StringView>&
-/// \param vCols vector<StringView>&
+/// \param sIndices StringView
+/// \param vRows std::vector<StringView>&
+/// \param vCols std::vector<StringView>&
+/// \param vLayers std::vector<StringView>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void extractIndexList(StringView sCols, vector<StringView>& vLines, vector<StringView>& vCols)
+static void extractIndexList(StringView sIndices, std::vector<StringView>& vRows, std::vector<StringView>& vCols, std::vector<StringView>& vLayers)
 {
     // Split line and column indices at
     // the comma (if it is available). Otherwise
     // only the line indices are available
-    StringView sLines(getNextViewedArgument(sCols));
+    StringView sLines(getNextViewedArgument(sIndices));
+    StringView sCols(getNextViewedArgument(sIndices));
 
     bool openEnd = sLines.back() == ':';
 
     // Split the line indices
-    vLines.push_back(getNextViewedIndex(sLines));
+    vRows.push_back(getNextViewedIndex(sLines));
 
     sLines.strip();
 
     if (sLines.length())
-        vLines.push_back(sLines);
+        vRows.push_back(sLines);
     else if (openEnd)
-        vLines.push_back(StringView());
+        vRows.push_back(StringView());
 
     // If the column indices are available,
     // split them also. Otherwise use an
-    // empty StringView instance. It's possible that the
-    // column indices are more than two.
+    // empty StringView instance.
     if (sCols.length())
     {
         openEnd = sCols.back() == ':';
@@ -257,6 +293,28 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
     }
     else
         vCols.push_back(StringView());
+
+    // If the layer indices are available,
+    // split them also. Otherwise use an
+    // empty StringView instance.
+    if (sIndices.length())
+    {
+        openEnd = sIndices.back() == ':';
+
+        vLayers.push_back(getNextViewedIndex(sIndices));
+
+        // As long as there's a column index
+        // available, separate it here
+        while (sIndices.length())
+        {
+            vLayers.push_back(getNextViewedIndex(sIndices));
+        }
+
+        if (openEnd)
+            vLayers.push_back(StringView());
+    }
+    else
+        vLayers.push_back(StringView());
 }
 
 
@@ -265,12 +323,12 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
 /// column indices for the respective table.
 ///
 /// \param a const mu::Array&
-/// \param sTableName StringView
-/// \param isAssignment bool
+/// \param idx_data const IndexData&
+/// \param type INDEX_TYPE
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-static mu::Array stringToNumIndex(const mu::Array& a, StringView sTableName, bool isAssignment)
+static mu::Array stringToNumIndex(const mu::Array& a, const IndexData& idx_data, INDEX_TYPE type)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     mu::Array ret;
@@ -280,11 +338,26 @@ static mu::Array stringToNumIndex(const mu::Array& a, StringView sTableName, boo
     {
         if (a.get(i).isString())
         {
+            const std::string& index_string = a.get(i).getStr();
+            std::vector<size_t> indices;
+            Table& table = _data.getTable(idx_data.tablename);
+
             // Find the columns if any
-            std::vector<size_t> cols = _data.findCols(sTableName.to_string(), {a.get(i).getStr()}, false, isAssignment);
+            if (type == INDEX_COL)
+            {
+                indices = table.findCols({index_string}, idx_data.idx.layer.front(), false, idx_data.assignment);
+
+                for (size_t layer = 1; layer < idx_data.idx.layer.size(); layer++)
+                {
+                    if (table.findCols({index_string}, idx_data.idx.layer[layer], false, idx_data.assignment) != indices)
+                        throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, index_string);
+                }
+            }
+            else if (type == INDEX_LAYER)
+                indices = table.findSheets({index_string}, false, idx_data.assignment);
 
             // insert the found columns
-            ret.insert(ret.end(), cols.begin(), cols.end());
+            ret.insert(ret.end(), indices.begin(), indices.end());
         }
         else
             ret.emplace_back(a.get(i));
@@ -299,15 +372,14 @@ static mu::Array stringToNumIndex(const mu::Array& a, StringView sTableName, boo
 /// indices and it tries to match it to a vector.
 ///
 /// \param _parser Parser&
+/// \param idx_data const IndexData&
 /// \param _vIdx VectorIndex&
 /// \param sIndex StringView
-/// \param sTableName StringView
-/// \param sCmd StringView
-/// \param isAssignment bool
+/// \param type INDEX_TYPE
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex, StringView sTableName, StringView sCmd, bool isAssignment)
+static void handleIndexVectors(Parser& _parser, const IndexData& idx_data, VectorIndex& _vIdx, StringView sIndex, INDEX_TYPE type)
 {
     mu::Array v;
 
@@ -318,10 +390,10 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
     else
     {
         _parser.SetExpr(sIndex);
-        mu::Array v = stringToNumIndex(_parser.Eval(), sTableName, isAssignment);
+        mu::Array v = stringToNumIndex(_parser.Eval(), idx_data, type);
 
         if (!v.size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v.print());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, v.print());
 
         if (v.size() > 1) // vector
             _vIdx = VectorIndex(v);
@@ -338,18 +410,19 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
 /// separately.
 ///
 /// \param _vIdx VectorIndex&
-/// \param vIndex vector<StringView>&
-/// \param sIndexExpressions string&
-/// \param vIndexNumbers vector<int>&
-/// \param sign int
+/// \param vIndexDef std::vector<StringView>&
+/// \param sIndexExpressions std::string&
+/// \param vIndex std::vector<std::pair<INDEX_TYPE, size_t>>&
+/// \param type INDEX_TYPE
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign)
+static void handleSingleCasualIndex(VectorIndex& _vIdx, std::vector<StringView>& vIndexDef, std::string& sIndexExpressions,
+                                    std::vector<std::pair<INDEX_TYPE, size_t>>& vIndex, INDEX_TYPE type)
 {
-    for (size_t n = 0; n < vIndex.size(); n++)
+    for (size_t n = 0; n < vIndexDef.size(); n++)
     {
-        if (!vIndex[n].length())
+        if (!vIndexDef[n].length())
         {
             if (n)
                 _vIdx.setIndex(n, VectorIndex::OPEN_END); //special one: last possible index
@@ -364,9 +437,10 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
                 if (sIndexExpressions.length())
                     sIndexExpressions += ",";
 
-                sIndexExpressions += vIndex[n].to_string();
-                // Store the assignment (lines are positive)
-                vIndexNumbers.push_back(sign*(n + 1));
+                sIndexExpressions += vIndexDef[n].to_string();
+
+                // Store the assignment
+                vIndex.push_back(std::make_pair(type, n));
             }
         }
     }
@@ -381,19 +455,19 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
 /// an exception.
 ///
 /// \param v const StackItem*
-/// \param vIndexNumbers const vector<int>&
+/// \param vIndex const std::vector<std::pair<INDEX_TYPE, size_t>>&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string convertToString(const StackItem* v, const vector<int>& vIndexNumbers)
+static std::string convertToString(const StackItem* v, const std::vector<std::pair<INDEX_TYPE, size_t>>& vIndex)
 {
     std::string sIndexExpression;
 
-    for (size_t i = 0; i < vIndexNumbers.size(); i++)
+    for (size_t i = 0; i < vIndex.size(); i++)
     {
         if (i)
         {
-            if (vIndexNumbers[i-1] > 0 && vIndexNumbers[i] < 0)
+            if (vIndex[i-1].first != vIndex[i].first)
                 sIndexExpression += ", ";
             else
                 sIndexExpression += ':';
@@ -413,48 +487,44 @@ static std::string convertToString(const StackItem* v, const vector<int>& vIndex
 /// Indices object.
 ///
 /// \param _parser Parser&
-/// \param _idx Indices&
-/// \param vLines vector<StringView>&
-/// \param vCols vector<StringView>&
-/// \param sTableName StringView
-/// \param sCmd StringView
-/// \param isAssignment bool
+/// \param idx_data IndexData&
+/// \param index_type INDEX_TYPE
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sTableName, StringView sCmd, bool isAssignment)
+static void handleCasualIndices(Parser& _parser, IndexData& idx_data, INDEX_TYPE index_type)
 {
-    string sIndexExpressions;
-    vector<int> vIndexNumbers;
+    std::string sIndexExpressions;
+    std::vector<std::pair<INDEX_TYPE, size_t>> vIndex;
 
     // Go through all indices and connect them to one single equation
     // store the assignment of the indices
-    if (!_idx.row.isValid())
-        handleSingleCasualIndex(_idx.row, vLines, sIndexExpressions, vIndexNumbers, 1);
-
-    // Go through the column indices separately,
-    // because they might be more than two
-    if (!_idx.col.isValid())
-        handleSingleCasualIndex(_idx.col, vCols, sIndexExpressions, vIndexNumbers, -1);
+    if (index_type == INDEX_ROW)
+        handleSingleCasualIndex(idx_data.idx.row, idx_data.rows, sIndexExpressions, vIndex, INDEX_ROW);
+    else if (index_type == INDEX_COL)
+        handleSingleCasualIndex(idx_data.idx.col, idx_data.cols, sIndexExpressions, vIndex, INDEX_COL);
+    else if (index_type == INDEX_LAYER)
+        handleSingleCasualIndex(idx_data.idx.layer, idx_data.layers, sIndexExpressions, vIndex, INDEX_LAYER);
 
     // If the index expression list has a length, evaluate it
     if (sIndexExpressions.length())
     {
         _parser.SetExpr(sIndexExpressions);
-		int nResults;
+        int nResults;
         const mu::StackItem* v = _parser.Eval(nResults);
 
         // check whether the number of the results is matching
-        if ((size_t)nResults != vIndexNumbers.size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
+        if ((size_t)nResults != vIndex.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
 
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
         {
             if (!v[i].get().size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, v[i].get().print());
+                throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
+                                  SyntaxError::invalid_position, v[i].get().print());
 
-            mu::Array idx = stringToNumIndex(v[i].get(), sTableName, isAssignment);
+            mu::Array idx = stringToNumIndex(v[i].get(), idx_data, index_type);
 
             if (isinf(idx.front().getNum().asF64())) // infinity => last possible index
                 idx.front() = mu::Value(-1); // only -1 because it will be decremented in the following lines
@@ -462,26 +532,38 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
             {
                 std::string sToken;
 
-                if (vIndexNumbers.front() > 0 && vIndexNumbers.back() < 0)
-                    sToken = convertToString(v, vIndexNumbers);
-                else if (vIndexNumbers.front() > 0)
+                if (index_type == INDEX_ROW)
                 {
-                    sToken = convertToString(v, vIndexNumbers);
-                    sToken += ", " + _idx.col.to_string();
+                    sToken = convertToString(v, vIndex);
+                    sToken += ", " + idx_data.idx.col.to_string();
+                }
+                else if (index_type == INDEX_LAYER)
+                {
+                    sToken = idx_data.idx.row.to_string() + ", " + idx_data.idx.col.to_string() + ", ";
+                    sToken += convertToString(v, vIndex);
                 }
                 else
                 {
-                    sToken = _idx.row.to_string() + ", ";
-                    sToken += convertToString(v, vIndexNumbers);
+                    sToken = idx_data.idx.row.to_string() + ", ";
+                    sToken += convertToString(v, vIndex);
                 }
 
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, sToken);
+                throw SyntaxError(SyntaxError::INVALID_INDEX, idx_data.cmd.to_string(),
+                                  SyntaxError::invalid_position, sToken);
             }
 
-            if (vIndexNumbers[i] > 0)
-                _idx.row.setIndex(vIndexNumbers[i] - 1, idx.getAsScalarInt() - 1);
-            else
-                _idx.col.setIndex(abs(vIndexNumbers[i]) - 1, idx.getAsScalarInt() - 1);
+            switch (index_type)
+            {
+                case INDEX_ROW:
+                    idx_data.idx.row.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+                case INDEX_COL:
+                    idx_data.idx.col.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+                case INDEX_LAYER:
+                    idx_data.idx.layer.setIndex(vIndex[i].second, idx.getAsScalarInt() - 1);
+                    break;
+            }
         }
     }
 }
@@ -513,11 +595,14 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
         throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 
     // Ensure that the indices are valid
-    if (!_idx.row.isValid() || !_idx.col.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+    if (!_idx.row.isValid() || !_idx.col.isValid() || !_idx.layer.isValid())
+        throw SyntaxError(SyntaxError::INVALID_INDEX,
+                          sCmd.to_string(),
+                          SyntaxError::invalid_position,
+                          _idx.row.to_string() + ", " + _idx.col.to_string() + ", " + _idx.layer.to_string());
 
     // If the cache is not really a cache
-    if (!isCluster && !_data.isTable(sCache.to_string()))
+    if (!isCluster && !_data.isTable(sCache))
         throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 }
 

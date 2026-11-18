@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "core/datamanagement/table.hpp"
+#include "core/datamanagement/tableview.hpp"
 #include "core/ParserLib/muStructures.hpp"
 
 // Global forward declarations
@@ -117,7 +117,7 @@ namespace NumeRe
     {
         std::string type;
         mu::Array val;
-        Table tableValue;
+        TableView tableValue;
     };
 
     // Forward declaration of the window manager class

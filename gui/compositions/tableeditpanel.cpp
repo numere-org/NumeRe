@@ -29,6 +29,9 @@
 
 BEGIN_EVENT_TABLE(TablePanel, wxPanel)
     EVT_CLOSE (TablePanel::OnClose)
+    EVT_AUINOTEBOOK_PAGE_CHANGED(-1, TablePanel::OnSheetChange)
+    EVT_AUINOTEBOOK_TAB_RIGHT_UP(-1, TablePanel::OnTabRightClick)
+    EVT_MENU_RANGE(TablePanel::ID_MENU_INSERT_SHEET, TablePanel::ID_MENU_TABLE_END, TablePanel::OnMenuEvent)
 END_EVENT_TABLE()
 
 BEGIN_EVENT_TABLE(TableEditPanel, TablePanel)
@@ -51,7 +54,9 @@ END_EVENT_TABLE()
 /////////////////////////////////////////////////
 TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
 {
+    m_topWindow = topWindow;
     m_topLevelFrame = topLevel;
+    m_statusBar = statusbar;
     SyntaxStyles uiTheme = topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     statusbar->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
     SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
@@ -71,9 +76,12 @@ TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxSta
                                    wxTE_READONLY | wxBORDER_THEME);
     m_lastSaveText = new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_LASTSAVE"));
 
-    grid = new TableViewer(this, wxID_ANY, statusbar, this, topWindow, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
-    grid->SetTableReadOnly(readOnly);
-    grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+    m_sheets = new ViewerBook(this,
+                              wxID_ANY,
+                              uiTheme.foreground.ChangeLightness(Options::PANEL),
+                              wxDefaultPosition,
+                              wxDefaultSize,
+                              wxAUI_NB_SCROLL_BUTTONS | wxAUI_NB_WINDOWLIST_BUTTON);
 
     vsizer->Add(new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_DESCRIPTION")), 0, wxALIGN_LEFT | wxBOTTOM, 5);
     vsizer->Add(m_commentField, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxBOTTOM, 5);
@@ -82,11 +90,97 @@ TablePanel::TablePanel(wxWindow* parent, wxFrame* topLevel, wxWindowID id, wxSta
     vsizer->Add(m_lastSaveText, 0, wxALIGN_LEFT, 0);
 
     hsizer->Add(vsizer, 0, wxEXPAND | wxALL, 5);
-    hsizer->Add(grid, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
+    hsizer->Add(m_sheets, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 0);
+
     globalSizer->Add(hsizer, 1, wxEXPAND);
 
     SetSizer(globalSizer);
     PostSizeEvent();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show a TableView instance.
+///
+/// \param _table NumeRe::TableView&
+/// \param sName const std::string&
+/// \param sIntName const std::string&
+/// \param readOnly bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::show(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName, bool readOnly)
+{
+    SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+
+    if (!_table.getSheets())
+        _table.appendSheets(1);
+
+    while (m_sheets->GetPageCount() > _table.getSheets())
+    {
+        m_sheets->DeletePage(m_sheets->GetPageCount()-1);
+    }
+
+    for (size_t k = 0; k < _table.getSheets(); k++)
+    {
+        TableViewer* grid;
+
+        if (m_sheets->GetPageCount() > k)
+            grid = static_cast<TableViewer*>(m_sheets->GetPage(k));
+        else
+            grid = new TableViewer(m_sheets, wxID_ANY, m_statusBar, this, m_topWindow,
+                                   wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+
+        grid->SetTableReadOnly(readOnly);
+        grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+        grid->SetData(_table, k, sName, sIntName);
+
+        if (m_sheets->GetPageCount() > k)
+            m_sheets->SetPageText(k, toString(k+1) + ": " + wxFromUtf8(_table.getTableData().getSheet(k).m_sheetName));
+        else
+            m_sheets->AddPage(grid, toString(k+1) + ": " + wxFromUtf8(_table.getTableData().getSheet(k).m_sheetName));
+    }
+
+    isReadOnly = readOnly;
+    m_tableDisplayName = sName;
+    m_sheets->SetSelection(0);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show a container.
+///
+/// \param _table NumeRe::Container<std::string>&
+/// \param sName const std::string&
+/// \param sIntName const std::string&
+/// \param readOnly bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::show(NumeRe::Container<std::string>& _table, const std::string& sName, const std::string& sIntName, bool readOnly)
+{
+    SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+
+    TableViewer* grid;
+
+    if (m_sheets->GetPageCount())
+        grid = static_cast<TableViewer*>(m_sheets->GetPage(0));
+    else
+        grid = new TableViewer(m_sheets, wxID_ANY, m_statusBar, this, m_topWindow,
+                               wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+
+    grid->SetTableReadOnly(readOnly);
+    grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+    grid->SetData(_table, sName, sIntName);
+
+    if (m_sheets->GetPageCount())
+        m_sheets->SetPageText(0, "1: " + sName);
+    else
+        m_sheets->AddPage(grid, "1: " + sName);
+
+    isReadOnly = readOnly;
+    m_tableDisplayName = sName;
+    m_sheets->SetSelection(0);
 }
 
 
@@ -147,6 +241,33 @@ void TablePanel::dismissMessage()
 
 
 /////////////////////////////////////////////////
+/// \brief Reload the table and create/remove
+/// sheets.
+///
+/// \param sDisplayName const std::string&
+/// \param sInternalName const std::string&
+/// \param is_tableView bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::reload(const std::string& sDisplayName, const std::string& sInternalName, bool is_tableView)
+{
+    if (is_tableView)
+    {
+        int selection = m_sheets->GetSelection();
+        NumeRe::TableView _tab = m_terminal->getTable(sInternalName);
+        show(_tab, sDisplayName, sInternalName, isReadOnly);
+        m_sheets->SetSelection(std::min(selection, (int)m_sheets->GetPageCount()-1));
+    }
+    else
+    {
+        NumeRe::Container<std::string> _strTab = m_terminal->getStringTable(sInternalName);
+        show(_strTab, sDisplayName, sInternalName, isReadOnly);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns a pointer to the menu bar of
 /// the parent frame. If no menu bar exists, a
 /// new one is created.
@@ -195,6 +316,36 @@ void TablePanel::ready()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the currently displayed
+/// TableViewer instance.
+///
+/// \return TableViewer*
+///
+/////////////////////////////////////////////////
+TableViewer* TablePanel::getCurrentPage()
+{
+    return static_cast<TableViewer*>(m_sheets->GetPage(m_sheets->GetSelection()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a combination of the table
+/// name and the name of the currently visible
+/// table sheet to be used within the window
+/// title.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString TablePanel::getTableAndSheetName()
+{
+    if (!m_sheets->GetPageCount())
+        return m_tableDisplayName;
+
+    return m_tableDisplayName + "  [" + m_sheets->GetPageText(m_sheets->GetSelection()) + "]";
+}
+
+/////////////////////////////////////////////////
 /// \brief Event handler for the CLOSE event.
 ///
 /// \param event wxCloseEvent&
@@ -203,7 +354,7 @@ void TablePanel::ready()
 /////////////////////////////////////////////////
 void TablePanel::OnClose(wxCloseEvent& event)
 {
-    grid->finalize();
+    getCurrentPage()->finalize();
 
     if (!finished)
     {
@@ -211,6 +362,150 @@ void TablePanel::OnClose(wxCloseEvent& event)
         m_parent->Close();
         event.Skip();
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler for the sheet change
+/// event.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::OnSheetChange(wxAuiNotebookEvent& event)
+{
+    if (!m_statusBar)
+        return;
+
+    m_topLevelFrame->SetTitle("NumeRe-DataViewer: " + getTableAndSheetName());
+    getCurrentPage()->refreshStatusBar();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler for right-clicking the
+/// sheet tabs.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::OnTabRightClick(wxAuiNotebookEvent& event)
+{
+    if (isReadOnly)
+        return;
+
+    wxPoint pt = wxGetMousePosition();
+	int pageNum = m_sheets->GetTabFromPoint(pt);
+	pt -= GetScreenRect().GetTopLeft();
+
+    if (pageNum < 0)
+		return;
+
+    m_clickedTab = pageNum;
+
+    wxMenu popUp;
+    popUp.Append(ID_MENU_INSERT_SHEET, _guilang.get("GUI_INSERT_TABLE_SHEET"));
+    popUp.Append(ID_MENU_APPEND_SHEET, _guilang.get("GUI_APPEND_TABLE_SHEET"));
+    popUp.AppendSeparator();
+    popUp.Append(ID_MENU_RENAME_SHEET, _guilang.get("GUI_RENAME_TABLE_SHEET"));
+    popUp.Append(ID_MENU_REMOVE_SHEET, _guilang.get("GUI_REMOVE_TABLE_SHEET"));
+
+    PopupMenu(&popUp, pt);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Menu event handler for the tabs
+/// context menu.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::OnMenuEvent(wxCommandEvent& event)
+{
+    TableViewer* tableViewer = static_cast<TableViewer*>(m_sheets->GetPage(m_clickedTab));
+    NumeRe::TableView tableView = tableViewer->GetData();
+    TableData& data = tableView.getTableData();
+    SyntaxStyles uiTheme = m_topWindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+
+    switch (event.GetId())
+    {
+        case ID_MENU_INSERT_SHEET:
+        {
+            tableView.insertSheets(m_clickedTab, 1);
+            tableView.set(0, 0, m_clickedTab, 0.0);
+            tableView.set(0, 0, m_clickedTab, NAN);
+            TableViewer* grid = new TableViewer(m_sheets, wxID_ANY, m_statusBar, this, m_topWindow,
+                                                wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+
+            grid->SetTableReadOnly(isReadOnly);
+            grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+            grid->SetData(tableView, m_clickedTab, wxToUtf8(m_tableDisplayName), tableViewer->GetInternalName());
+
+            m_sheets->InsertPage(m_clickedTab, grid, toString(m_clickedTab+1) + ": " + wxFromUtf8(data[m_clickedTab].m_sheetName));
+
+            for (size_t k = m_clickedTab+1; k < m_sheets->GetPageCount(); k++)
+            {
+                m_sheets->SetPageText(k, toString(k+1) + ": " + wxFromUtf8(data[k].m_sheetName));
+                static_cast<TableViewer*>(m_sheets->GetPage(k))->setRefSheet(k);
+            }
+
+            break;
+        }
+        case ID_MENU_APPEND_SHEET:
+        {
+            tableView.appendSheets(1);
+            tableView.set(0, 0, tableView.getSheets()-1, 0.0);
+            tableView.set(0, 0, tableView.getSheets()-1, NAN);
+            TableViewer* grid = new TableViewer(m_sheets, wxID_ANY, m_statusBar, this, m_topWindow,
+                                                wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+
+            grid->SetTableReadOnly(isReadOnly);
+            grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
+            grid->SetData(tableView, tableView.getSheets()-1, wxToUtf8(m_tableDisplayName), tableViewer->GetInternalName());
+
+            m_sheets->AddPage(grid, toString(tableView.getSheets()) + ": " + wxFromUtf8(data[tableView.getSheets()-1].m_sheetName));
+
+            break;
+        }
+        case ID_MENU_RENAME_SHEET:
+        {
+            wxTextEntryDialog textentry(this,
+                                        _guilang.get("GUI_DLG_RENAME_QUESTION"),
+                                        _guilang.get("GUI_DLG_RENAME"),
+                                        wxFromUtf8(data[m_clickedTab].m_sheetName));
+            int retval = textentry.ShowModal();
+
+            if (retval == wxID_CANCEL)
+                return;
+
+            data[m_clickedTab].m_sheetName = wxToUtf8(textentry.GetValue());
+            m_sheets->SetPageText(m_clickedTab, toString(m_clickedTab+1) + ": " + textentry.GetValue());
+
+            break;
+        }
+        case ID_MENU_REMOVE_SHEET:
+        {
+            m_sheets->DeletePage(m_clickedTab);
+            tableView.deleteSheets(m_clickedTab, 1);
+
+            for (size_t k = m_clickedTab; k < m_sheets->GetPageCount(); k++)
+            {
+                m_sheets->SetPageText(k, toString(k+1) + ": " + wxFromUtf8(data[k].m_sheetName));
+                static_cast<TableViewer*>(m_sheets->GetPage(k))->setRefSheet(k);
+            }
+
+            break;
+        }
+    }
+
+    if (!m_statusBar)
+        return;
+
+    m_topLevelFrame->SetTitle("NumeRe-DataViewer: " + getTableAndSheetName());
 }
 
 
@@ -252,8 +547,8 @@ TableEditPanel::TableEditPanel(wxWindow* parent, wxWindowID id, wxStatusBar* sta
 /////////////////////////////////////////////////
 void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 {
-    grid->finalize();
-    m_terminal->passEditedTable(grid->GetData());
+    getCurrentPage()->finalize();
+    m_terminal->passEditedTable(getCurrentPage()->GetData());
     finished = true;
     m_parent->Close();
 }
@@ -268,7 +563,7 @@ void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 /////////////////////////////////////////////////
 void TableEditPanel::OnButtonCancel(wxCommandEvent& event)
 {
-    grid->finalize();
+    getCurrentPage()->finalize();
     m_terminal->cancelTableEdit();
     finished = true;
     m_parent->Close();
@@ -284,7 +579,7 @@ void TableEditPanel::OnButtonCancel(wxCommandEvent& event)
 /////////////////////////////////////////////////
 void TableEditPanel::OnClose(wxCloseEvent& event)
 {
-    grid->finalize();
+    getCurrentPage()->finalize();
 
     if (!finished)
     {

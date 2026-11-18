@@ -479,8 +479,8 @@ static std::vector<double> evaluateFittingParams(FittingData& fitData, CommandLi
 
             evaluateIndices(fitData.sChiMap, _idx, _data);
             fitData.sChiMap.erase(fitData.sChiMap.find('('));
-            fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.col[0], fitData.sChiMap);
-            fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.col[1], fitData.sChiMap);
+            fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.col[0], _idx.layer.front(), fitData.sChiMap);
+            fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.col[1], _idx.layer.front(), fitData.sChiMap);
         }
     }
 
@@ -1063,6 +1063,8 @@ static bool calculateChiMap(std::string sFunctionDefString, const std::string& s
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
+    Table& chiMap = _data.getTable(fitData.sChiMap);
+
     Fitcontroller _fControl(&_parser);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
@@ -1077,17 +1079,17 @@ static bool calculateChiMap(std::string sFunctionDefString, const std::string& s
                 ++iter;
             }
 
-            if (!_data.isValidElement(_idx.row[i], _idx.col[0], fitData.sChiMap))
+            if (!chiMap.isValidElement(_idx.row[i], _idx.col[0], _idx.layer.front()))
                 continue;
 
-            *(varMap.at(fitData.sChiMap_Vars[0])) = _data.getElement(_idx.row[i], _idx.col[0], fitData.sChiMap);
+            *(varMap.at(fitData.sChiMap_Vars[0])) = chiMap.read(_idx.row[i], _idx.col[0], _idx.layer.front());
 
             if (!fitData.b1DChiMap)
             {
-                if (!_data.isValidElement(_idx.row[j], _idx.col[1], fitData.sChiMap))
+                if (!chiMap.isValidElement(_idx.row[j], _idx.col[1], _idx.layer.front()))
                     continue;
 
-                *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(_idx.row[j], _idx.col[1], fitData.sChiMap);
+                *(varMap.at(fitData.sChiMap_Vars[1])) = chiMap.read(_idx.row[j], _idx.col[1], _idx.layer.front());
             }
 
             if (fitData.nDim >= 2 && fitData.nFitVars == 1)
@@ -1146,12 +1148,12 @@ static bool calculateChiMap(std::string sFunctionDefString, const std::string& s
                 sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
             }
 
-            _data.writeToTable(_idx.row[i], _idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, _fControl.getFitChi());
+            chiMap.write(_idx.row[i], _idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], _idx.layer.front(), _fControl.getFitChi());
 
             if (!i && !fitData.b1DChiMap)
-                _data.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2(" + toString(j + 1) + ")");
+                chiMap.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], _idx.layer.front(), "chi^2(" + toString(j + 1) + ")");
             else if (!i)
-                _data.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2");
+                chiMap.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], _idx.layer.front(), "chi^2");
 
         }
     }

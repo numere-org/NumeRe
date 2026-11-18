@@ -1943,6 +1943,7 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
             || sSyntaxElement == "nrows"
             || sSyntaxElement == "ncols"
             || sSyntaxElement == "nlayers"
+            || sSyntaxElement == "nsheets"
             || sSyntaxElement == "ndim"
             || sSyntaxElement == "nlines")
         {
@@ -1964,6 +1965,8 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
     }
     else if (sSyntaxElement == "nrows"
              || sSyntaxElement == "ncols"
+             || sSyntaxElement == "nsheets"
+             || sSyntaxElement == "nlayers"
              || sSyntaxElement == "nlines")
     {
         // Should only be used in tables. Additionally,
@@ -1989,8 +1992,14 @@ AnnotationCount CodeAnalyzer::analysePreDefs()
 
             // Check, whether the dimension vars can be found in the
             // opposite dimension
-            if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
-                || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
+            bool rowError = (sSyntaxElement == "nrows" || sSyntaxElement == "nlines")
+                && findVariableInExpression(args[0], sSyntaxElement, 0u) == std::string::npos;
+            bool colError = sSyntaxElement == "ncols"
+                && findVariableInExpression(args[1], sSyntaxElement, 0u) == std::string::npos;
+            bool layerError = (sSyntaxElement == "nlayer" || sSyntaxElement == "nsheets")
+                && findVariableInExpression(args[2], sSyntaxElement, 0u) == std::string::npos;
+
+            if (rowError || colError || layerError)
                 AnnotCount += addWarning(highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
                                          "GUI_ANALYZER_DIMVAR_MIXUP");
         }

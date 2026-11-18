@@ -28,6 +28,7 @@
 
 class TextField;
 class NumeReWindow;
+class ViewerBook;
 
 /////////////////////////////////////////////////
 /// \brief Generic table panel, which also
@@ -36,32 +37,53 @@ class NumeReWindow;
 class TablePanel : public wxPanel
 {
     protected:
+        ViewerBook* m_sheets;
         TextField* m_commentField;
         wxTextCtrl* m_sourceField;
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
         wxStaticText* m_lastSaveText;
         wxInfoBar* m_infoBar;
+        wxStatusBar* m_statusBar;
+        wxString m_tableDisplayName;
         bool finished;
+        bool isReadOnly;
+        int m_clickedTab;
 
+        NumeReWindow* m_topWindow;
         NumeReTerminal* m_terminal;
         wxFrame* m_topLevelFrame;
 
-    public:
-        TableViewer* grid;
+        enum TablePanelIds
+        {
+            ID_MENU_INSERT_SHEET = 16000,
+            ID_MENU_APPEND_SHEET,
+            ID_MENU_RENAME_SHEET,
+            ID_MENU_REMOVE_SHEET,
+            ID_MENU_TABLE_END
+        };
 
+    public:
         TablePanel(wxWindow* parent, wxFrame* toplevel, wxWindowID id, wxStatusBar* statusbar, NumeReWindow* topWindow, bool readOnly = true);
+        void show(NumeRe::TableView& _table, const std::string& sName, const std::string& sIntName, bool readOnly = true);
+        void show(NumeRe::Container<std::string>& _table, const std::string& sName, const std::string& sIntName, bool readOnly = true);
         void update(const NumeRe::TableMetaData& meta);
         void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
         NumeReTerminal* GetTerminal() {return m_terminal;};
         std::string getComment() const;
         void showMessage(const wxString& msg);
         void dismissMessage();
+        void reload(const std::string& sDisplayName, const std::string& sInternalName, bool is_tableView);
         wxMenuBar* getMenuBar();
         wxFrame* getFrame();
         void ready();
+        TableViewer* getCurrentPage();
+        wxString getTableAndSheetName();
 
         void OnClose(wxCloseEvent& event);
+        void OnSheetChange(wxAuiNotebookEvent& event);
+        void OnTabRightClick(wxAuiNotebookEvent& event);
+        void OnMenuEvent(wxCommandEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

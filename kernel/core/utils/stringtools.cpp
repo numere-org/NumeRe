@@ -634,6 +634,44 @@ std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool 
 /////////////////////////////////////////////////
 /// \brief This function fills the passed string
 /// up to the width nWidth with the characters
+/// cFill. The string will be aligned
+/// right. If the bool option limit is true,
+/// the string will be shortened to the required
+/// size and '...' will be added.
+///
+/// \param sString const std::string&
+/// \param nWidth size_t
+/// \param sFill const std::string&
+/// \param limit bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strfills(const std::string& sString, size_t nWidth, const std::string& sFill, bool limit)
+{
+    if (!nWidth)
+        return "";
+
+    std::string sReturn = sString;
+    size_t len = countUnicodePoints(sString);
+
+    if (countUnicodePoints(sFill) != 1)
+        throw std::length_error("The length of " + sFill + " does not correspond to a single unicode codepoint.");
+
+    // Fill the string
+    if (len < nWidth)
+        sReturn.insert(0, strRepeat(sFill, nWidth-len));
+
+    // Limit the output size if required
+    if (limit && len > nWidth)
+        sReturn = sString.substr(0, findNthCharStart(sString, nWidth - 3)) + "...";
+
+    return sReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
 /// cFill. The string will be aligned left.
 ///
 /// \param sString const std::string&
@@ -648,10 +686,10 @@ std::string strlfill(const std::string& sString, size_t nWidth, char cFill)
         return "";
 
     std::string sReturn = sString;
-    size_t length = sString.length();
+    size_t len = countUnicodePoints(sString);
 
-    if (length < nWidth)
-        sReturn.append(nWidth-length, cFill);
+    if (len < nWidth)
+        sReturn.append(nWidth-len, cFill);
 
     return sReturn;
 }

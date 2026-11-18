@@ -23,7 +23,7 @@
 #include <string>
 #include "../ParserLib/muParser.h"
 #include "memorymanager.hpp"
-#include "table.hpp"
+#include "tableview.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
 
@@ -70,20 +70,15 @@ class DataView
 {
     private:
         mu::Array m_array;
+        Table* m_table;
         DataAccessParser m_access;
         std::string m_dataName;
         size_t m_axisCount;
 
     public:
-        DataView(const mu::Array& arr, const std::string& dataName) : m_array(arr), m_dataName(dataName), m_axisCount(0) { }
-        DataView(const DataAccessParser& acc) : m_access(acc), m_axisCount(0)
-        {
-            m_dataName = m_access.getDataObject() + "(";
-        }
-        DataView(const DataAccessParser&& acc) : m_access(acc), m_axisCount(0)
-        {
-            m_dataName = m_access.getDataObject() + "(";
-        }
+        DataView(const mu::Array& arr, const std::string& dataName);
+        DataView(const DataAccessParser& acc);
+        DataView(const DataAccessParser&& acc);
         DataView(const DataView&) = default;
         DataView(DataView&&) = default;
 
@@ -115,7 +110,7 @@ class DataView
         size_t getDims() const
         {
             if (isTable())
-                return m_access.getIndices().col.size() > 1 ? 2ull : 1ull;
+                return 1ull + size_t(m_access.getIndices().col.size() > 1) + size_t(m_access.getIndices().layer.size() > 1);
 
             return m_array.getDims();
         }
@@ -151,6 +146,21 @@ class DataView
         }
 
         /////////////////////////////////////////////////
+        /// \brief Return the number of layers
+        /// referenced in the data source.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t layers() const
+        {
+            if (isTable())
+                return m_access.getIndices().layer.size();
+
+            return m_array.layers();
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Returns true, if a table has been
         /// referenced.
         ///
@@ -172,6 +182,33 @@ class DataView
         const std::string& getDataName() const
         {
             return m_dataName;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the datagrid dimensions. Only
+        /// meaningful for DataViews containing tables.
+        ///
+        /// \return std::vector<size_t>
+        ///
+        /////////////////////////////////////////////////
+        std::vector<size_t> getDataGridDimensions() const
+        {
+            if (isTable())
+                return m_access.getDataGridDimensions();
+
+            return m_array.getDimSizes();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the table access indices. Only
+        /// meaningful for table accesses.
+        ///
+        /// \return Indices&
+        ///
+        /////////////////////////////////////////////////
+        Indices& getTableIndices()
+        {
+            return m_access.getIndices();
         }
 
         /////////////////////////////////////////////////
@@ -199,6 +236,7 @@ class DataView
         }
 
         bool isValueLike() const;
+        bool isDataTime(const VectorIndex& cols, const VectorIndex& layers = VectorIndex(0)) const;
         bool isValid() const;
 
         mu::Array getAxis(size_t axis) const;
@@ -209,8 +247,8 @@ class DataView
             return m_axisCount;
         }
 
-        mu::Value get(size_t i, size_t j) const;
-        mu::Array get(const VectorIndex& rows, const VectorIndex& cols) const;
+        mu::Value get(size_t i, size_t j, size_t k = 0) const;
+        mu::Array get(const VectorIndex& rows, const VectorIndex& cols, const VectorIndex& layers = VectorIndex(0)) const;
 
         mu::Value sum() const;
         mu::Value min() const;
@@ -231,10 +269,8 @@ bool parser_CheckMultArgFunc(StringView, StringView);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options = REPLACE_NAN);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, int options = NO_OPTION);
-Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
+Table* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
 bool isNotEmptyExpression(StringView);
-mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
-mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 

@@ -216,10 +216,11 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
 {
     bool systemPrints = NumeReKernel::getInstance()->getSettings().systemPrints();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Table& targetTable = _data.getTable(sTarget);
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     bool bCalcLyapunov = nLyapuSamples > 0;
-    bool bAllowCacheClearance = _idx.row.isFullRange(_data.getLines(sTarget));
+    bool bAllowCacheClearance = _idx.row.isFullRange(targetTable.getRows());
 
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, _idx.row.front() + nSamples);
@@ -228,7 +229,7 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
         _idx.col.setRange(0, _idx.col.front() + params.dims + (long long int)bCalcLyapunov*2);
 
     if (bAllowCacheClearance)
-        _data.deleteBulk(sTarget, _idx.row, _idx.col);
+        targetTable.deleteBulk(_idx.row, _idx.col, _idx.layer);
 
     std::vector<double> y(params.dims, 0.0);
     std::vector<double> y2;
@@ -261,12 +262,12 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
 
     // Write the x column title
     if (bAllowCacheClearance || !_idx.row.front())
-        _data.setHeadLineElement(_idx.col.front(), sTarget, "x");
+        targetTable.setHeadLineElement(_idx.col.front(), _idx.layer.front(), "x");
 
     double startTime = timeInterval.min();
 
     // Write x start value
-    _data.writeToTable(_idx.row.front(), _idx.col.front(), sTarget, startTime);
+    targetTable.write(_idx.row.front(), _idx.col.front(), _idx.layer.front(), startTime);
 
     // Write position column titles and start values
     for (int j = 0; j < params.dims; j++)
@@ -275,16 +276,16 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
             break;
 
         if (bAllowCacheClearance || !_idx.row.front())
-            _data.setHeadLineElement(_idx.col[1+j], sTarget, "y_"+toString(j+1));
+            targetTable.setHeadLineElement(_idx.col[1+j], _idx.layer.front(), "y_"+toString(j+1));
 
-        _data.writeToTable(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
+        targetTable.write(_idx.row.front(), _idx.col[j+1], _idx.layer.front(), y[j]);
     }
 
     // Write the Lyapunov column titles
     if (bCalcLyapunov && (bAllowCacheClearance || !_idx.row.front()) && _idx.col[params.dims+2] != VectorIndex::INVALID)
     {
-        _data.setHeadLineElement(_idx.col[1+params.dims], sTarget, "x_lypnv");
-        _data.setHeadLineElement(_idx.col[2+params.dims], sTarget, "lyapunov");
+        targetTable.setHeadLineElement(_idx.col[1+params.dims], _idx.layer.front(), "x_lypnv");
+        targetTable.setHeadLineElement(_idx.col[2+params.dims], _idx.layer.front(), "lyapunov");
     }
 
     // Initialize systems
@@ -341,7 +342,7 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
         }
 
         // Store the current simulated time (not the target time)
-        _data.writeToTable(_idx.row[i+1], _idx.col[0], sTarget, t);
+        targetTable.write(_idx.row[i+1], _idx.col[0], _idx.layer.front(), t);
 
         // Store the integrated results
         for (int j = 0; j < params.dims; j++)
@@ -349,7 +350,7 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
             if (_idx.col[j+1] == VectorIndex::INVALID)
                 break;
 
-            _data.writeToTable(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
+            targetTable.write(_idx.row[i+1], _idx.col[j+1], _idx.layer.front(), y[j]);
         }
 
         // Do we need to calculate Lyapunov values?
@@ -382,8 +383,8 @@ static bool integrate(OdeParams params, const std::vector<double>& vStartValues,
             // Store the Lyapunov parameter
             if (!((i+1) % nLyapuSamples) && _idx.col[params.dims + 2] != VectorIndex::INVALID)
             {
-                _data.writeToTable((i+1)/nLyapuSamples-1, _idx.col[params.dims+1], sTarget, currentTime);
-                _data.writeToTable((i+1)/nLyapuSamples-1, _idx.col[params.dims+2], sTarget, lyapu[0]);
+                targetTable.write((i+1)/nLyapuSamples-1, _idx.col[params.dims+1], _idx.layer.front(), currentTime);
+                targetTable.write((i+1)/nLyapuSamples-1, _idx.col[params.dims+2], _idx.layer.front(), lyapu[0]);
             }
 
             // Update the starting values

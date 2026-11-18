@@ -2887,7 +2887,12 @@ string getFileInfo(const string& sFileName)
 
     sFileInfo = toString(info.timeStamp, 0)
                 + " (NDAT v" + toString(info.fileVersion, 5) + ") | "
-                + toString(info.nRows) + " x " + toString(info.nCols) + " | \"" + info.sTableName + "()\"";
+                + toString(info.nRows) + " x " + toString(info.nCols);
+
+    if (info.nLayers > 1)
+        sFileInfo += " x " + toString(info.nLayers);
+
+    sFileInfo += " | \"" + info.sTableName + "()\"";
 
     if (info.sComment.length() > 204)
         sFileInfo += "\n" + info.sComment.substr(0, 200) + "...";

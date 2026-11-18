@@ -19,7 +19,7 @@
 #include <wx/grid.h>
 #include <map>
 
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 #include "gridcellcoordscontainer.hpp"
 
 #ifndef GRIDTABLE_HPP
@@ -34,29 +34,30 @@
 class GridNumeReTable : public wxGridTableBase
 {
     private:
-        NumeRe::Table _table;
+        NumeRe::TableView _table;
         std::complex<double> cmplx;
         mu::Value value;
         bool m_showQMarks;
         std::map<int,wxString> m_customColLabels;
         VectorIndex m_sortIndex;
         int m_numHeadLines;
+        size_t m_currentSheet;
 
         int getRow(int row) const;
 
     public:
         GridNumeReTable();
         GridNumeReTable(int numRows, int numCols);
-        GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks);
+        GridNumeReTable(const NumeRe::TableView& _extTable, size_t sheet, bool showQMarks);
         virtual ~GridNumeReTable() {}
 
-        NumeRe::Table getTable()
+        NumeRe::TableView getTable()
         {
             return _table;
         }
 
-        NumeRe::Table getTableCopy();
-        NumeRe::Table& getTableRef();
+        NumeRe::TableView getTableCopy();
+        NumeRe::TableView& getTableRef();
 
         virtual int GetNumberRows() override;
         virtual int GetNumberCols() override;
@@ -96,6 +97,8 @@ class GridNumeReTable : public wxGridTableBase
         void sortCol(int col, bool ascending);
         bool isSorted() const;
         void removeSort();
+
+        bool setCurrentSheet(size_t sheet);
 };
 
 

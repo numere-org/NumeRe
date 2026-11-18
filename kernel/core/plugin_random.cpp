@@ -173,6 +173,8 @@ void plugin_random(std::string& sCmd)
     std::binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);
     std::student_t_distribution<double> studentTDistribution(nFreedoms);
 
+    Table& target = _data.getTable(sTarget);
+
     // Fill the table with the newly created random numbers
     for (size_t i = 0; i < (size_t)nDataPoints; i++)
     {
@@ -201,7 +203,7 @@ void plugin_random(std::string& sCmd)
             }
 
             if (i < _idx.row.size() && j < _idx.col.size())
-                _data.writeToTable(_idx.row[i], _idx.col[j], sTarget, dRandomNumber);
+                target.write(_idx.row[i], _idx.col[j], _idx.layer.front(), dRandomNumber);
 
             if ((!i && !j) || dSeedBase == 0.0)
             {

@@ -25,7 +25,7 @@
 #include "viewerbook.hpp"
 
 #include "../../kernel/core/datamanagement/container.hpp"
-#include "../../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/tableview.hpp"
 
 class NumeReWindow;
 
@@ -48,7 +48,7 @@ class TableBrowser : public ViewerFrame
         TableBrowser(wxWindow* parent, NumeReWindow* topWindow);
 
         void openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName);
-        void openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName);
+        void openTable(NumeRe::TableView _table, const std::string& tableDisplayName, const std::string& sIntName);
 
         void onPageChange(wxAuiNotebookEvent& event);
         void onPageClose(wxAuiNotebookEvent& event);

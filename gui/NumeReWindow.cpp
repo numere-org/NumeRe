@@ -2141,7 +2141,7 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
+void NumeReWindow::openTable(NumeRe::TableView _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
     wxWindow* openedBrowser = findWindow(WT_TABLEVIEWER);
     TableBrowser* browser;
@@ -2179,8 +2179,9 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3), this);
     panel->SetTerminal(m_terminal);
-    panel->grid->SetData(_stringTable, tableDisplayName, "");
-    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()), std::max(std::min((size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
+    panel->show(_stringTable, tableDisplayName, "", false);
+    frame->SetSize(std::min((size_t)800u, panel->getCurrentPage()->GetWidth()),
+                   std::max(std::min((size_t)600u, panel->getCurrentPage()->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2198,14 +2199,15 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDisplayName)
+void NumeReWindow::editTable(NumeRe::TableView _table, const std::string& tableDisplayName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3), this);
     panel->SetTerminal(m_terminal);
-    panel->grid->SetData(_table, tableDisplayName, "");
-    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()+200), std::max(std::min((size_t)(size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
+    panel->show(_table, tableDisplayName, "", false);
+    frame->SetSize(std::min((size_t)800u, panel->getCurrentPage()->GetWidth()+200),
+                   std::max(std::min((size_t)(size_t)600u, panel->getCurrentPage()->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -3017,7 +3019,10 @@ void NumeReWindow::OnPreview()
         return;
     }
 
-    NumeRe::Table table = _memManager.extractTable("data");
+    NumeRe::TableView table = _memManager.getTable("data").extractView("data",
+                                                                       VectorIndex(0, VectorIndex::OPEN_END),
+                                                                       VectorIndex(0, VectorIndex::OPEN_END),
+                                                                       VectorIndex(0, VectorIndex::OPEN_END));
     openTable(table, fileName, fileName);
 }
 
