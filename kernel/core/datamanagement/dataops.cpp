@@ -523,7 +523,7 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
                 _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.row.size() - 1);
 
             if (_iTargetIndex.col.isOpenEnd())
-                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size() - 1);;
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size() - 1);
         }
         else
         {

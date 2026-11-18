@@ -3165,65 +3165,6 @@ bool isNotEmptyExpression(StringView sExpr)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the data from
-/// the selected object and switches
-/// automatically between tables and clusters.
-///
-/// \param sObject const std::string&
-/// \param i long long int
-/// \param j long long int
-/// \param k long long int
-/// \param isCluster bool
-/// \return mu::Value
-///
-/////////////////////////////////////////////////
-mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, long long int k, bool isCluster)
-{
-    // Get a reference to the datafile object
-    static MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
-    // Fallback to ensure that valid indices are read
-    if (i < 0 || j < 0)
-        return NAN;
-
-    // return the data depending on the passed isCluster
-    // boolean, the object name and its indices
-    return isCluster ? _data.getCluster(sObject).get(i) : _data.getTable(sObject).read(i, j, k);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function returns the data from
-/// the selected object and switches
-/// automatically between tables and clusters.
-///
-/// \param sObject const std::string&
-/// \param vRows const VectorIndex&
-/// \param j long long int
-/// \param k long long int
-/// \param isCluster bool
-/// \return mu::Array
-///
-/////////////////////////////////////////////////
-mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, long long int k, bool isCluster)
-{
-    // Get a reference to the datafile object
-    static MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
-    // Fallback to ensure that valid indices are read
-    if (vRows.front() == VectorIndex::INVALID || j < 0 || k < 0)
-        return mu::Value(NAN);
-
-    // return the data depending on the passed isCluster
-    // boolean, the object name and its indices
-    if (isCluster)
-        return _data.getCluster(sObject);
-
-    return _data.getTable(sObject).read(vRows, VectorIndex(j), VectorIndex(k));
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function checks, whether the
 /// argument located between sLeft and sRight is
 /// part of a multi-argument function.

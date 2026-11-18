@@ -4317,40 +4317,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                         m_manager.assets[typeCounter].writeData(0.0, q, n);
                 }
             }
-            /*if (!isTablePlot)
-            {
-            }
-            else
-            {
-                for (size_t q = 0; q < dataCols; q++)
-                {
-                    if (q >= cols)
-                    {
-                        // Write zeroes for errorbars or similar
-                        for (size_t n = 0; n < _idx.row.size(); n++)
-                            m_manager.assets[typeCounter].writeData(0.0, q, n);
-                    }
-                    else if (_idx.col[q+1] == VectorIndex::INVALID)
-                    {
-                        for (size_t n = 0; n < _idx.row.size(); n++)
-                            m_manager.assets[typeCounter].writeData(n+1.0, q, n);
-                    }
-                    else
-                    {
-                        vVals = getDataFromObject(_accessParser.getDataObject(),
-                                                  _idx.row, _idx.col[q+1], _idx.layer.front(), false);
-
-                        if (vVals.getCommonType() == mu::TYPE_NUMERICAL
-                            && vVals.getCommonNumericalType() == mu::DATETIME)
-                            isTimeAxis[YRANGE] = true;
-
-                        for (size_t n = 0; n < vVals.size(); n++)
-                        {
-                            m_manager.assets[typeCounter].writeData(vVals[n].getNum().asCF64(), q, n);
-                        }
-                    }
-                }
-            }*/
 
             bool isHbar = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0;
             bool isMultiDataSet = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0
@@ -4454,30 +4420,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     const mu::Value& v = view.get(t, q);
                     m_manager.assets[typeCounter].writeData(q < cols && !v.isVoid() ? v.getNum().asCF64() : 0.0, q, t);
                 }
-                /*if (!isTablePlot)
-                {
-                }
-                else if (_idx.col[q] == VectorIndex::INVALID
-                         || !_data.getRows(_idx.col.subidx(q, 1), _idx.layer.front(), _accessParser.getDataObject()))
-                {
-                    for (size_t t = 0; t < rows; t++)
-                        m_manager.assets[typeCounter].writeData(0.0, q, t);
-                }
-                else
-                {
-                    vVals = getDataFromObject(_accessParser.getDataObject(),
-                                              _idx.row, _idx.col[q], _idx.layer.front(), false);
-
-                    if (vVals.getCommonType() == mu::TYPE_NUMERICAL
-                        && vVals.getCommonNumericalType() == mu::DATETIME
-                        && q <= ZRANGE)
-                        isTimeAxis[q] = true;
-
-                    for (size_t t = 0; t < vVals.size(); t++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vVals[t].getNum().asCF64(), q, t);
-                    }
-                }*/
             }
 
             // Calculate the data ranges
@@ -4551,38 +4493,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     + m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-2];
             }
 
-            /*if (isTablePlot)
-            {
-                // Write the meshgrid data
-                #pragma omp parallel for
-                for (size_t y = 0; y < samples[1]-isBars; y++)
-                {
-                    mu::Array vals = getDataFromObject(_accessParser.getDataObject(),
-                                                       _idx.row, _idx.col[y+2], _idx.layer.front(), false);
-
-                    if (vals.getCommonType() == mu::TYPE_NUMERICAL
-                        && vals.getCommonNumericalType() == mu::DATETIME
-                        && !isTimeAxis[ZRANGE])
-                    {
-                        #pragma omp critical
-                        {
-                            isTimeAxis[ZRANGE] = true;
-                            isTimeAxis[CRANGE] = true;
-                        }
-                    }
-
-                    for (size_t x = 0; x < std::min(samples[0]-isBars, vals.size()); x++)
-                    {
-                        m_manager.assets[typeCounter].writeData(vals[x].as_cmplx(),
-                                                                0,
-                                                                x,
-                                                                y);
-                    }
-                }
-            }
-            else
-            {
-            }*/
             if (view.isDataTime(VectorIndex(0, VectorIndex::OPEN_END)))
             {
                 isTimeAxis[ZRANGE] = true;
