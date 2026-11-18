@@ -180,7 +180,7 @@ class NumeReKernel
         static int nLastStatusVal;
         static size_t nLastLineLength;
         static bool modifiedSettings;
-        static NumeRe::TableView table;
+        static NumeRe::TableView table; // Used for acquiring the edited table
         static bool bSupressAnswer;
         static bool bGettingLine;
         static bool bErrorNotification;

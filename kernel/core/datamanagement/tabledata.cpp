@@ -1502,6 +1502,7 @@ void TableData::write(const mu::Array& _values, const TableIndices& idx)
     }
     else if (_values.isMatrix() && !_values.isVector())
     {
+        // Write a slice, but not a sheet
         idx.m_sheets.setOpenEndIndex(idx.m_sheets.front() + _values.cols() - 1);
 
         if (idx.m_rows.size() > 1)
@@ -1537,6 +1538,8 @@ void TableData::write(const mu::Array& _values, const TableIndices& idx)
     }
     else
     {
+        idx.m_sheets.setOpenEndIndex(m_sheets.size()-1);
+
         // vectors are accepted here for backwards compatibility
         for (size_t k = 0; k < idx.m_sheets.size(); k++)
         {

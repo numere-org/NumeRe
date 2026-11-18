@@ -4125,6 +4125,17 @@ std::vector<std::string> Plot::separateFunctionsAndData()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get a DataView from the various data
+/// sources.
+///
+/// \param expr const std::string&
+/// \param _data MemoryManager&
+/// \param _parser mu::Parser&
+/// \param isTablePlot bool
+/// \return DataView
+///
+/////////////////////////////////////////////////
 static DataView getCurrentDataView(const std::string& expr, MemoryManager& _data, mu::Parser& _parser, bool isTablePlot)
 {
     if (isTablePlot)
@@ -4146,7 +4157,6 @@ static DataView getCurrentDataView(const std::string& expr, MemoryManager& _data
 /// \return void
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#1#11/05/26): This function needs to be extended for table sheets
 void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 {
     size_t typeCounter = 0;

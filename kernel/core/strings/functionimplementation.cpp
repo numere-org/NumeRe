@@ -3573,6 +3573,9 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 
                 if (_accessParser.getIndices().col.isOpenEnd())
                     _accessParser.getIndices().col.back() = VectorIndex::INVALID;
+
+                if (_accessParser.getIndices().layer.isOpenEnd())
+                    _accessParser.getIndices().layer.back() = VectorIndex::INVALID;
             }
             else
             {
@@ -3581,19 +3584,25 @@ mu::Array strfnc_getindices(const mu::Array& tab, const mu::Array& opts)
 
                 if (_accessParser.getIndices().col.isOpenEnd())
                     _accessParser.getIndices().col.setRange(0, _data.getTable(_accessParser.getDataObject()).getCols()-1);
+
+                if (_accessParser.getIndices().layer.isOpenEnd())
+                    _accessParser.getIndices().layer.setRange(0, _data.getTable(_accessParser.getDataObject()).getSheets()-1);
             }
         }
 
         _accessParser.getIndices().row.linearize();
         _accessParser.getIndices().col.linearize();
+        _accessParser.getIndices().layer.linearize();
 
         mu::Array current;
-        current.reserve(4);
+        current.reserve(6);
 
         current.emplace_back(_accessParser.getIndices().row.front() + 1);
         current.emplace_back(_accessParser.getIndices().row.last() + 1);
         current.emplace_back(_accessParser.getIndices().col.front() + 1);
         current.emplace_back(_accessParser.getIndices().col.last() + 1);
+        current.emplace_back(_accessParser.getIndices().layer.front() + 1);
+        current.emplace_back(_accessParser.getIndices().layer.last() + 1);
         ret.emplace_back(current);
     }
 #endif // PARSERSTANDALONE
@@ -3680,18 +3689,20 @@ mu::Array strfnc_is_cluster(const mu::Array& sStr)
 ///
 /// \param tab const mu::Array&
 /// \param col const mu::Array&
+/// \param sheet const mu::Array&
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
+mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col, const mu::Array& sheet)
 {
     mu::Array ret;
 #ifndef PARSERSTANDALONE
-    ret.reserve(std::max(tab.size(), col.size()));
+    size_t elems = std::max({tab.size(), col.size(), sheet.size()});
+    ret.reserve(elems);
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-    for (size_t i = 0; i < std::max(tab.size(), col.size()); i++)
+    for (size_t i = 0; i < elems; i++)
     {
         if (!_data.isTable(tab.get(i).getStr()))
         {
@@ -3699,7 +3710,13 @@ mu::Array strfnc_findcolumn(const mu::Array& tab, const mu::Array& col)
             continue;
         }
 
-        std::vector<size_t> cols = _data.getTable(tab.get(i).getStr().substr(0, tab.get(i).getStr().find('('))).findCols({col.get(i).getStr()}, 0, false, false);
+        int64_t sheetNum = 0LL;
+
+        if (!sheet.isDefault())
+            sheetNum = sheet.get(i).getNum().asI64()-1;
+
+        Table& table = _data.getTable(tab.get(i).getStr());
+        std::vector<size_t> cols = table.findCols({col.get(i).getStr()}, std::max(0LL, sheetNum), false, false);
 
         if (cols.size())
             ret.emplace_back(cols);

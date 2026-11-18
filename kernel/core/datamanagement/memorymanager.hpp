@@ -334,6 +334,7 @@ class MemoryManager : public NumeRe::FileAdapter, public NumeRe::ClusterManager
             return sHeadLineElement.substr(0, sHeadLineElement.find('\n'));
         }
 
+        int getSheets(const std::string& _sTable) const;
         int getCols(const VectorIndex& sheets, const std::string& _sTable) const;
         int getRows(const VectorIndex& cols, const VectorIndex& sheets, const std::string& _sTable) const;
 

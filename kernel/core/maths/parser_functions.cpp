@@ -623,6 +623,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 /// \return bool
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#1#11/18/26): Can be removed once the old matrix evaluation is removed.
 bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 {
 	// Check the initial indices

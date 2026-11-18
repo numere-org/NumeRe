@@ -1292,7 +1292,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
         nBytesSum += table.getSize();
     }
 
-    NumeReKernel::printPreFmt("|   " + strfills("─", nWinWidth - 4, "─") + "\n");
+    NumeReKernel::printPreFmt("|   " + strRepeat("─", nWinWidth - 4) + "\n");
 
     // Print now the set of variables
     for (auto item = variables.begin(); item != variables.end(); ++item)
@@ -3260,10 +3260,13 @@ static CommandReturnValues cmd_append(string& sCmd)
         NumeReKernel::printPreFmt("\r");
 
         const Table& dataTable = _data.getTable("data");
-        double j1 = dataTable.getCols() + 1;
+        int64_t j1 = dataTable.getCols() + 1;
+        int64_t k1 = dataTable.getSheets() + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getRows(VectorIndex(j1, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END), "data"),
-                                                            j1, dataTable.getCols()}));
+        cmdParser.setReturnValue(std::vector<mu::Numerical>({1, _data.getRows(VectorIndex(j1, VectorIndex::OPEN_END),
+                                                                              VectorIndex(0, VectorIndex::OPEN_END), "data"),
+                                                            j1, dataTable.getCols(),
+                                                            k1, dataTable.getSheets()}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -4962,7 +4965,8 @@ static CommandReturnValues cmd_reload(string& sCmd)
     }
 
     _parser.SetInternalVar("_~load[~_~]", std::vector<std::complex<double>>({1, _data.getTable("data").getRows(),
-                                                                             1, _data.getTable("data").getCols()}));
+                                                                             1, _data.getTable("data").getCols(),
+                                                                             1, _data.getTable("data").getSheets()}));
     sCmd.replace(_mMatch.nPos, string::npos, "_~load[~_~]");
 
     return COMMAND_HAS_RETURNVALUE;

@@ -757,6 +757,23 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the number of sheets of the
+/// selected table.
+///
+/// \param _sTable const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int MemoryManager::getSheets(const std::string& _sTable) const
+{
+    if (!exists(_sTable))
+        return 0;
+
+    return m_tables[findTable(_sTable)]->getSheets();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the maximal number of columns
 /// in the selected sheet range.
 ///
@@ -1419,7 +1436,8 @@ void MemoryManager::copyTable(const std::string& source, const std::string& targ
     Table* targetTable = m_tables[findTable(target.substr(0, target.find('(')))];
 
     // Use the assignment operator overload
-    *targetTable = *sourceTable;
+    if (targetTable != sourceTable)
+        *targetTable = *sourceTable;
 }
 
 
@@ -1445,8 +1463,9 @@ void MemoryManager::copyTable(const std::string& source, const Indices& sourceId
     Table& sourceTable = getTable(source);
     Table& targetTable = getTable(target);
 
-    if (sourceIdx.row.isFullRange(sourceTable.getRows()-1) && sourceIdx.col.isFullRange(sourceTable.getCols()-1)
-        && targetIdx.row.isFullRange(targetTable.getRows()-1) && targetIdx.col.isFullRange(targetTable.getCols()-1))
+    if (sourceIdx.row.isFullRange(sourceTable.getRows()-1) && targetIdx.row.isFullRange(targetTable.getRows()-1)
+        && sourceIdx.col.isFullRange(sourceTable.getCols()-1) && targetIdx.col.isFullRange(targetTable.getCols()-1)
+        && sourceIdx.layer.isFullRange(sourceTable.getSheets()-1) && targetIdx.layer.isFullRange(targetTable.getSheets()-1))
     {
         copyTable(source, target);
         return;

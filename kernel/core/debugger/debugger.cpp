@@ -264,11 +264,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         sArgumentValue = "{" + toString(_data.min(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
 
         const Table& table = _data.getTable(sCache);
-        std::string sDim = toString(table.getRows()) + " x " + toString(table.getCols());
-        int sheets = table.getSheets();
-
-        if (sheets > 1)
-            sDim += " x " + toString(sheets);
+        std::string sDim = table.printDims();
 
         // Determine whether this is a templated variable
         if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
@@ -956,11 +952,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (!iter->first.starts_with("_~"))
         {
             const Table& table = _data.getTable(iter->first);
-            std::string sDim = toString(table.getRows()) + " x " + toString(table.getCols());
-            int sheets = table.getSheets();
-
-            if (sheets > 1)
-                sDim += " x " + toString(sheets);
+            std::string sDim = table.printDims();
 
             mGlobals[iter->first + "()"] = sDim
                 + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "

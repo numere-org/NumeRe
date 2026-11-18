@@ -178,7 +178,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
     {
-        if ((!isFlowCtrlStatement(sCurrentCommand) || getCurrentBlockDepth() > 0)
+        if (!(isFlowCtrlStatement(sCurrentCommand) || getCurrentBlockDepth() > 0)
             && !Plot::isPlottingCommand(sCurrentCommand)
             && sCurrentCommand != "define"
             && sCurrentCommand != "redef"
@@ -1387,7 +1387,8 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                             Table& target = _data.getTable(sTargetTable);
 
                             sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({target.getRows(),
-                                                                                             target.getCols()}))
+                                                                                             target.getCols(),
+                                                                                             target.getSheets()}))
                                     + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                         }
                         else
@@ -2693,6 +2694,7 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             sTargetTable.erase(sTargetTable.find_last_not_of(" =")+1);
 
         StripSpaces(sTargetTable);
+        const Table& returnedTable = _data.getTable(_return.sReturnedTable);
 
         if (sTargetTable.find('(') != std::string::npos
             && getMatchingParenthesis(sTargetTable) == sTargetTable.length()-1
@@ -2701,8 +2703,10 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             // Copy efficient move operations
             if (_return.delayDelete
                 && sTargetTable.ends_with("()")
-                && _return.sourceIdx.row.isFullRange(_data.getTable(_return.sReturnedTable).getRows()-1)
-                && _return.sourceIdx.col.isFullRange(_data.getTable(_return.sReturnedTable).getCols()-1))
+                && _return.sourceIdx.row.isFullRange(returnedTable.getRows()-1)
+                && _return.sourceIdx.col.isFullRange(returnedTable.getCols()-1)
+                && _return.sourceIdx.layer.isFullRange(returnedTable.getSheets()-1)
+                )
             {
                 sTargetTable.erase(sTargetTable.find('('));
 
@@ -2727,11 +2731,13 @@ size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Ret
             }
 
             _parser.SetInternalVar(sReplaceName, std::vector<std::complex<double>>({_return.sourceIdx.row.size(),
-                                                                                    _return.sourceIdx.col.size()}));
+                                                                                    _return.sourceIdx.col.size(),
+                                                                                    _return.sourceIdx.layer.size()}));
             sLine = sReplaceName + sLine.substr(nPos2);
             return sReplaceName.length();
         }
-        else if (_return.sourceIdx.row.size() == 1u || _return.sourceIdx.col.size() == 1u)
+        else if ((_return.sourceIdx.row.size() == 1u || _return.sourceIdx.col.size() == 1u)
+                 && _return.sourceIdx.layer.size() == 1u)
         {
             // If we only return a single row or column, then we can convert
             // it in a simple vector instead

@@ -332,6 +332,7 @@ string Output::getDate(bool bForFile)	// Der Boolean entscheidet, ob ein Dateina
 }
 
 
+#warning TODO (numere#1#11/18/26): Rework this file and strip any unecessary functionality
 void Output::format(std::vector<std::vector<string>>& _sMatrix, size_t nHeadLineCount)
 {
     const Settings& _option = NumeReKernel::getInstance()->getSettings();

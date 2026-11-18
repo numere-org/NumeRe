@@ -299,10 +299,24 @@ std::vector<size_t> DataAccessParser::getDataGridDimensions() const
 
 
 
+/////////////////////////////////////////////////
+/// \brief Construct a DataView instance from a
+/// mu::Array.
+///
+/// \param arr const mu::Array&
+/// \param dataName const std::string&
+///
+/////////////////////////////////////////////////
 DataView::DataView(const mu::Array& arr, const std::string& dataName) : m_array(arr), m_table(nullptr), m_dataName(dataName), m_axisCount(0)
 { }
 
 
+/////////////////////////////////////////////////
+/// \brief Copy constructor.
+///
+/// \param acc const DataAccessParser&
+///
+/////////////////////////////////////////////////
 DataView::DataView(const DataAccessParser& acc) : m_access(acc), m_axisCount(0)
 {
     m_dataName = m_access.getDataObject() + "(";
@@ -310,12 +324,17 @@ DataView::DataView(const DataAccessParser& acc) : m_access(acc), m_axisCount(0)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Move constructor.
+///
+/// \param acc const DataAccessParser&&
+///
+/////////////////////////////////////////////////
 DataView::DataView(const DataAccessParser&& acc) : m_access(acc), m_axisCount(0)
 {
     m_dataName = m_access.getDataObject() + "(";
     m_table = &NumeReKernel::getInstance()->getMemoryManager().getTable(m_access.getDataObject());
 }
-
 
 
 /////////////////////////////////////////////////
@@ -436,7 +455,6 @@ bool DataView::reserveAxes(size_t axisCount, bool asDataGrid)
 {
     if (isTable() && !m_axisCount && cols() > 1)
     {
-        g_logger.debug("Requested " + toString(axisCount) + " axes for " + toString(cols()) + " columns with datagriddim " + toString(m_access.getDataGridDimensions()[1]) + ".");
         bool isTuple = cols() == 3 && !asDataGrid;
         size_t colGridDim = m_access.getDataGridDimensions()[1];
         bool isGrid = abs(2+(int64_t)colGridDim - (int64_t)cols()) < 0.1 * colGridDim && asDataGrid;
@@ -689,7 +707,7 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
         // Try to handle the assignment operator shortcut
         if (eq_pos != std::string::npos)
         {
-           StringView target(sLine, 0, eq_pos);
+            StringView target(sLine, 0, eq_pos);
             target.strip();
 
             // Direct assignment shortcut
@@ -731,7 +749,8 @@ std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManag
                     _parser.DisableAccessCaching();
                     _data.copyTable(src.getDataObject(), src.getIndices(), tgt.getDataObject(), tgt.getIndices());
                     sLine = _parser.CreateTempVar(mu::Array(std::vector<std::complex<double>>({src.getIndices().row.size(),
-                                                                                               src.getIndices().col.size()})));
+                                                                                               src.getIndices().col.size(),
+                                                                                               src.getIndices().layer.size()})));
                     return "";
                 }
             }
@@ -892,9 +911,9 @@ static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOc
     // evaluate the indices
     _access.evalIndices(_idx.col.size() > 1 && _idx.col.size() > 1);
 
-    if (_idx.col.isString()
-        && _idx.row.isString()
-        && _idx.layer.isString())
+    if (_idx.layer.isString()
+        && _idx.col.isString()
+        && _idx.row.isString())
         bWriteFileName = true;
 
     // Handle the filename and headline access different from the usual data access
@@ -971,15 +990,20 @@ static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parse
             throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position,
                               _idx.row.to_string() + ", " + _idx.col.to_string());
 
+        const Table& table = _data.getTable(_access.sCacheName);
+
         // Evaluate the indices
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getTable(_access.sCacheName).getRows() - 1);
+            _idx.row.setRange(0, table.getRows() - 1);
 
         if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getTable(_access.sCacheName).getCols() - 1);
+            _idx.col.setRange(0, table.getCols() - 1);
+
+        if (_idx.layer.isOpenEnd())
+            _idx.layer.setRange(0, table.getSheets() - 1);
 
         // Handle the filename and headline access different from the usual data access
-        if (_idx.col.isString())
+        if (_idx.layer.isString() && _idx.col.isString() && _idx.row.isString())
         {
             // Get the file name (or the cache table name)
             mu::Variable* var = _parser.GetInternalVar(_access.sVectorName);
@@ -1649,7 +1673,7 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     VectorIndex cols = _kernel->getMemoryManager().arrayToIndex(v[0].get(), sTableName, sheets.front());
     Table& table = _kernel->getMemoryManager().getTable(sTableName);
 
-    if (nResults < 2)
+    if (nResults < 2 || v[1].get().isVoid())
     {
         // Only convert to categories here
         if (!table.convertColumns(cols, sheets, "category"))

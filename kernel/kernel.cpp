@@ -988,7 +988,7 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("is_data", strfnc_is_data, false);                             // is_data(str) <- tables/clusters may change
     _parser.DefineFun("is_table", strfnc_is_table, false);                           // is_table(str) <- tables/clusters may change
     _parser.DefineFun("is_cluster", strfnc_is_cluster, false);                       // is_cluster(str) <- tables/clusters may change
-    _parser.DefineFun("findcolumn", strfnc_findcolumn, false);                       // findcolumn(str,str) <- tables may change
+    _parser.DefineFun("findcolumn", strfnc_findcolumn, false, 1);                    // findcolumn(str,str,sheet) <- tables may change
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
     _parser.DefineFun("readxml", strfnc_readxml, true, 1);                           // readxml(file,isfile)
@@ -2260,7 +2260,9 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             _option.enableSystemPrints(false);
 
             // Call the relevant procedure
-            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _pData, _script);
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(),
+                                                    _procedure.getPluginVarList(),
+                                                    _parser, _functions, _memoryManager, _option, _pData, _script);
 
             // Handle the return values
             if (_rTemp.sReturnedTable.length())
@@ -2293,7 +2295,8 @@ bool NumeReKernel::executePlugins(std::string& sLine)
                         _memoryManager.copyTable(_rTemp.sReturnedTable, sTargetTable);
 
                     sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_memoryManager.getTable(sTargetTable).getRows(),
-                                                                                     _memoryManager.getTable(sTargetTable).getCols()}))
+                                                                                     _memoryManager.getTable(sTargetTable).getCols(),
+                                                                                     _memoryManager.getTable(sTargetTable).getSheets()}))
                             + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                 }
                 else
@@ -4449,11 +4452,11 @@ bool NumeReKernel::GetAsyncCancelState()
 void make_hline(int nLength)
 {
     if (nLength == -1)
-        NumeReKernel::printPreFmt("\r" + strfills("═", NumeReKernel::nLINE_LENGTH - 1, "═") + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("═", NumeReKernel::nLINE_LENGTH - 1) + "\n");
     else if (nLength < -1)
-        NumeReKernel::printPreFmt("\r" + strfills("─", NumeReKernel::nLINE_LENGTH - 1, "─") + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("─", NumeReKernel::nLINE_LENGTH - 1) + "\n");
     else
-        NumeReKernel::printPreFmt("\r" + strfills("═", nLength, "═") + "\n");
+        NumeReKernel::printPreFmt("\r" + strRepeat("═", nLength) + "\n");
 
     return;
 }

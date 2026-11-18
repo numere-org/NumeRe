@@ -501,14 +501,14 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size() - 1);
             _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.col.size() - 1);
-            _iTargetIndex.layer = VectorIndex(0LL, _iSourceIndex.layer.size() - 1);
         }
         else
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size() - 1);
             _iTargetIndex.col = VectorIndex(cols, cols + _iSourceIndex.row.size() - 1);
-            _iTargetIndex.layer = VectorIndex(0LL, _iSourceIndex.layer.size()-1);
         }
+
+        _iTargetIndex.layer = VectorIndex(0LL, _iSourceIndex.layer.size() - 1);
     }
     else if (_iTargetIndex.row.size())
     {
@@ -523,7 +523,7 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
                 _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.row.size() - 1);
 
             if (_iTargetIndex.col.isOpenEnd())
-                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size() - 1);
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size() - 1);;
         }
         else
         {
@@ -533,6 +533,9 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
             if (_iTargetIndex.col.isOpenEnd())
                 _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.row.size() - 1);
         }
+
+        if (_iTargetIndex.layer.isOpenEnd())
+            _iTargetIndex.layer = VectorIndex(_iTargetIndex.layer.front(), _iTargetIndex.layer.front() + _iSourceIndex.layer.size() - 1);
     }
 }
 
