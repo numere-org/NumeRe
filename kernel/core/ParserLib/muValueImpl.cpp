@@ -933,10 +933,11 @@ namespace mu
                                         {"unicodelen", 0}, {"segments", 0}, {"normalize", 0},
                                         {"normalize", 1}, {"collate", 1}, {"collate", 2},
                                         {"at", 1}, {"chr", 1}, {"startsw", 1}, {"endsw", 1},
-                                        {"sub", 1}, {"sub", 2}, {"splt", 1}, {"splt", 2},
-                                        {"fnd", 1}, {"fnd", 2}, {"rfnd", 1}, {"rfnd", 2},
-                                        {"mtch", 1}, {"mtch", 2}, {"rmtch", 1}, {"rmtch", 2},
-                                        {"nmtch", 1}, {"nmtch", 2}, {"nrmtch", 1}, {"nrmtch", 2}});
+                                        {"sub", 1}, {"sub", 2}, {"subchr", 1}, {"subchr", 2},
+                                        {"splt", 1}, {"splt", 2}, {"fnd", 1}, {"fnd", 2},
+                                        {"rfnd", 1}, {"rfnd", 2}, {"mtch", 1}, {"mtch", 2},
+                                        {"rmtch", 1}, {"rmtch", 2}, {"nmtch", 1}, {"nmtch", 2},
+                                        {"nrmtch", 1}, {"nrmtch", 2}});
 
         auto iter = methods.find(MethodDefinition(sMethod, argc));
 
@@ -1015,6 +1016,8 @@ namespace mu
         }
         else if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(substr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1));
+        else if (sMethod == "subchr" && arg1.getPlainType() == TYPE_NUMERICAL)
+            return new StrValue(subchr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1));
         else if (sMethod == "splt" && arg1.getPlainType() == TYPE_STRING)
             return new ArrValue(split_impl(m_val, static_cast<const StrValue&>(arg1).get()));
         else if (sMethod == "fnd" && arg1.getPlainType() == TYPE_STRING)
@@ -1056,6 +1059,9 @@ namespace mu
 
         if (sMethod == "sub" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_NUMERICAL)
             return new StrValue(substr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1,
+                                            static_cast<const NumValue&>(arg2).get().asI64()));
+        else if (sMethod == "subchr" && arg1.getPlainType() == TYPE_NUMERICAL && arg2.getPlainType() == TYPE_NUMERICAL)
+            return new StrValue(subchr_impl(m_val, static_cast<const NumValue&>(arg1).get().asI64()-1,
                                             static_cast<const NumValue&>(arg2).get().asI64()));
         else if (sMethod == "splt" && arg1.getPlainType() == TYPE_STRING)
             return new ArrValue(split_impl(m_val, static_cast<const StrValue&>(arg1).get(), bool(arg2)));

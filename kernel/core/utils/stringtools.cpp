@@ -2407,6 +2407,48 @@ std::string substr_impl(const std::string& sString, size_t p, size_t len)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation for subchr()
+///
+/// \param sString const std::string&
+/// \param nthChr size_t
+/// \param len size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string subchr_impl(const std::string& sString, size_t nthChr, size_t len)
+{
+    if (!sString.length() || !len || nthChr >= sString.length())
+        return "";
+
+    size_t p = 0;
+
+    // Find the correct character
+    while (nthChr && p < sString.length())
+    {
+        p += getUtf8ByteLen(sString[p]);
+        nthChr--;
+    }
+
+    // Ensure that we have a valid character position
+    if (nthChr || p >= sString.length())
+        return "";
+
+    size_t pEnd = p;
+
+    while (len > 0 && pEnd < sString.length())
+    {
+        pEnd += getUtf8ByteLen(sString[pEnd]);
+        len--;
+    }
+
+    if (pEnd >= sString.length())
+        return sString.substr(p);
+
+    return sString.substr(p, pEnd-p);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation for split()
 ///
 /// \param sString const std::string&

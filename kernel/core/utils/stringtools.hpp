@@ -562,6 +562,7 @@ std::string decode_base_n(const std::string& sToDecode, int n);
 
 std::string chr_impl(const std::string& sString, int64_t nthChar);
 std::string substr_impl(const std::string& sString, size_t p, size_t len = -1);
+std::string subchr_impl(const std::string& sString, size_t nthChr, size_t len = -1);
 std::vector<std::string> split_impl(const std::string& sString, const std::string& c, bool keepEmpty = false);
 size_t strfnd_impl(const std::string& sString, const std::string& sFind, size_t p = 0);
 size_t strrfnd_impl(const std::string& sString, const std::string& sFind, size_t p = -1);
