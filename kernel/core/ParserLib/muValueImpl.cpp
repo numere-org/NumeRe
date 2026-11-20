@@ -2108,7 +2108,7 @@ namespace mu
 
     //------------------------------------------------------------------------------
 
-    // Basic implementation of the DictStructValue class
+    // Basic implementation of the DictValue class
     BASE_VALUE_IMPL(DictValue, TYPE_DICT, m_val)
 
 
@@ -2641,8 +2641,9 @@ namespace mu
     MethodDefinition DictStructValue::isMethod(const std::string& sMethod, size_t argc) const
     {
         static const MethodSet methods({{"keys", 0}, {"values", 0}, {"encodejson", 0}, {"encodejson", 1},
-                                        {"encodexml", 0}, {"encodexml", 1},
-                                        {"at", 1}, {"len", 0}, {"contains", 1}, {"pick", -1}, {"omit", -1}});
+                                        {"encodexml", 0}, {"encodexml", 1}, {"encodetoml", 0}, {"encodetoml", 1},
+                                        {"encodeyaml", 0}, {"encodeyaml", 1}, {"at", 1}, {"len", 0},
+                                        {"contains", 1}, {"pick", -1}, {"omit", -1}});
 
         if (m_val.isField(sMethod) && argc == 0)
             return MethodDefinition(sMethod);
@@ -2685,6 +2686,10 @@ namespace mu
             return new StrValue(m_val.encodeJson(false));
         else if (sMethod == "encodexml")
             return new StrValue(m_val.encodeXml(false));
+        else if (sMethod == "encodetoml")
+            return new StrValue(m_val.encodeToml(false));
+        else if (sMethod == "encodeyaml")
+            return new StrValue(m_val.encodeYaml(false));
         else if (sMethod == "len")
             return new NumValue(Numerical(m_val.size()));
         else if (m_val.isField(sMethod))
@@ -2741,6 +2746,10 @@ namespace mu
             return new StrValue(m_val.encodeJson((bool)arg1));
         else if (sMethod == "encodexml")
             return new StrValue(m_val.encodeXml((bool)arg1));
+        else if (sMethod == "encodetoml")
+            return new StrValue(m_val.encodeToml((bool)arg1));
+        else if (sMethod == "encodeyaml")
+            return new StrValue(m_val.encodeYaml((bool)arg1));
         else if (sMethod == "pick" && arg1.getPlainType() == TYPE_STRING)
             return new DictStructValue(m_val.pick({static_cast<const StrValue&>(arg1).get()}));
         else if (sMethod == "pick" && arg1.getPlainType() == TYPE_ARRAY)
@@ -2771,9 +2780,10 @@ namespace mu
     /////////////////////////////////////////////////
     MethodDefinition DictStructValue::isApplyingMethod(const std::string& sMethod, size_t argc) const
     {
-        static const MethodSet methods({{"clear", 0}, {"removekey", 1}, {"loadxml", 1}, {"loadjson", 1},
-                                        {"decodejson", 1}, {"decodexml", 1}, {"merge", 1}, {"write", -2},
-                                        {"insertkey", -1}, {"insertkey", -2}, {"renamekey", 2}});
+        static const MethodSet methods({{"clear", 0}, {"removekey", 1},
+                                        {"loadxml", 1}, {"loadjson", 1}, {"loadtoml", 1}, {"loadyaml", 1},
+                                        {"decodejson", 1}, {"decodexml", 1}, {"decodetoml", 1}, {"decodeyaml", 1},
+                                        {"merge", 1}, {"write", -2}, {"insertkey", -1}, {"insertkey", -2}, {"renamekey", 2}});
 
         if (m_val.isField(sMethod) && argc <= 1)
             return MethodDefinition(sMethod, -argc);
@@ -2842,11 +2852,29 @@ namespace mu
         if (sMethod == "loadjson" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
             return new NumValue(Numerical(m_val.importJson(static_cast<const PathValue&>(arg1).get().to_string('/'))));
 
-        if (sMethod == "merge" && arg1.getPlainType() == TYPE_DICTSTRUCT)
-            return new ArrValue(m_val.merge(static_cast<const DictStructValue&>(arg1).get()));
-
         if (sMethod == "decodejson" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(Numerical(m_val.decodeJson(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadtoml" && arg1.getPlainType() == TYPE_STRING)
+            return new NumValue(Numerical(m_val.importToml(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadtoml" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(Numerical(m_val.importToml(static_cast<const PathValue&>(arg1).get().to_string('/'))));
+
+        if (sMethod == "decodetoml" && arg1.getPlainType() == TYPE_STRING)
+            return new NumValue(Numerical(m_val.decodeToml(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadyaml" && arg1.getPlainType() == TYPE_STRING)
+            return new NumValue(Numerical(m_val.importYaml(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "loadyaml" && arg1.getPlainType() == TYPE_OBJECT && static_cast<const Object&>(arg1).getObjectType() == "path")
+            return new NumValue(Numerical(m_val.importYaml(static_cast<const PathValue&>(arg1).get().to_string('/'))));
+
+        if (sMethod == "decodeyaml" && arg1.getPlainType() == TYPE_STRING)
+            return new NumValue(Numerical(m_val.decodeYaml(static_cast<const StrValue&>(arg1).get())));
+
+        if (sMethod == "merge" && arg1.getPlainType() == TYPE_DICTSTRUCT)
+            return new ArrValue(m_val.merge(static_cast<const DictStructValue&>(arg1).get()));
 
         if (sMethod == "insertkey" && arg1.getPlainType() == TYPE_STRING)
             return new NumValue(m_val.addKey(static_cast<const StrValue&>(arg1).get()));

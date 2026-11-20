@@ -21,6 +21,8 @@
 #include "muValueBase.hpp"
 #include "muValueImpl.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
+#include "../../../externals/tomlplusplus/include/toml++/toml.hpp"
+#include "../utils/datetimetools.hpp"
 
 #ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
@@ -29,6 +31,7 @@
 #endif // PARSERSTANDALONE
 
 #include <json/json.h>
+#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <sstream>
 #include <boost/nowide/convert.hpp>
@@ -1962,6 +1965,31 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Check, whether this level of the
+    /// DictStruct instance has XML structure.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::hasXmlStructure() const
+    {
+        if (m_fields.empty())
+            return false;
+
+        if (!isField("name"))
+            return false;
+
+        for (const auto& iter : m_fields)
+        {
+            if (iter.first != "name" && iter.first != "attrs" && iter.first != "nodes" && iter.first != "text")
+                return false;
+        }
+
+        return true;
+    }
+
+
     // Forward declaration due to interdependence of the two
     // importer functions for JSON
     static Array importJsonArray(const Json::Value& json);
@@ -2266,29 +2294,652 @@ namespace mu
     }
 
 
+    // Forward declaration to resolve cross dependency
+    static Array importTomlArray(const toml::array& tomlArray);
+
+
     /////////////////////////////////////////////////
-    /// \brief Check, whether this level of the
-    /// DictStruct instance has XML structure.
+    /// \brief Import a TOML table into a
+    /// mu::DictStruct.
     ///
+    /// \param tomlTable const toml::table&
+    /// \return DictStructMap
+    ///
+    /////////////////////////////////////////////////
+    static DictStructMap importTomlTable(const toml::table& tomlTable)
+    {
+        DictStructMap dict;
+
+        for (const auto& kvPair : tomlTable)
+        {
+            switch (kvPair.second.type())
+            {
+                case toml::node_type::integer:
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(**kvPair.second.as_integer())));
+                    break;
+                case toml::node_type::floating_point:
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(**kvPair.second.as_floating_point())));
+                    break;
+                case toml::node_type::string:
+                    dict[kvPair.first.data()].reset(new StrValue(**kvPair.second.as_string()));
+                    break;
+                case toml::node_type::boolean:
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(**kvPair.second.as_boolean())));
+                    break;
+                case toml::node_type::date:
+                {
+                    toml::date dt = **kvPair.second.as_date();
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(getTimePointFromYMD(dt.year, dt.month, dt.day))));
+                    break;
+                }
+                case toml::node_type::time:
+                {
+                    toml::time tm = **kvPair.second.as_time();
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(getTimePointFromHMS(tm.hour, tm.minute, tm.second, 0, tm.nanosecond / 1000))));
+                    break;
+                }
+                case toml::node_type::date_time:
+                {
+                    toml::date_time dttm = **kvPair.second.as_date_time();
+                    time_stamp timeStruct;
+                    timeStruct.m_ymd = date::year_month_day(date::year(dttm.date.year), date::month(dttm.date.month), date::day(dttm.date.day));
+                    timeStruct.m_hours = std::chrono::hours(dttm.time.hour);
+                    timeStruct.m_minutes = std::chrono::minutes(dttm.time.minute);
+                    timeStruct.m_seconds = std::chrono::seconds(dttm.time.second);
+                    timeStruct.m_microsecs = std::chrono::microseconds(dttm.time.nanosecond / 1000);
+
+                    if (!dttm.is_local())
+                        timeStruct.m_minutes += std::chrono::minutes(dttm.offset->minutes);
+
+                    dict[kvPair.first.data()].reset(new NumValue(Numerical(getTimePointFromTimeStamp(timeStruct))));
+                    break;
+                }
+                case toml::node_type::array:
+                    dict[kvPair.first.data()].reset(new ArrValue(importTomlArray(*kvPair.second.as_array())));
+                    break;
+                case toml::node_type::table:
+                    dict[kvPair.first.data()].reset(new DictStructValue(DictStruct(importTomlTable(*kvPair.second.as_table()))));
+                    break;
+                case toml::node_type::none:
+                    dict[kvPair.first.data()];
+                    break;
+            }
+        }
+
+        return dict;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import a TOML array into a mu::Array.
+    ///
+    /// \param tomlArray const toml::array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    static Array importTomlArray(const toml::array& tomlArray)
+    {
+        Array arr;
+        arr.makeMutable();
+
+        for (const auto& tomlValue : tomlArray)
+        {
+            switch (tomlValue.type())
+            {
+                case toml::node_type::integer:
+                    arr.emplace_back(Numerical(**tomlValue.as_integer()));
+                    break;
+                case toml::node_type::floating_point:
+                    arr.emplace_back(Numerical(**tomlValue.as_floating_point()));
+                    break;
+                case toml::node_type::string:
+                    arr.emplace_back(**tomlValue.as_string());
+                    break;
+                case toml::node_type::boolean:
+                    arr.emplace_back(Numerical(**tomlValue.as_boolean()));
+                    break;
+                case toml::node_type::date:
+                {
+                    toml::date dt = **tomlValue.as_date();
+                    arr.emplace_back(Numerical(getTimePointFromYMD(dt.year, dt.month, dt.day)));
+                    break;
+                }
+                case toml::node_type::time:
+                {
+                    toml::time tm = **tomlValue.as_time();
+                    arr.emplace_back(Numerical(getTimePointFromHMS(tm.hour, tm.minute, tm.second, 0, tm.nanosecond / 1000)));
+                    break;
+                }
+                case toml::node_type::date_time:
+                {
+                    toml::date_time dttm = **tomlValue.as_date_time();
+                    time_stamp timeStruct;
+                    timeStruct.m_ymd = date::year_month_day(date::year(dttm.date.year), date::month(dttm.date.month), date::day(dttm.date.day));
+                    timeStruct.m_hours = std::chrono::hours(dttm.time.hour);
+                    timeStruct.m_minutes = std::chrono::minutes(dttm.time.minute);
+                    timeStruct.m_seconds = std::chrono::seconds(dttm.time.second);
+                    timeStruct.m_microsecs = std::chrono::microseconds(dttm.time.nanosecond / 1000);
+
+                    if (!dttm.is_local())
+                        timeStruct.m_minutes += std::chrono::minutes(dttm.offset->minutes);
+
+                    arr.emplace_back(Numerical(getTimePointFromTimeStamp(timeStruct)));
+                    break;
+                }
+                case toml::node_type::array:
+                    arr.emplace_back(importTomlArray(*tomlValue.as_array()));
+                    break;
+                case toml::node_type::table:
+                    arr.emplace_back(DictStruct(importTomlTable(*tomlValue.as_table())));
+                    break;
+                case toml::node_type::none:
+                    arr.emplace_back(Value());
+                    break;
+            }
+        }
+
+        return arr;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import the contents of a TOML file
+    /// into this DictStruct instance.
+    ///
+    /// \param fileName std::string
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool DictStruct::hasXmlStructure() const
+    bool DictStruct::importToml(std::string fileName)
     {
-        if (m_fields.empty())
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidFileName(fileName, ".toml", false, true);
+
+        if (!fileExists(fileName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "loadtoml(\"" + fileName + "\")", fileName);
+#endif
+
+        boost::nowide::ifstream tomlFile(fileName);
+
+        if (!tomlFile.good())
             return false;
 
-        if (!isField("name"))
-            return false;
+        toml::table tomlData = toml::parse(tomlFile, fileName);
 
-        for (const auto& iter : m_fields)
-        {
-            if (iter.first != "name" && iter.first != "attrs" && iter.first != "nodes" && iter.first != "text")
-                return false;
-        }
+        m_fields.clear();
+        m_fields["DOM"].reset(new DictStructValue(importTomlTable(tomlData)));
 
         return true;
     }
+
+    // Forward declaration due to interdependence of the two
+    // encoder functions for TOML
+    static toml::table encodeToml(const DictStruct& dict);
+
+    /////////////////////////////////////////////////
+    /// \brief Encode an Array into a TOML array.
+    ///
+    /// \param arr const Array&
+    /// \return toml::array
+    ///
+    /////////////////////////////////////////////////
+    static toml::array encodeToml(const Array& arr)
+    {
+        toml::array tomlArray;
+
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            const Value& val = arr.get(i);
+
+            if (val.getType() == TYPE_ARRAY)
+                tomlArray.emplace_back(encodeToml(val.getArray()));
+            else if (val.getType() == TYPE_DICTSTRUCT)
+                tomlArray.emplace_back(encodeToml(val.getDictStruct()));
+            else if (val.getType() == TYPE_NUMERICAL)
+            {
+                const Numerical& num = val.getNum();
+
+                if (num.getType() == LOGICAL)
+                    tomlArray.emplace_back(bool(num));
+                else if (num.getType() < F32)
+                    tomlArray.emplace_back(num.asI64());
+                else if (num.getType() <= F64)
+                    tomlArray.emplace_back(num.asF64());
+                else if (num.getType() == DATETIME)
+                {
+                    time_stamp time = getTimeStampFromTimePoint(to_timePoint(num.asF64()));
+                    toml::date_time dttm;
+                    dttm.date.year = (int)time.m_ymd.year();
+                    dttm.date.month = (unsigned)time.m_ymd.month();
+                    dttm.date.day = (unsigned)time.m_ymd.day();
+
+                    dttm.time.hour = time.m_hours.count();
+                    dttm.time.minute = time.m_minutes.count();
+                    dttm.time.second = time.m_seconds.count();
+                    dttm.time.nanosecond = (time.m_millisecs.count()*1000+time.m_microsecs.count())*1000;
+
+                    tomlArray.emplace_back(dttm);
+                }
+                else
+                    tomlArray.emplace_back(num.print());
+            }
+            else
+                tomlArray.emplace_back(val.printVal(0, 0));
+        }
+
+        return tomlArray;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode a DictStruct into a
+    /// TOML table.
+    ///
+    /// \param dict const DictStruct&
+    /// \return toml::table
+    ///
+    /////////////////////////////////////////////////
+    static toml::table encodeToml(const DictStruct& dict)
+    {
+        std::vector<std::string> fields = dict.getFields();
+        toml::table tomlTable;
+
+        for (const std::string& field : fields)
+        {
+            const BaseValue* val = dict.read(field);
+
+            if (val->getPlainType() == TYPE_ARRAY)
+                tomlTable.emplace(field, encodeToml(static_cast<const ArrValue*>(val)->get()));
+            else if (val->getPlainType() == TYPE_DICTSTRUCT)
+                tomlTable.emplace(field, encodeToml(static_cast<const DictStructValue*>(val)->get()));
+            else if (val->getPlainType() == TYPE_NUMERICAL)
+            {
+                const Numerical& num = static_cast<const NumValue*>(val)->get();
+
+                if (num.getType() == LOGICAL)
+                    tomlTable.emplace(field, bool(num));
+                else if (num.getType() < F32)
+                    tomlTable.emplace(field, num.asI64());
+                else if (num.getType() <= F64)
+                    tomlTable.emplace(field, num.asF64());
+                else if (num.getType() == DATETIME)
+                {
+                    time_stamp time = getTimeStampFromTimePoint(to_timePoint(num.asF64()));
+                    toml::date_time dttm;
+                    dttm.date.year = (int)time.m_ymd.year();
+                    dttm.date.month = (unsigned)time.m_ymd.month();
+                    dttm.date.day = (unsigned)time.m_ymd.day();
+
+                    dttm.time.hour = time.m_hours.count();
+                    dttm.time.minute = time.m_minutes.count();
+                    dttm.time.second = time.m_seconds.count();
+                    dttm.time.nanosecond = (time.m_millisecs.count()*1000+time.m_microsecs.count())*1000;
+
+                    tomlTable.emplace(field, dttm);
+                }
+                else
+                    tomlTable.emplace(field, num.print());
+            }
+            else
+                tomlTable.emplace(field, val->printVal(0, 0));
+        }
+
+        return tomlTable;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode the contents as a
+    /// string-encoded TOML.
+    ///
+    /// \param format bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictStruct::encodeToml(bool format) const
+    {
+        if (!size())
+            return "";
+
+        std::vector<std::string> fields = getFields();
+        toml::table tomlTable;
+
+        if (fields.size() == 1 && fields.front() == "DOM")
+        {
+            // Ignore that
+            const BaseValue* val = read("DOM");
+
+            if (val->getPlainType() == TYPE_ARRAY)
+                tomlTable.emplace("DOM",  mu::encodeToml(static_cast<const ArrValue*>(val)->get()));
+            else
+                tomlTable = mu::encodeToml(static_cast<const DictStructValue*>(val)->get());
+        }
+        else
+            tomlTable = mu::encodeToml(*this);
+
+        std::stringstream tomlStream;
+        tomlStream << toml::toml_formatter(tomlTable, format ? toml::toml_formatter::default_flags : toml::format_flags::none);
+
+        return tomlStream.str();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Decode the string-encoded TOML.
+    ///
+    /// \param tomlString const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::decodeToml(const std::string& tomlString)
+    {
+        toml::table tomlData = toml::parse(tomlString);
+
+        m_fields.clear();
+        m_fields["DOM"].reset(new DictStructValue(importTomlTable(tomlData)));
+
+        return true;
+    }
+
+
+    // Forward declaration to resolve cross dependency
+    static Value importYamlScalar(const YAML::Node& yamlScalar);
+    static Array importYamlSequence(const YAML::Node& yamlSequence);
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import a YAML map into a
+    /// mu::DictStruct.
+    ///
+    /// \param yamlMap const YAML::Node&
+    /// \return DictStructMap
+    ///
+    /////////////////////////////////////////////////
+    static DictStructMap importYamlMap(const YAML::Node& yamlMap)
+    {
+        DictStructMap dict;
+
+        for (const auto& iter : yamlMap)
+        {
+            switch (iter.second.Type())
+            {
+                case YAML::NodeType::Sequence:
+                    dict[iter.first.Scalar()].reset(new ArrValue(importYamlSequence(iter.second)));
+                    break;
+                case YAML::NodeType::Map:
+                    dict[iter.first.Scalar()].reset(new DictStructValue(DictStruct(importYamlMap(iter.second))));
+                    break;
+                case YAML::NodeType::Scalar:
+                    dict[iter.first.Scalar()].reset(importYamlScalar(iter.second).release());
+                    break;
+                case YAML::NodeType::Null:
+                case YAML::NodeType::Undefined:
+                    dict[iter.first.Scalar()];
+                    break;
+            }
+        }
+
+        return dict;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import a YAML sequence into a
+    /// mu::Array.
+    ///
+    /// \param yamlSequence const YAML::Node&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+    static Array importYamlSequence(const YAML::Node& yamlSequence)
+    {
+        Array arr;
+        arr.makeMutable();
+
+        for (const auto& yamlValue : yamlSequence)
+        {
+            switch (yamlValue.Type())
+            {
+                case YAML::NodeType::Sequence:
+                    arr.emplace_back(importYamlSequence(yamlValue));
+                    break;
+                case YAML::NodeType::Map:
+                    arr.emplace_back(DictStruct(importYamlMap(yamlValue)));
+                    break;
+                case YAML::NodeType::Scalar:
+                    arr.emplace_back(importYamlScalar(yamlValue));
+                    break;
+                case YAML::NodeType::Null:
+                case YAML::NodeType::Undefined:
+                    arr.emplace_back(mu::Value());
+                    break;
+            }
+        }
+
+        return arr;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import a YAML scalar as a mu::Value
+    ///
+    /// \param yamlScalar const YAML::Node&
+    /// \return Value
+    ///
+    /////////////////////////////////////////////////
+    static Value importYamlScalar(const YAML::Node& yamlScalar)
+    {
+        std::string value = yamlScalar.Scalar();
+
+        if (isConvertible(value, CONVTYPE_VALUE))
+            return Numerical(StrToCmplx(value));
+        else if (isConvertible(value, CONVTYPE_LOGICAL))
+            return Numerical(StrToLogical(value));
+        else if (isConvertible(value, CONVTYPE_DURATION))
+            return Numerical(parseDuration(value), mu::DURATION);
+        else if (isConvertible(value, CONVTYPE_DATE_TIME))
+            return Numerical(StrToTime(value));
+
+        return value;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Import the contents of a YAML file
+    /// into this DictStruct instance.
+    ///
+    /// \param fileName std::string
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::importYaml(std::string fileName)
+    {
+#ifndef PARSERSTANDALONE
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+        fileName = _fSys.ValidFileName(fileName, ".yaml", false, true);
+
+        if (!fileExists(fileName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "loadyaml(\"" + fileName + "\")", fileName);
+#endif
+
+        std::ifstream yamlFile(boost::nowide::widen(fileName).c_str());
+
+        if (!yamlFile.good())
+            return false;
+
+        YAML::Node root = YAML::Load(yamlFile);
+
+        m_fields.clear();
+
+        if (root.IsSequence())
+            m_fields["DOM"].reset(new ArrValue(importYamlSequence(root)));
+        else if (root.IsMap())
+            m_fields["DOM"].reset(new DictStructValue(importYamlMap(root)));
+        else if (root.IsScalar())
+            m_fields["DOM"].reset(importYamlScalar(root).release());
+        else
+            return false;
+
+        return true;
+    }
+
+
+
+    // Forward declaration due to interdependence of the two
+    // encoder functions for YAML
+    static YAML::Node encodeYaml(const DictStruct& dict);
+
+    /////////////////////////////////////////////////
+    /// \brief Encode an Array into a YAML node.
+    ///
+    /// \param arr const Array&
+    /// \return YAML::Node
+    ///
+    /////////////////////////////////////////////////
+    static YAML::Node encodeYaml(const Array& arr)
+    {
+        YAML::Node yamlSequence;
+
+        for (size_t i = 0; i < arr.size(); i++)
+        {
+            const Value& val = arr.get(i);
+
+            if (val.getType() == TYPE_ARRAY)
+                yamlSequence.push_back(encodeYaml(val.getArray()));
+            else if (val.getType() == TYPE_DICTSTRUCT)
+                yamlSequence.push_back(encodeYaml(val.getDictStruct()));
+            else if (val.getType() == TYPE_NUMERICAL)
+            {
+                const Numerical& num = val.getNum();
+
+                if (num.getType() == LOGICAL)
+                    yamlSequence.push_back(bool(num));
+                else if (num.getType() < F32)
+                    yamlSequence.push_back(num.asI64());
+                else if (num.getType() <= F64)
+                    yamlSequence.push_back(num.asF64());
+                else
+                    yamlSequence.push_back(num.print());
+            }
+            else
+                yamlSequence.push_back(val.printVal(0, 0));
+        }
+
+        return yamlSequence;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode a DictStruct into a YAML node.
+    ///
+    /// \param dict const DictStruct&
+    /// \return YAML::Node
+    ///
+    /////////////////////////////////////////////////
+    static YAML::Node encodeYaml(const DictStruct& dict)
+    {
+        std::vector<std::string> fields = dict.getFields();
+        YAML::Node yamlMap;
+
+        for (const std::string& field : fields)
+        {
+            const BaseValue* val = dict.read(field);
+
+            if (val->getPlainType() == TYPE_ARRAY)
+                yamlMap[field] = encodeYaml(static_cast<const ArrValue*>(val)->get());
+            else if (val->getPlainType() == TYPE_DICTSTRUCT)
+                yamlMap[field] = encodeYaml(static_cast<const DictStructValue*>(val)->get());
+            else if (val->getPlainType() == TYPE_NUMERICAL)
+            {
+                const Numerical& num = static_cast<const NumValue*>(val)->get();
+
+                if (num.getType() == LOGICAL)
+                    yamlMap[field] = bool(num);
+                else if (num.getType() < F32)
+                    yamlMap[field] = num.asI64();
+                else if (num.getType() <= F64)
+                    yamlMap[field] = num.asF64();
+                else
+                    yamlMap[field] = num.print();
+            }
+            else
+                yamlMap[field] = val->printVal(0, 0);
+        }
+
+        return yamlMap;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Encode the contents as a
+    /// string-encoded YAML.
+    ///
+    /// \param format bool
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string DictStruct::encodeYaml(bool format) const
+    {
+        if (!size())
+            return "";
+
+        std::vector<std::string> fields = getFields();
+        YAML::Node yamlNode;
+
+        if (fields.size() == 1 && fields.front() == "DOM")
+        {
+            // Ignore that
+            const BaseValue* val = read("DOM");
+
+            if (val->getPlainType() == TYPE_ARRAY)
+                yamlNode = mu::encodeYaml(static_cast<const ArrValue*>(val)->get());
+            else
+                yamlNode = mu::encodeYaml(static_cast<const DictStructValue*>(val)->get());
+        }
+        else
+            yamlNode = mu::encodeYaml(*this);
+
+        YAML::Emitter yamlStream;
+
+        if (!format)
+        {
+            yamlStream.SetStringFormat(YAML::EMITTER_MANIP::DoubleQuoted);
+            yamlStream.SetOutputCharset(YAML::EMITTER_MANIP::EscapeNonAscii);
+        }
+
+        yamlStream << yamlNode;
+
+        return yamlStream.c_str();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Decode the string-encoded YAML.
+    ///
+    /// \param yamlString const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool DictStruct::decodeYaml(const std::string& yamlString)
+    {
+        YAML::Node root = YAML::Load(yamlString);
+
+        m_fields.clear();
+
+        if (root.IsSequence())
+            m_fields["DOM"].reset(new ArrValue(importYamlSequence(root)));
+        else if (root.IsMap())
+            m_fields["DOM"].reset(new DictStructValue(importYamlMap(root)));
+        else if (root.IsScalar())
+            m_fields["DOM"].reset(importYamlScalar(root).release());
+        else
+            return false;
+
+        return true;
+    }
+
+
 
 
     //------------------------------------------------------------------------

@@ -260,13 +260,23 @@ namespace mu
             DictStruct omit(const std::vector<std::string>& fieldNames) const;
             std::vector<std::string> merge(const DictStruct& other);
             size_t clear();
+
             bool importXml(std::string fileName);
             std::string encodeXml(bool format) const;
             bool decodeXml(const std::string& xmlString);
+            bool hasXmlStructure() const;
+
             bool importJson(std::string fileName);
             std::string encodeJson(bool format) const;
             bool decodeJson(const std::string& jsonString);
-            bool hasXmlStructure() const;
+
+            bool importToml(std::string fileName);
+            std::string encodeToml(bool format) const;
+            bool decodeToml(const std::string& tomlString);
+
+            bool importYaml(std::string fileName);
+            std::string encodeYaml(bool format) const;
+            bool decodeYaml(const std::string& yamlString);
     };
 
 

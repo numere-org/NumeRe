@@ -110,6 +110,8 @@ mu::Array strfnc_valtostr(const mu::Array& vals, const mu::Array& cfill, const m
 mu::Array strfnc_gettypeof(const mu::Array& vals);
 mu::Array strfnc_readxml(const mu::Array& xmlFiles, const mu::Array& opts); // OPT=1
 mu::Array strfnc_readjson(const mu::Array& jsonFiles, const mu::Array& opts); // OPT=1
+mu::Array strfnc_readtoml(const mu::Array& tomlFiles, const mu::Array& opts); // OPT=1
+mu::Array strfnc_readyaml(const mu::Array& yamlFiles, const mu::Array& opts); // OPT=1
 
 #endif // STRFUNCTIONIMPLEMENTATION_HPP
 

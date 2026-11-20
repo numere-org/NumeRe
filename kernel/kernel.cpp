@@ -992,6 +992,8 @@ void NumeReKernel::defineStrFunctions()
     _parser.DefineFun("valtostr", strfnc_valtostr, true, 2);                         // valtostr(val,str,l)
     _parser.DefineFun("gettypeof", strfnc_gettypeof);                                // gettypeof(val)
     _parser.DefineFun("readxml", strfnc_readxml, true, 1);                           // readxml(file,isfile)
+    _parser.DefineFun("readtoml", strfnc_readtoml, true, 1);                         // readtoml(file,isfile)
+    _parser.DefineFun("readyaml", strfnc_readyaml, true, 1);                         // readyaml(file,isfile)
     _parser.DefineFun("readjson", strfnc_readjson, true, 1);                         // readjson(file,isfile)
 }
 

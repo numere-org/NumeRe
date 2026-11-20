@@ -22,3 +22,6 @@
 [submodule "externals/base-n"]
 	path = externals/base-n
 	url = https://github.com/azawadzki/base-n.git
+[submodule "externals/tomlplusplus"]
+	path = externals/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git

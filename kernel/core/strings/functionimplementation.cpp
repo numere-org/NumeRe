@@ -3870,6 +3870,86 @@ mu::Array strfnc_readjson(const mu::Array& jsonFiles, const mu::Array& opts)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Implements the readtoml() function.
+///
+/// \param tomlFiles const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readtoml(const mu::Array& tomlFiles, const mu::Array& opts)
+{
+    mu::MatrixView tomlView(tomlFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = tomlView.prepare(optsView);
+
+    size_t elems = tomlView.size();
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::DictStruct());
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(tomlView.get(i).getPath(), ".toml", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readtoml(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importToml(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeToml(tomlView.get(i).getStr());
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the readyaml() function.
+///
+/// \param yamlFiles const mu::Array&
+/// \param opts const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array strfnc_readyaml(const mu::Array& yamlFiles, const mu::Array& opts)
+{
+    mu::MatrixView yamlView(yamlFiles);
+    mu::MatrixView optsView(opts);
+    mu::Array ret = yamlView.prepare(optsView);
+
+    size_t elems = yamlView.size();
+
+    for (size_t i = 0; i < elems; i++)
+    {
+        ret.emplace_back(mu::DictStruct());
+
+        if (opts.isDefault() || optsView.get(i).getNum().asI64())
+        {
+#ifndef PARSERSTANDALONE
+            FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
+            std::string validFile = _fSys.ValidFileName(yamlView.get(i).getPath(), ".yaml", false, true);
+
+            if (!fileExists(validFile))
+                throw SyntaxError(SyntaxError::FILE_NOT_EXIST, "readyaml(\"" + validFile + "\")", validFile);
+
+            ret.back().getDictStruct().importYaml(validFile);
+#endif // PARSERSTANDALONE
+        }
+        else
+            ret.back().getDictStruct().decodeYaml(yamlView.get(i).getStr());
+    }
+
+    return ret;
+}
+
+
 
 
 

@@ -29,3 +29,5 @@ Applied	Reduced the default output size of PNGs to 1024/768 from 1280/960. Setti
 Applied	The table method "TAB().size" will now always return the values for all three dimensions, even if there is only one sheet in the current table.
 Added	Terminal output can now contain inline code sequences between backticks. Those segments are rendered in normal text, warnings and errors.
 New	Strings do now have the method "STR.subchr()", which will return a new string based upon unicode code points instead on pure bytes.
+New	DictStructs do now provide TOML import and export functionalities.
+New	DictStructs do now provide YAML import and export functionalities.
